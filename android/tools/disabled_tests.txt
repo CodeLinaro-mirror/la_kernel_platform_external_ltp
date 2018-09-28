@@ -191,26 +191,6 @@ du01.sh
 eject_check_tray
 eject-tests.sh
 file_test.sh
-# TODO(b/69117476): Enable ftrace_stress tests again
-ftrace_buffer_size_kb.h
-ftrace_current_tracer.sh
-ftrace_ftrace_enabled.sh
-ftrace_function_profile_enabled.sh
-ftrace_set_event.sh
-ftrace_set_ftrace_filter.sh
-ftrace_set_ftrace_pid.sh
-ftrace_stack_max_size.sh
-ftrace_stack_trace.sh
-ftrace_stress_test.sh
-ftrace_trace.sh
-ftrace_trace_clock.sh
-ftrace_trace_options.sh
-ftrace_trace_pipe.sh
-ftrace_trace_stat.sh
-ftrace_tracing_cpumask.sh
-ftrace_tracing_enabled.sh
-ftrace_tracing_max_latency.sh
-ftrace_tracing_on.sh
 insmod01.sh
 keyctl01.sh
 ld01
@@ -416,14 +396,6 @@ f1.obj
 nmfile.obj
 nmfile2.obj
 
-# The following test cases are disabled due to a disabled library
-cpuset_syscall_test
-cpuset_list_compute
-cpuset_cpu_hog
-cpuset_mem_hog
-cpuset_sched_domains_check
-cpuset_memory_pressure
-
 # The following test cases are disabled due to a disabled cflags
 
 # TODO b/69263988
@@ -503,3 +475,4 @@ testcases/bin/fs_bind/rbind/test19
 testcases/bin/fs_bind/rbind/test22
 testcases/bin/fs_bind/regression/test01
 testcases/bin/fs_bind/regression/test02
+testcases/bin/fs_bind/regression/test03
