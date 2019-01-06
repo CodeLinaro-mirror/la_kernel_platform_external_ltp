@@ -219,6 +219,8 @@ class CKI_Coverage(object):
     if syscall in ("arm_sync_file_range", "sync_file_range2") and \
       test.startswith("sync_file_range"):
       return True
+    if syscall == "get_thread_area" and test == "set_thread_area01":
+      return True
 
     return False
 
@@ -348,6 +350,9 @@ class CKI_Coverage(object):
     if not seen:
       cki.syscalls.append({"name":syscall, arch:True})
 
+  def delete_syscall(self, cki, syscall):
+    cki.syscalls = list(filter(lambda i: i["name"] != syscall, cki.syscalls))
+
   def check_blacklist(self, cki, error_on_match):
     unlisted_syscalls = []
     for s in cki.syscalls:
@@ -439,6 +444,12 @@ class CKI_Coverage(object):
     self.get_arm_kernel_syscalls(cki)
     self.get_x86_kernel_syscalls(cki)
     self.get_x86_64_kernel_syscalls(cki)
+
+    # restart_syscall is a special syscall which the kernel issues internally
+    # when a process is resumed with SIGCONT.  seccomp whitelists this syscall,
+    # but it is not part of the CKI or meaningfully testable from userspace.
+    # See restart_syscall(2) for more details.
+    self.delete_syscall(cki, "restart_syscall")
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Output list of system calls "
