@@ -12,22 +12,23 @@
  *
  * - EACCES when cmd is Q_QUOTAON and addr existed but not a regular file
  * - ENOENT when the file specified by special or addr does not exist
- * - EBUSY when cmd is Q_QUOTAON and another Q_QUOTAON had already been performed
+ * - EBUSY when cmd is Q_QUOTAON and another Q_QUOTAON had already been
+ *   performed
  * - EFAULT when addr or special is invalid
  * - EINVAL when cmd or type is invalid
  * - ENOTBLK when special is not a block device
- * - ESRCH when no disk quota is found for the indicated user and quotas have not been
- *   turned on for this fs
+ * - ESRCH when no disk quota is found for the indicated user and quotas have
+ *   not been turned on for this fs
  * - ESRCH when cmd is Q_QUOTAON, but the quota format was not found
- * - ESRCH when cmd is Q_GETNEXTQUOTA, but there is no ID greater than or equal to id that
- *   has an active quota
- * - ERANGE when cmd is Q_SETQUOTA, but the specified limits are out of the range allowed
- *   by the quota format
- * - EPERM when the caller lacked the required privilege (CAP_SYS_ADMIN) for the specified
- *   operation
+ * - ESRCH when cmd is Q_GETNEXTQUOTA, but there is no ID greater than or
+ *   equal to id that has an active quota
+ * - ERANGE when cmd is Q_SETQUOTA, but the specified limits are out of the
+ *   range allowed by the quota format
+ * - EPERM when the caller lacked the required privilege (CAP_SYS_ADMIN) for
+ *   the specified operation
  *
- * For ERANGE error, the vfsv0 and vfsv1 format's maximum quota limit setting have been
- * fixed since the following kernel patch:
+ * For ERANGE error, the vfsv0 and vfsv1 format's maximum quota limit setting
+ * have been fixed since the following kernel patch:
  *
  *  commit 7e08da50cf706151f324349f9235ebd311226997
  *  Author: Jan Kara <jack@suse.cz>
@@ -135,10 +136,13 @@ static void verify_quotactl(unsigned int n)
 	}
 
 	if (tc->on_flag) {
-		TST_EXP_PASS_SILENT(quotactl(QCMD(Q_QUOTAON, USRQUOTA), tst_device->dev,
-					fmt_id, usrpath), "quotactl with Q_QUOTAON");
+		TST_EXP_PASS_SILENT(quotactl(QCMD(Q_QUOTAON, USRQUOTA),
+			tst_device->dev, fmt_id, usrpath),
+			"quotactl with Q_QUOTAON");
+
 		if (!TST_PASS)
 			return;
+
 		quota_on = 1;
 	}
 
@@ -147,16 +151,19 @@ static void verify_quotactl(unsigned int n)
 		drop_flag = 1;
 	}
 
-	if (tc->exp_err == ENOTBLK)
+	if (tc->exp_err == ENOTBLK) {
 		TST_EXP_FAIL(quotactl(tc->cmd, "/dev/null", *tc->id, tc->addr),
 			ENOTBLK, "quotactl()");
-	else
-		TST_EXP_FAIL(quotactl(tc->cmd, tst_device->dev, *tc->id, tc->addr),
-			tc->exp_err, "quotactl()");
+	} else {
+		TST_EXP_FAIL(quotactl(tc->cmd, tst_device->dev, *tc->id,
+			tc->addr), tc->exp_err, "quotactl()");
+	}
 
 	if (quota_on) {
-		TST_EXP_PASS_SILENT(quotactl(QCMD(Q_QUOTAOFF, USRQUOTA), tst_device->dev,
-					fmt_id, usrpath), "quotactl with Q_QUOTAOFF");
+		TST_EXP_PASS_SILENT(quotactl(QCMD(Q_QUOTAOFF, USRQUOTA),
+			tst_device->dev, fmt_id, usrpath),
+			"quotactl with Q_QUOTAOFF");
+
 		if (!TST_PASS)
 			return;
 	}
@@ -169,7 +176,9 @@ static void setup(void)
 {
 	unsigned int i;
 	const struct quotactl_fmt_variant *var = &fmt_variants[tst_variant];
-	const char *const cmd[] = {"quotacheck", "-ugF", var->fmt_name, MNTPOINT, NULL};
+	const char *const cmd[] = {
+		"quotacheck", "-ugF", var->fmt_name, MNTPOINT, NULL
+	};
 
 	tst_res(TINFO, "quotactl() with %s format", var->fmt_name);
 	SAFE_CMD(cmd, NULL, NULL);
@@ -177,10 +186,7 @@ static void setup(void)
 	/* vfsv0 block limit 2^42, vfsv1 block limit 2^63 - 1 */
 	set_dqmax.dqb_bsoftlimit = tst_variant ? 0x20000000000000 : 0x100000000;
 
-	if (access(USRPATH, F_OK) == -1)
-		tst_brk(TFAIL | TERRNO, "user quotafile didn't exist");
-
-	tst_require_quota_support(tst_device->dev, fmt_id, usrpath);
+	SAFE_ACCESS(USRPATH, F_OK);
 
 	SAFE_MKDIR(TESTDIR1, 0666);
 
@@ -197,15 +203,18 @@ static void setup(void)
 
 static void cleanup(void)
 {
-	SAFE_UNLINK(USRPATH);
-	SAFE_RMDIR(TESTDIR1);
+	if (!access(USRPATH, F_OK))
+		SAFE_UNLINK(USRPATH);
+
+	if (!access(TESTDIR1, F_OK))
+		SAFE_RMDIR(TESTDIR1);
 }
 
 static struct tst_test test = {
 	.setup = setup,
 	.cleanup = cleanup,
-	.needs_kconfigs = (const char *[]) {
-		"CONFIG_QFMT_V2",
+	.needs_drivers = (const char *const []) {
+		"quota_v2",
 		NULL
 	},
 	.tcnt = ARRAY_SIZE(tcases),

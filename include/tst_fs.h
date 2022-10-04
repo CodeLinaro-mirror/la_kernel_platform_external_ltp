@@ -30,6 +30,7 @@
 #define TST_EXOFS_MAGIC    0x5DF5
 #define TST_OVERLAYFS_MAGIC 0x794c7630
 #define TST_FUSE_MAGIC     0x65735546
+#define TST_VFAT_MAGIC     0x4d44 /* AKA MSDOS */
 #define TST_EXFAT_MAGIC    0x2011BAB0UL
 
 enum {
@@ -195,21 +196,6 @@ const char **tst_get_supported_fs_types(const char *const *skiplist);
  * @skiplist A NULL terminated array of fileystemsytems to skip.
  */
 int tst_fs_in_skiplist(const char *fs_type, const char *const *skiplist);
-
-/*
- * Check whether device supports FS quotas. Negative return value means that
- * quotas appear to be broken.
- */
-int tst_check_quota_support(const char *device, int format, char *quotafile);
-
-/*
- * Check for quota support and terminate the test with appropriate exit status
- * if quotas are not supported or broken.
- */
-#define tst_require_quota_support(dev, fmt, qfile) \
-	tst_require_quota_support_(__FILE__, __LINE__, (dev), (fmt), (qfile))
-void tst_require_quota_support_(const char *file, const int lineno,
-	const char *device, int format, char *quotafile);
 
 /*
  * Creates and writes to files on given path until write fails with ENOSPC

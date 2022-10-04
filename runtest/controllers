@@ -19,6 +19,8 @@ memcg_control		memcg_control_test.sh
 # kselftest ports
 memcontrol01 memcontrol01
 memcontrol02 memcontrol02
+memcontrol03 memcontrol03
+memcontrol04 memcontrol04
 
 cgroup_fj_function_debug cgroup_fj_function.sh debug
 cgroup_fj_function_cpuset cgroup_fj_function.sh cpuset
@@ -357,6 +359,9 @@ cpuset_memory_spread	cpuset_memory_spread_testset.sh
 cpuset_regression_test cpuset_regression_test.sh
 
 cgroup_xattr	cgroup_xattr
+
+# V2 IO controller (was blkio)
+io_control01 io_control01
 
 pids_1_1 pids.sh 1 1 0
 pids_1_2 pids.sh 1 2 0

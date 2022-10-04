@@ -47,6 +47,7 @@ static struct dqinfo res_qf;
 static int32_t fmt_buf;
 
 static struct if_nextdqblk res_ndq;
+static int getnextquota_nsup;
 
 static struct tcase {
 	int cmd;
@@ -95,36 +96,20 @@ static struct tcase {
 
 };
 
-static void do_mount(const char *source, const char *target,
-	const char *filesystemtype, unsigned long mountflags,
-	const void *data)
-{
-	TEST(mount(source, target, filesystemtype, mountflags, data));
-
-	if (TST_RET == -1 && TST_ERR == ESRCH)
-		tst_brk(TCONF, "Kernel or device does not support FS quotas");
-
-	if (TST_RET == -1) {
-		tst_brk(TBROK | TTERRNO, "mount(%s, %s, %s, %lu, %p) failed",
-			source, target, filesystemtype, mountflags, data);
-	}
-
-	if (TST_RET) {
-		tst_brk(TBROK | TTERRNO, "mount(%s, %s, %s, %lu, %p) failed",
-			source, target, filesystemtype, mountflags, data);
-	}
-
-	mount_flag = 1;
-}
-
 static void setup(void)
 {
 	const char *const fs_opts[] = {"-I 256", "-O quota,project", NULL};
 
 	quotactl_info();
 	SAFE_MKFS(tst_device->dev, tst_device->fs_type, fs_opts, NULL);
-	do_mount(tst_device->dev, MNTPOINT, tst_device->fs_type, 0, NULL);
+	SAFE_MOUNT(tst_device->dev, MNTPOINT, tst_device->fs_type, 0, NULL);
+	mount_flag = 1;
 	fd = SAFE_OPEN(MNTPOINT, O_RDONLY);
+
+	TEST(do_quotactl(fd, QCMD(Q_GETNEXTQUOTA, PRJQUOTA), tst_device->dev,
+		test_id, (void *) &res_ndq));
+	if (TST_ERR == EINVAL || TST_ERR == ENOSYS)
+		getnextquota_nsup = 1;
 }
 
 static void cleanup(void)
@@ -145,6 +130,11 @@ static void verify_quota(unsigned int n)
 
 	tst_res(TINFO, "Test #%d: %s", n, tc->tname);
 
+	if (tc->cmd == QCMD(Q_GETNEXTQUOTA, PRJQUOTA) && getnextquota_nsup) {
+		tst_res(TCONF, "current system doesn't support this cmd");
+		return;
+	}
+
 	TST_EXP_PASS_SILENT(do_quotactl(fd, tc->cmd, tst_device->dev, *tc->id, tc->addr),
 			"do_quotactl to %s", tc->des);
 	if (!TST_PASS)
@@ -162,11 +152,11 @@ static void verify_quota(unsigned int n)
 
 static struct tst_test test = {
 	.needs_root = 1,
-	.needs_kconfigs = (const char *[]) {
-		"CONFIG_QFMT_V2",
+	.needs_drivers = (const char *const []) {
+		"quota_v2",
 		NULL
 	},
-	.min_kver = "4.10", /* commit 689c958cbe6b (ext4: add project quota support) */
+	.min_kver = "4.5", /* commit 689c958cbe6b (ext4: add project quota support) */
 	.test = verify_quota,
 	.tcnt = ARRAY_SIZE(tcases),
 	.setup = setup,

@@ -1,6 +1,6 @@
 #!/bin/sh
 # Copyright (c) 2015 Oracle and/or its affiliates. All Rights Reserved.
-# Copyright (c) 2019-2021 Petr Vorel <pvorel@suse.cz>
+# Copyright (c) 2019-2022 Petr Vorel <pvorel@suse.cz>
 # Author: Alexey Kodanev <alexey.kodanev@oracle.com>
 
 dev_makeswap=-1
@@ -12,10 +12,9 @@ sys_control=-1
 
 TST_NEEDS_TMPDIR=1
 TST_NEEDS_ROOT=1
-TST_SETUP="zram_load"
-TST_CLEANUP="zram_cleanup"
+TST_SETUP="${TST_SETUP:-zram_load}"
+TST_CLEANUP="${TST_CLEANUP:-zram_cleanup}"
 TST_NEEDS_DRIVERS="zram"
-. tst_test.sh
 
 zram_cleanup()
 {
@@ -193,3 +192,5 @@ zram_set_memlimit()
 
 	tst_res TPASS "test succeeded"
 }
+
+. tst_test.sh

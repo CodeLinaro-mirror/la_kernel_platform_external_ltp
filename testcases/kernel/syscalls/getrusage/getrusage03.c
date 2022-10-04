@@ -178,10 +178,15 @@ static struct tst_test test = {
 	.child_needs_reinit = 1,
 	.resource_files = resource,
 	.min_kver = "2.6.32",
+	.min_mem_avail = 512,
 	.tags = (const struct tst_tag[]) {
 		{"linux-git", "1f10206cf8e9"},
 		{}
 	},
 	.test = run,
 	.tcnt = ARRAY_SIZE(testfunc_list),
+	.caps = (struct tst_cap []) {
+		TST_CAP(TST_CAP_REQ, CAP_IPC_LOCK),
+		{}
+	},
 };
