@@ -1,5 +1,6 @@
 #!/bin/sh
 # SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (c) Linux Test Project, 2016-2022
 # Copyright (c) 2015-2018 Oracle and/or its affiliates. All Rights Reserved.
 # Copyright (c) International Business Machines  Corp., 2001
 
@@ -29,7 +30,7 @@ TST_PARSE_ARGS=nfs_parse_args
 TST_USAGE=nfs_usage
 TST_NEEDS_TMPDIR=1
 TST_NEEDS_ROOT=1
-TST_NEEDS_CMDS="$TST_NEEDS_CMDS mount exportfs"
+TST_NEEDS_CMDS="$TST_NEEDS_CMDS mount exportfs mount.nfs"
 TST_SETUP="${TST_SETUP:-nfs_setup}"
 TST_CLEANUP="${TST_CLEANUP:-nfs_cleanup}"
 TST_NEEDS_DRIVERS="nfsd"
@@ -38,8 +39,6 @@ TST_NEEDS_DRIVERS="nfsd"
 # through lo interface instead of ltp_ns_veth* netns interfaces (useful for
 # debugging whether test failures are related to veth/netns).
 LTP_NFS_NETNS_USE_LO=${LTP_NFS_NETNS_USE_LO:-}
-
-. tst_net.sh
 
 get_socket_type()
 {
@@ -79,7 +78,11 @@ nfs_server_udp_enabled()
 
 nfs_setup_server()
 {
-	local export_cmd="exportfs -i -o fsid=$$,no_root_squash,rw *:$remote_dir"
+
+	local fsid="$1"
+	local export_cmd="exportfs -i -o fsid=$fsid,no_root_squash,rw *:$remote_dir"
+
+	[ -z "$fsid" ] && tst_brk TBROK "empty fsid"
 
 	if tst_net_use_netns; then
 		if ! test -d $remote_dir; then
@@ -94,6 +97,7 @@ nfs_setup_server()
 
 nfs_mount()
 {
+	local opts="$1"
 	local host_type=rhost
 	local mount_dir
 
@@ -134,7 +138,6 @@ nfs_setup()
 	local i
 	local type
 	local n=0
-	local opts
 	local local_dir
 	local remote_dir
 	local mount_dir
@@ -149,6 +152,8 @@ nfs_setup()
 		done
 	fi
 
+	tst_res TINFO "$(mount.nfs -V)"
+
 	for i in $VERSION; do
 		type=$(get_socket_type $n)
 		tst_res TINFO "setup NFSv$i, socket type $type"
@@ -161,10 +166,9 @@ nfs_setup()
 		remote_dir="$TST_TMPDIR/$i/$type"
 		mkdir -p $local_dir
 
-		nfs_setup_server
+		nfs_setup_server $(($$ + n))
 
-		opts="-o proto=$type,vers=$i"
-		nfs_mount
+		nfs_mount "-o proto=$type,vers=$i"
 
 		n=$(( n + 1 ))
 	done
@@ -200,3 +204,5 @@ nfs_cleanup()
 		n=$(( n + 1 ))
 	done
 }
+
+. tst_net.sh

@@ -24,6 +24,11 @@
 #include "safe_macros_fn.h"
 #include "tst_cmd.h"
 
+int safe_access(const char *filename, const int lineno, const char *pathname,
+		   int mode);
+#define SAFE_ACCESS(path, mode) \
+	safe_access(__FILE__, __LINE__, (path), (mode))
+
 #define SAFE_BASENAME(path) \
 	safe_basename(__FILE__, __LINE__, NULL, (path))
 
@@ -601,6 +606,11 @@ int safe_mincore(const char *file, const int lineno, void *start,
 int safe_personality(const char *filename, unsigned int lineno,
 		    unsigned long persona);
 #define SAFE_PERSONALITY(persona) safe_personality(__FILE__, __LINE__, persona)
+
+int safe_pidfd_open(const char *filename, const int lineno, pid_t pid,
+		   unsigned int flags);
+#define SAFE_PIDFD_OPEN(pid, flags) \
+	safe_pidfd_open(__FILE__, __LINE__, (pid), (flags))
 
 #define SAFE_SETENV(name, value, overwrite) do {		\
 	if (setenv(name, value, overwrite)) {			\

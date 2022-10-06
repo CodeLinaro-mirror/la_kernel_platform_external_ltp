@@ -7,14 +7,10 @@
 TST_NEEDS_TMPDIR=1
 TST_NEEDS_ROOT=1
 TST_MIN_KVER=2.6.15
-TST_SETUP=fs_bind_setup
-TST_CLEANUP=fs_bind_cleanup
+TST_SETUP="${TST_SETUP:-fs_bind_setup}"
+TST_CLEANUP="${TST_CLEANUP:-fs_bind_cleanup}"
 TST_TESTFUNC=fs_bind_test
 TST_NEEDS_CMDS="mount umount awk sed"
-
-. tst_test.sh
-
-[ -z "$FS_BIND_TESTFUNC" ] && tst_brk TBROK "Please set FS_BIND_TESTFUNC before sourcing fs_bind_lib.sh"
 
 # Test interface:
 #
@@ -245,3 +241,6 @@ fs_bind_test()
 
 	_fs_bind_cleanup_test
 }
+
+. tst_test.sh
+[ -z "$FS_BIND_TESTFUNC" ] && tst_brk TBROK "Please set FS_BIND_TESTFUNC before sourcing fs_bind_lib.sh"

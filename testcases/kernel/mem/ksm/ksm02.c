@@ -59,9 +59,6 @@
 #ifdef HAVE_NUMA_V2
 #include <numaif.h>
 
-static const struct tst_cgroup_group *cg;
-static const struct tst_cgroup_group *cg_drain;
-
 static void verify_ksm(void)
 {
 	unsigned long nmask[MAXNODES / BITS_PER_LONG] = { 0 };
@@ -79,37 +76,15 @@ static void verify_ksm(void)
 	}
 	create_same_memory(size, num, unit);
 
-	write_cpusets(cg, node);
-	SAFE_CGROUP_PRINTF(cg, "cgroup.procs", "%d", getpid());
+	write_cpusets(tst_cg, node);
+	SAFE_CG_PRINTF(tst_cg, "cgroup.procs", "%d", getpid());
 	create_same_memory(size, num, unit);
-	SAFE_CGROUP_PRINTF(cg_drain, "cgroup.procs", "%d", getpid());
-}
-
-static void cleanup(void)
-{
-	if (access(PATH_KSM "merge_across_nodes", F_OK) == 0)
-		FILE_PRINTF(PATH_KSM "merge_across_nodes",
-				 "%d", merge_across_nodes);
-
-	tst_cgroup_cleanup();
+	SAFE_CG_PRINTF(tst_cg_drain, "cgroup.procs", "%d", getpid());
 }
 
 static void setup(void)
 {
-	if (access(PATH_KSM, F_OK) == -1)
-		tst_brk(TCONF, "KSM configuration is not enabled");
-
 	parse_ksm_options(opt_sizestr, &size, opt_numstr, &num, opt_unitstr, &unit);
-
-	if (access(PATH_KSM "merge_across_nodes", F_OK) == 0) {
-		SAFE_FILE_SCANF(PATH_KSM "merge_across_nodes",
-				"%d", &merge_across_nodes);
-		SAFE_FILE_PRINTF(PATH_KSM "merge_across_nodes", "1");
-	}
-
-	tst_cgroup_require("cpuset", NULL);
-	cg = tst_cgroup_get_test_group();
-	cg_drain = tst_cgroup_get_drain_group();
 }
 
 static struct tst_test test = {
@@ -122,13 +97,20 @@ static struct tst_test test = {
 		{}
 	},
 	.setup = setup,
-	.cleanup = cleanup,
-	.save_restore = (const char * const[]) {
-		"?/sys/kernel/mm/ksm/max_page_sharing",
-		NULL,
+	.save_restore = (const struct tst_path_val[]) {
+		{"!/sys/kernel/mm/ksm/run", NULL},
+		{"!/sys/kernel/mm/ksm/sleep_millisecs", NULL},
+		{"?/sys/kernel/mm/ksm/max_page_sharing", NULL},
+		{"?/sys/kernel/mm/ksm/merge_across_nodes", "1"},
+		{}
+	},
+	.needs_kconfigs = (const char *const[]){
+		"CONFIG_KSM=y",
+		NULL
 	},
 	.test_all = verify_ksm,
 	.min_kver = "2.6.32",
+	.needs_cgroup_ctrls = (const char *const []){ "cpuset", NULL },
 };
 
 #else
