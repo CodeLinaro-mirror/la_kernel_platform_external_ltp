@@ -168,6 +168,7 @@ test8()
 # Test that notify_on_release can be changed
 test9()
 {
+    create_subgroup "$start_path/ltp_1"
     local notify=$(ROD cat "$start_path/ltp_1/notify_on_release")
     local value
 
