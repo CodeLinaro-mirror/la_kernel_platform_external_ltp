@@ -102,16 +102,16 @@ static struct tst_test test = {
 	.test_all = run,
 	.setup = setup,
 	.cleanup = cleanup,
-	.timeout = 600,
+	.max_runtime = 300,
 	.taint_check = TST_TAINT_W | TST_TAINT_D,
 	.needs_kconfigs = (const char *[]) {
 		"CONFIG_USER_NS=y",
 		"CONFIG_NET_NS=y",
 		NULL
 	},
-	.save_restore = (const char * const[]) {
-		"?/proc/sys/user/max_user_namespaces",
-		NULL,
+	.save_restore = (const struct tst_path_val[]) {
+		{"?/proc/sys/user/max_user_namespaces", NULL},
+		{}
 	},
 	.tags = (const struct tst_tag[]) {
 		{"linux-git", "15fe076edea7"},

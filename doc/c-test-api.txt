@@ -93,14 +93,35 @@ in range of [0, '.tcnt' - 1].
 
 IMPORTANT: Only one of '.test' and '.test_all' can be set at a time.
 
-Each test has a default timeout set to 300s. The default timeout can be
-overridden by setting '.timeout' in the test structure or by calling
-'tst_set_timeout()' in the test 'setup()'. There are a few testcases whose run
-time may vary arbitrarily, for these timeout can be disabled by setting it to
--1.
+Each test has a limit on how long it can run and the limit composes of two
+parts max_runtime and timeout. The max_runtime is a limit for how long can the
+'.test_all' or a set of '.test' functions take and the timeout is static part
+that should cover the duration of test setup and cleanup plus some safety.
 
-Test can find out how much time (in seconds) is remaining to timeout,
-by calling 'tst_timeout_remaining()'.
+Any test that runs for more than a second or two has to make sure to:
+
+- set the runtime either by setting the '.max_runtime' in tst_test or by
+  calling 'tst_set_runtime()' in the test setup
+
+- monitor remaning runtime by regular calls to 'tst_remaining_runtime()' and
+  exit when runtime has been used up
+
+Test is free to exit before max_runtime has been used up for example when
+minimal number of iteration was finished.
+
+The limit is applied to a single call of the '.test_all' function that means
+that for example when '.test_variants' or '.all_filesystems' is set the whole
+test will be limited by 'variants * (max_runtime + timeout)' seconds and the
+test runtime will be likely close to 'variants * max_runtime' seconds.
+
+[source,c]
+-------------------------------------------------------------------------------
+/*
+ * Returns number of seconds or zero in case that runtime has been used up.
+ */
+
+int tst_remaining_runtime(void);
+-------------------------------------------------------------------------------
 
 LAPI headers
 ++++++++++++
@@ -298,6 +319,9 @@ The 'TST_EXP_FAIL2()' is the same as 'TST_EXP_FAIL()' except the return value is
 expected to be non-negative integer if call passes. These macros build upon the
 +TEST()+ macro and associated variables.
 
+'TST_EXP_FAIL_SILENT()' and 'TST_EXP_FAIL2_SILENT()' variants are less verbose
+and do not print TPASS messages when SCALL fails as expected.
+
 [source,c]
 -------------------------------------------------------------------------------
 TEST(socket(AF_INET, SOCK_RAW, 1));
@@ -335,6 +359,20 @@ see 'tst_test_macros.h'.
 
 [source,c]
 -------------------------------------------------------------------------------
+TST_EXP_EQ_LI(val1, val2);
+TST_EXP_EQ_UI(val1, val2);
+TST_EXP_EQ_SZ(val1, val2);
+TST_EXP_EQ_SSZ(val1, val2);
+
+/* Use as */
+TST_EXP_EQ_LI(sig_caught, SIGCHLD);
+-------------------------------------------------------------------------------
+
+Set of macros for different integer type comparsions. These macros print the
+variable names as well as values in both pass and fail scenarios.
+
+[source,c]
+-------------------------------------------------------------------------------
 const char *tst_strsig(int sig);
 -------------------------------------------------------------------------------
 
@@ -360,12 +398,13 @@ WARNING: This function is not thread safe.
 
 [source,c]
 -------------------------------------------------------------------------------
-void tst_set_timeout(unsigned int timeout);
+void tst_set_max_runtime(int max_runtime);
 -------------------------------------------------------------------------------
 
-Allows for setting timeout per test iteration dynamically in the test setup(),
+Allows for setting max_runtime per test iteration dynamically in the test setup(),
 the timeout is specified in seconds. There are a few testcases whose runtime
-can vary arbitrarily, these can disable timeouts by setting it to -1.
+can vary arbitrarily, these can disable timeouts by setting it to
+TST_UNLIMITED_RUNTIME.
 
 [source,c]
 -------------------------------------------------------------------------------
@@ -1034,6 +1073,17 @@ uint64_t tst_get_device_size(const char *dev_path);
 This function gets size of the given block device, it checks the 'dev_path' is
 valid first, if yes, return the size in MB, otherwise return -1.
 
+[source,c]
+-------------------------------------------------------------------------------
+#include "tst_test.h"
+
+int tst_dev_block_size(const char *path);
+-------------------------------------------------------------------------------
+
+This function returns the physical device block size for the specific `path`.
+It finds the device where `path` is located and then uses `ioctl` (BLKSSZGET)
+to get a physical device block size.
+
 1.16 Formatting a device with a filesystem
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -1533,10 +1583,12 @@ itself is not available on the system.
 
 LTP library can be instructed to save and restore value of specified
 (/proc|sys) files. This is achieved by initialized tst_test struct
-field 'save_restore'. It is a 'NULL' terminated array of strings where
-each string represents a file, whose value is saved at the beginning
-and restored at the end of the test. Only first line of a specified
-file is saved and restored.
+field 'save_restore'. It is a NULL-terminated array of struct
+'tst_path_val' where each tst_path_val.path represents a file, whose
+value is saved at the beginning and restored at the end of the test.
+If non-NULL value is passed it is written to the respective file at
+the beginning of the test. Only the first line of a specified file
+is saved and restored.
 
 Pathnames can be optionally prefixed to specify how strictly (during
 'store') are handled errors:
@@ -1550,9 +1602,9 @@ Pathnames can be optionally prefixed to specify how strictly (during
 
 [source,c]
 -------------------------------------------------------------------------------
-static const char *save_restore[] = {
-	"/proc/sys/kernel/core_pattern",
-	NULL,
+static const struct tst_path_val save_restore[] = {
+	{"/proc/sys/kernel/core_pattern", NULL},
+	{}
 };
 
 static void setup(void)
@@ -2045,11 +2097,13 @@ the field value of file.
 1.36 Using Control Group
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-Some LTP tests need specific Control Group configurations. tst_cgroup.h provides
-APIs to discover and use CGroups. There are many differences between CGroups API
-V1 and V2. We encapsulate the details of configuring CGroups in high-level
-functions which follow the V2 kernel API. Allowing one to use CGroups without
-caring too much about the current system's configuration.
+Some LTP tests need specific Control Group configurations.  'tst_cgroup.h'
+provides APIs to discover and use CGroups. There are many differences between
+CGroups API V1 and V2. We encapsulate the details of configuring CGroups in
+high-level functions which follow the V2 kernel API where possible. Allowing one
+to write code that works on both V1 or V2. At least some of the time anyway;
+often the behavioural differences between V1 and V2 are too great. In such cases
+we revert to branching on the CGroup version.
 
 Also, the LTP library will automatically mount/umount and configure the CGroup
 hierarchies if that is required (e.g. if you run the tests from init with no
@@ -2058,9 +2112,6 @@ system manager).
 [source,c]
 -------------------------------------------------------------------------------
 #include "tst_test.h"
-#include "tst_cgroup.h"
-
-static const struct tst_cgroup_group *cg;
 
 static void run(void)
 {
@@ -2071,34 +2122,24 @@ static void run(void)
 
 static void setup(void)
 {
-	tst_cgroup_require("memory", NULL);
-	cg = tst_cgroup_get_test_group();
-	SAFE_CGROUP_PRINTF(cg, "cgroup.procs", "%d", getpid());
-	SAFE_CGROUP_PRINTF(cg, "memory.max", "%lu", MEMSIZE);
-	if (SAFE_CGROUP_HAS(cg, "memory.swap.max"))
-		SAFE_CGROUP_PRINTF(cg, "memory.swap.max", "%zu", memsw);
-}
-
-static void cleanup(void)
-{
-	tst_cgroup_cleanup();
+	SAFE_CG_PRINTF(tst_cg, "cgroup.procs", "%d", getpid());
+	SAFE_CG_PRINTF(tst_cg, "memory.max", "%lu", MEMSIZE);
+	if (SAFE_CG_HAS(tst_cg, "memory.swap.max"))
+		SAFE_CG_PRINTF(tst_cg, "memory.swap.max", "%zu", memsw);
 }
 
 struct tst_test test = {
 	.setup = setup,
 	.test_all = run,
 	.cleanup = cleanup,
+	.needs_cgroup_controllers = (const char *const []){ "memory", NULL },
 	...
 };
 -------------------------------------------------------------------------------
 
 Above, we first ensure the memory controller is available on the
-test's CGroup with 'tst_cgroup_require'. We then get a structure,
-'cg', which represents the test's CGroup. Note that
-'tst_cgroup_get_test_group' should not be called many times, as it is
-allocated in a guarded buffer (See section 2.2.31). Therefor it is
-best to call it once in 'setup' and not 'run' because 'run' may be
-repeated with the '-i' option.
+test's CGroup with '.needs_cgroup_controllers'. This populates a structure,
+'tst_cg', which represents the test's CGroup.
 
 We then write the current processes PID into 'cgroup.procs', which
 moves the current process into the test's CGroup. After which we set
@@ -2109,7 +2150,7 @@ on both CGroup versions, then we use the V2 naming.
 
 Some controller features, such as 'memory.swap', can be
 disabled. Therefor we need to check if they exist before accessing
-them. This can be done with 'SAFE_CGROUP_HAS' which can be called on
+them. This can be done with 'SAFE_CG_HAS' which can be called on
 any control file or feature.
 
 Most tests only require setting a few limits similar to the above. In
@@ -2118,29 +2159,29 @@ cleanup is also mostly hidden. However things can get much worse.
 
 [source,c]
 -------------------------------------------------------------------------------
-static const struct tst_cgroup_group *cg;
-static const struct tst_cgroup_group *cg_drain;
-static struct tst_cgroup_group *cg_child;
+static struct tst_cg_group *cg_child;
 
 static void run(void)
 {
 	char buf[BUFSIZ];
 	size_t mem = 0;
 
-	cg_child = tst_cgroup_group_mk(cg, "child");
-	SAFE_CGROUP_PRINTF(cg_child, "cgroup.procs", "%d", getpid());
+	cg_child = tst_cg_group_mk(tst_cg, "child");
+	SAFE_CG_PRINTF(cg_child, "cgroup.procs", "%d", getpid());
 
-	if (!TST_CGROUP_VER_IS_V1(cg, "memory"))
-		SAFE_CGROUP_PRINT(cg, "cgroup.subtree_control", "+memory");
-	if (!TST_CGROUP_VER_IS_V1(cg, "cpuset"))
-		SAFE_CGROUP_PRINT(cg, "cgroup.subtree_control", "+cpuset");
+	if (!TST_CG_VER_IS_V1(tst_cg, "memory"))
+		SAFE_CG_PRINT(tst_cg, "cgroup.subtree_control", "+memory");
+	if (!TST_CG_VER_IS_V1(tst_cg, "cpuset"))
+		SAFE_CG_PRINT(tst_cg, "cgroup.subtree_control", "+cpuset");
 
 	if (!SAFE_FORK()) {
-		SAFE_CGROUP_PRINTF(cg_child, "cgroup.procs", "%d", getpid());
+		SAFE_CG_PRINTF(cg_child, "cgroup.procs", "%d", getpid());
 
-		if (SAFE_CGROUP_HAS(cg_child, "memory.swap"))
-			SAFE_CGROUP_SCANF(cg_child, "memory.swap.current", "%zu", &mem);
-		SAFE_CGROUP_READ(cg_child, "cpuset.mems", buf, sizeof(buf));
+		if (SAFE_CG_HAS(cg_child, "memory.swap")) {
+			SAFE_CG_SCANF(cg_child,
+					  "memory.swap.current", "%zu", &mem);
+		}
+		SAFE_CG_READ(cg_child, "cpuset.mems", buf, sizeof(buf));
 
 		// Do something with cpuset.mems and memory.current values
 		...
@@ -2149,45 +2190,43 @@ static void run(void)
 	}
 
 	tst_reap_children();
-	SAFE_CGROUP_PRINTF(cg_drain, "cgroup.procs", "%d", getpid());
-	cg_child = tst_cgroup_group_rm(cg_child);
-}
-
-static void setup(void)
-{
-	tst_cgroup_require("memory", NULL);
-	tst_cgroup_require("cpuset", NULL);
-
-	cg = tst_cgroup_get_test_group();
-	cg_drain = tst_cgroup_get_drain_group();
+	SAFE_CG_PRINTF(tst_cg_drain, "cgroup.procs", "%d", getpid());
+	cg_child = tst_cg_group_rm(cg_child);
 }
 
 static void cleanup(void)
 {
 	if (cg_child) {
-		SAFE_CGROUP_PRINTF(cg_drain, "cgroup.procs", "%d", getpid());
-		cg_child = tst_cgroup_group_rm(cg_child);
+		SAFE_CG_PRINTF(tst_cg_drain, "cgroup.procs", "%d", getpid());
+		cg_child = tst_cg_group_rm(cg_child);
 	}
-
-	tst_cgroup_cleanup();
 }
 
 struct tst_test test = {
 	.setup = setup,
 	.test_all = run,
-	.cleanup = cleanup,
+	.needs_cgroup_controllers = (const char *const []){
+		"cpuset",
+		"memory",
+		NULL
+	},
 	...
 };
 -------------------------------------------------------------------------------
 
-Starting with setup; we can see here that we also fetch the 'drain'
+Starting with setup; we can see here that we fetch the 'drain'
 CGroup. This is a shared group (between parallel tests) which may
-contain processes from other tests. It should have default settings and
-these should not be changed by the test. It can be used to remove
+contain processes from other tests. It should have default settings
+and these should not be changed by the test. It can be used to remove
 processes from other CGroups incase the hierarchy root is not
 accessible.
 
-In 'run', we first create a child CGroup with 'tst_cgroup_mk'. As we
+Note that 'tst_cg_get_drain_group' should not be called many times,
+as it is allocated in a guarded buffer (See section 2.2.31). Therefor
+it is best to call it once in 'setup' and not 'run' because 'run' may
+be repeated with the '-i' option.
+
+In 'run', we first create a child CGroup with 'tst_cg_mk'. As we
 create this CGroup in 'run' we should also remove it at the end of
 run. We also need to check if it exists and remove it in cleanup as
 well. Because there are 'SAFE_' functions which may jump to cleanup.
@@ -2218,22 +2257,23 @@ destroying the child CGroup. So there is no need to transfer the child
 to drain. However the parent process must be moved otherwise we will
 get 'EBUSY' when trying to remove the child CGroup.
 
-Another example of an edge case is the following.
+Another example of a behavioral difference between versions is shown below.
 
 [source,c]
 -------------------------------------------------------------------------------
-	if (TST_CGROUP_VER_IS_V1(cg, "memory"))
-		SAFE_CGROUP_PRINTF(cg, "memory.swap.max", "%lu", ~0UL);
+	if (TST_CG_VER_IS_V1(tst_cg, "memory"))
+		SAFE_CG_PRINTF(tst_cg, "memory.swap.max", "%lu", ~0UL);
 	else
-		SAFE_CGROUP_PRINT(cg, "memory.swap.max", "max");
+		SAFE_CG_PRINT(tst_cg, "memory.swap.max", "max");
 -------------------------------------------------------------------------------
 
 CGroups V2 introduced a feature where 'memory[.swap].max' could be set to
 "max". This does not appear to work on V1 'limit_in_bytes' however. For most
 tests, simply using a large number is sufficient and there is no need to use
 "max". Importantly though, one should be careful to read both the V1 and V2
-kernel docs. The LTP library can not handle all edge cases. It does the minimal
-amount of work to make testing on both V1 and V2 feasible.
+kernel docs. Presently the LTP library does not attempt to handle most
+differences in semantics. It does the minimal amount of work to make testing on
+both V1 and V2 feasible.
 
 1.37 Require minimum numbers of CPU for a testcase
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2318,6 +2358,12 @@ static struct tst_test test = {
        },
 };
 -------------------------------------------------------------------------------
+
+1.40 Require minimum size of MemAvailable for a testcase
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Some tests require more than specific size(MB) of MemAvailable. It can be defined
+with `.min_mem_avail = N`.
 
 2. Common problems
 ------------------

@@ -23,7 +23,8 @@
 #include <string.h>
 #include "tst_test.h"
 #include "tst_safe_stdio.h"
-#include "lapi/pidfd_open.h"
+#include "tst_safe_macros.h"
+#include "lapi/pidfd.h"
 
 #ifdef HAVE_SYS_FANOTIFY_H
 #include "fanotify.h"
@@ -32,7 +33,7 @@
 #define MOUNT_PATH	"fs_mnt"
 #define TEST_FILE	MOUNT_PATH "/testfile"
 
-struct pidfd_fdinfo_t {
+static struct pidfd_fdinfo_t {
 	int pos;
 	int flags;
 	int mnt_id;
@@ -40,7 +41,7 @@ struct pidfd_fdinfo_t {
 	int ns_pid;
 };
 
-struct test_case_t {
+static struct test_case_t {
 	char *name;
 	int fork;
 	int want_pidfd_err;
@@ -124,12 +125,7 @@ static void do_setup(void)
 	SAFE_FANOTIFY_MARK(fanotify_fd, FAN_MARK_ADD, FAN_OPEN, AT_FDCWD,
 			   TEST_FILE);
 
-	pidfd = pidfd_open(getpid(), 0);
-	if (pidfd < 0) {
-		tst_brk(TBROK | TERRNO,
-			"pidfd=%d, pidfd_open(%d, 0) failed",
-			pidfd, getpid());
-	}
+	pidfd = SAFE_PIDFD_OPEN(getpid(), 0);
 
 	self_pidfd_fdinfo = read_pidfd_fdinfo(pidfd);
 	if (self_pidfd_fdinfo == NULL) {

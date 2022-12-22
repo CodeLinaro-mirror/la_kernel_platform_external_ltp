@@ -1,14 +1,16 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * Copyright (c) 2015 Cui Bixuan <cuibixuan@huawei.com>
+ * Copyright (c) Linux Test Project, 2016-2022
  */
 
 #ifndef LAPI_SCHED_H__
 #define LAPI_SCHED_H__
 
-#include "lapi/syscalls.h"
+#include <sched.h>
 #include <stdint.h>
 #include <inttypes.h>
+#include "lapi/syscalls.h"
 
 struct sched_attr {
 	uint32_t size;
@@ -40,20 +42,24 @@ static inline int sched_getattr(pid_t pid, struct sched_attr *attr,
 	return syscall(__NR_sched_getattr, pid, attr, size, flags);
 }
 
+#ifndef SCHED_DEADLINE
+# define SCHED_DEADLINE	6
+#endif
+
 #ifndef CLONE_VM
-#define CLONE_VM   0x00000100
+# define CLONE_VM   0x00000100
 #endif
 
 #ifndef CLONE_FS
-#define CLONE_FS   0x00000200
+# define CLONE_FS   0x00000200
 #endif
 
 #ifndef CLONE_SYSVSEM
-#define CLONE_SYSVSEM   0x00040000
+# define CLONE_SYSVSEM   0x00040000
 #endif
 
 #ifndef CLONE_IO
-#define CLONE_IO        0x80000000
+# define CLONE_IO        0x80000000
 #endif
 
 #endif /* LAPI_SCHED_H__ */

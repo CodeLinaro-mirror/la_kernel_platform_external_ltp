@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
- * Copyright (c) 2019 Federico Bonfiglio fedebonfi95@gmail.com
+ * Copyright (c) 2019 Federico Bonfiglio <fedebonfi95@gmail.com>
+ * Copyright (c) Linux Test Project, 2019-2022
  */
 
-/*
+/*\
+ * [Description]
+ *
  * Test ioctl_ns with NS_GET_PARENT request.
  *
  * Parent process tries to get parent of initial namespace, which should
@@ -11,8 +14,8 @@
  *
  * Child process has a new pid namespace, which should make the call fail
  * with EPERM error.
- *
  */
+
 #define _GNU_SOURCE
 
 #include <errno.h>
@@ -58,9 +61,9 @@ static void test_ns_get_parent(void)
 		else
 			tst_res(TFAIL | TERRNO, "unexpected ioctl error");
 	} else {
-		SAFE_CLOSE(fd);
 		tst_res(TFAIL, "call to ioctl succeded");
 	}
+	SAFE_CLOSE(fd);
 }
 
 static int child(void *arg LTP_ATTRIBUTE_UNUSED)

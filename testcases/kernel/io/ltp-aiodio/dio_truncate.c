@@ -33,7 +33,7 @@
 #include "tst_test.h"
 #include "common.h"
 
-static int *run_child;
+static volatile int *run_child;
 
 static char *str_numchildren;
 static char *str_filesize;
@@ -109,7 +109,7 @@ static void cleanup(void)
 {
 	if (run_child) {
 		*run_child = 0;
-		SAFE_MUNMAP(run_child, sizeof(int));
+		SAFE_MUNMAP((void *)run_child, sizeof(int));
 	}
 }
 
@@ -142,6 +142,11 @@ static void run(void)
 			fail = 1;
 			break;
 		}
+
+		if (!tst_remaining_runtime()) {
+			tst_res(TINFO, "Test out of runtime, exiting");
+			break;
+		}
 	}
 
 	if (fail)
@@ -158,6 +163,7 @@ static struct tst_test test = {
 	.cleanup = cleanup,
 	.needs_tmpdir = 1,
 	.forks_child = 1,
+	.max_runtime = 1800,
 	.options = (struct tst_option[]) {
 		{"n:", &str_numchildren, "Number of threads (default 16)"},
 		{"s:", &str_filesize, "Size of file (default 64K)"},

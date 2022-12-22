@@ -14,7 +14,6 @@ TST_PARSE_ARGS=parse_args
 TST_NEEDS_ROOT=1
 TST_NEEDS_DEVICE=1
 TST_NEEDS_CMDS="blkid df"
-. tst_test.sh
 
 usage()
 {
@@ -45,7 +44,7 @@ setup()
 mkfs_verify_type()
 {
 	if [ -z "$1" ]; then
-		blkid $2 -t TYPE="ext2" >/dev/null
+		blkid $2 -t TYPE="$TST_FS_TYPE" >/dev/null
 	else
 		if [ "$1" = "msdos" ]; then
 			blkid $2 -t TYPE="vfat" >/dev/null
@@ -174,4 +173,5 @@ test5()
 	mkfs_test "-h"
 }
 
+. tst_test.sh
 tst_run

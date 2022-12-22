@@ -24,7 +24,6 @@ AC_PROG_CC
 # 2.62.
 AC_DEFUN([AC_PROG_AR], [AC_CHECK_TOOL(AR, ar, :)])
 AC_PROG_AR
-AC_PROG_LEX
 AC_PROG_RANLIB
 AC_DEFUN([AC_PROG_STRIP], [AC_CHECK_TOOL(STRIP, strip, :)])
 AC_PROG_STRIP
@@ -51,6 +50,7 @@ AC_CHECK_HEADERS_ONCE([ \
     linux/close_range.h \
     linux/dccp.h \
     linux/fs.h \
+    linux/futex.h \
     linux/genetlink.h \
     linux/if_alg.h \
     linux/if_ether.h \
@@ -59,6 +59,7 @@ AC_CHECK_HEADERS_ONCE([ \
     linux/keyctl.h \
     linux/mempolicy.h \
     linux/module.h \
+    linux/mount.h \
     linux/netlink.h \
     linux/openat2.h \
     linux/seccomp.h \
@@ -98,6 +99,7 @@ AC_CHECK_FUNCS_ONCE([ \
     fspick \
     fstatat \
     getauxval \
+    getcontext \
     getdents \
     getdents64 \
     io_pgetevents \
@@ -116,6 +118,7 @@ AC_CHECK_FUNCS_ONCE([ \
     open_tree \
     openat \
     openat2 \
+    pidfd_getfd \
     pidfd_open \
     pidfd_send_signal \
     pkey_mprotect \
@@ -227,11 +230,13 @@ AC_CHECK_TYPES([struct xt_entry_match, struct xt_entry_target],,,[
 AC_CHECK_TYPES([struct __kernel_old_timeval, struct __kernel_old_timespec, struct __kernel_timespec,
                 struct __kernel_old_itimerspec, struct __kernel_itimerspec],,,[#include <sys/socket.h>])
 
+AC_CHECK_TYPES([struct futex_waitv],,,[#include <linux/futex.h>])
+
 # Tools knobs
 
 # Bash
 AC_ARG_WITH([bash],
-  [AC_HELP_STRING([--with-bash],
+  [AS_HELP_STRING([--with-bash],
     [have the Bourne Again Shell interpreter])],
   [with_bash=$withval],
   [with_bash=no]
@@ -244,24 +249,24 @@ fi
 
 # metadata
 AC_ARG_ENABLE([metadata],
-  [AC_HELP_STRING([--disable-metadata],
+  [AS_HELP_STRING([--disable-metadata],
 	[Disable metadata generation (both HTML and PDF, default no)])],
   [], [enable_metadata=yes]
 )
 AC_ARG_ENABLE([metadata_html],
-  [AC_HELP_STRING([--disable-metadata-html],
+  [AS_HELP_STRING([--disable-metadata-html],
 	[Disable metadata HTML generation (default no)])],
   [], [enable_metadata_html=yes]
 )
 
 AC_ARG_ENABLE([metadata_pdf],
-  [AC_HELP_STRING([--enable-metadata-pdf],
+  [AS_HELP_STRING([--enable-metadata-pdf],
 	[Enable metadata PDF generation (default no)])],
   [], [enable_metadata_pdf=no]
 )
 
 AC_ARG_WITH([metadata_generator],
-  [AC_HELP_STRING([--with-metadata-generator=asciidoc|asciidoctor],
+  [AS_HELP_STRING([--with-metadata-generator=asciidoc|asciidoctor],
 	[Specify metadata generator to use (default autodetect)])],
   [with_metadata_generator=$withval],
   [with_metadata_generator=detect]
@@ -271,7 +276,7 @@ LTP_DOCPARSE
 
 # Expect
 AC_ARG_WITH([expect],
-  [AC_HELP_STRING([--with-expect],
+  [AS_HELP_STRING([--with-expect],
     [have the Tcl/expect library])],
   [with_expect=$withval],
   [with_expect=no]
@@ -284,7 +289,7 @@ fi
 
 # Numa
 AC_ARG_WITH([numa],
-  AC_HELP_STRING([--without-numa],
+  AS_HELP_STRING([--without-numa],
     [without numa support]),
   [with_numa=$withval],
   [with_numa=yes]
@@ -292,7 +297,7 @@ AC_ARG_WITH([numa],
 
 # Perl
 AC_ARG_WITH([perl],
-  [AC_HELP_STRING([--with-perl],
+  [AS_HELP_STRING([--with-perl],
     [have a perl interpreter])],
   [with_perl=$withval],
   [with_perl=no]
@@ -305,7 +310,7 @@ fi
 
 # Python
 AC_ARG_WITH([python],
-  [AC_HELP_STRING([--with-python],
+  [AS_HELP_STRING([--with-python],
     [have a python interpreter])],
   [with_python=$withval],
   [with_python=no]
@@ -318,7 +323,7 @@ fi
 
 # TI RPC
 AC_ARG_WITH([tirpc],
-  AC_HELP_STRING([--without-tirpc],
+  AS_HELP_STRING([--without-tirpc],
     [without libtirpc support]),
   [with_tirpc=$withval],
   [with_tirpc=yes]
@@ -328,7 +333,7 @@ AC_ARG_WITH([tirpc],
 # Testsuites knobs
 
 AC_ARG_WITH([open-posix-testsuite],
-  [AC_HELP_STRING([--with-open-posix-testsuite],
+  [AS_HELP_STRING([--with-open-posix-testsuite],
     [compile and install the open posix testsuite])],
   [with_open_posix_testsuite=$withval],
   [with_open_posix_testsuite=no]
@@ -341,7 +346,7 @@ fi
 
 # TODO: testcases/realtime requires bash and python.
 AC_ARG_WITH([realtime-testsuite],
-  [AC_HELP_STRING([--with-realtime-testsuite],
+  [AS_HELP_STRING([--with-realtime-testsuite],
     [compile and install the realtime testsuite])],
   [with_realtime_testsuite=$withval],
   [with_realtime_testsuite=no]
@@ -364,7 +369,6 @@ LTP_CHECK_ATOMIC_MEMORY_MODEL
 LTP_CHECK_BUILTIN_CLEAR_CACHE
 LTP_CHECK_CAPABILITY_SUPPORT
 LTP_CHECK_CC_WARN_OLDSTYLE
-LTP_CHECK_CLONE_SUPPORTS_7_ARGS
 LTP_CHECK_CRYPTO
 LTP_CHECK_FORTIFY_SOURCE
 LTP_CHECK_KERNEL_DEVEL
@@ -372,12 +376,15 @@ LTP_CHECK_KEYUTILS_SUPPORT
 LTP_CHECK_LIBMNL
 LTP_CHECK_LINUX_PTRACE
 LTP_CHECK_LINUXRANDOM
-LTP_CHECK_MREMAP_FIXED
 LTP_CHECK_NOMMU_LINUX
 LTP_CHECK_SELINUX
 LTP_CHECK_SYNC_ADD_AND_FETCH
 LTP_CHECK_SYSCALL_EVENTFD
 LTP_CHECK_SYSCALL_FCNTL
+LTP_CHECK_FSVERITY
+
+AX_CHECK_COMPILE_FLAG([-no-pie], [LTP_CFLAGS_NOPIE=1])
+AC_SUBST([LTP_CFLAGS_NOPIE])
 
 if test "x$with_numa" = xyes; then
 	LTP_CHECK_SYSCALL_NUMA
@@ -388,7 +395,6 @@ fi
 AC_DEFINE_UNQUOTED(NUMA_ERROR_MSG, ["$numa_error_msg"], [Error message when no NUMA support])
 
 
-LTP_CHECK_SYSCALL_PERF_EVENT_OPEN
 LTP_CHECK_SYSCALL_SIGNALFD
 LTP_CHECK_SYSCALL_UTIMENSAT
 LTP_CHECK_TASKSTATS

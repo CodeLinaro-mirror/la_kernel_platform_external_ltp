@@ -99,6 +99,7 @@ pid_t safe_fork(const char *filename, unsigned int lineno);
 #include "tst_safe_file_ops.h"
 #include "tst_safe_net.h"
 #include "tst_clone.h"
+#include "tst_cgroup.h"
 
 /*
  * Wait for all children and exit with TBROK if
@@ -132,6 +133,8 @@ struct tst_tag {
 extern unsigned int tst_variant;
 
 #define TST_NO_HUGEPAGES ((unsigned long)-1)
+
+#define TST_UNLIMITED_RUNTIME (-1)
 
 struct tst_test {
 	/* number of tests available in test() function */
@@ -184,6 +187,9 @@ struct tst_test {
 	/* Minimum number of online CPU required by the test */
 	unsigned long min_cpus;
 
+	/* Minimum size(MB) of MemAvailable required by the test */
+	unsigned long min_mem_avail;
+
 	/*
 	 * If set non-zero number of request_hugepages, test will try to reserve the
 	 * expected number of hugepage for testing in setup phase. If system does not
@@ -230,8 +236,18 @@ struct tst_test {
 	unsigned int mnt_flags;
 	void *mnt_data;
 
-	/* override default timeout per test run, disabled == -1 */
-	int timeout;
+	/*
+	 * Maximal test runtime in seconds.
+	 *
+	 * Any test that runs for more than a second or two should set this and
+	 * also use tst_remaining_runtime() to exit when runtime was used up.
+	 * Tests may finish sooner, for example if requested number of
+	 * iterations was reached before the runtime runs out.
+	 *
+	 * If test runtime cannot be know in advance it should be set to
+	 * TST_UNLIMITED_RUNTIME.
+	 */
+	int max_runtime;
 
 	void (*setup)(void);
 	void (*cleanup)(void);
@@ -252,10 +268,10 @@ struct tst_test {
 	const char * const *needs_drivers;
 
 	/*
-	 * NULL terminated array of (/proc, /sys) files to save
+	 * {NULL, NULL} terminated array of (/proc, /sys) files to save
 	 * before setup and restore after cleanup
 	 */
-	const char * const *save_restore;
+	const struct tst_path_val *save_restore;
 
 	/*
 	 * NULL terminated array of kernel config options required for the
@@ -264,12 +280,12 @@ struct tst_test {
 	const char *const *needs_kconfigs;
 
 	/*
-	 * NULL-terminated array to be allocated buffers.
+	 * {NULL, NULL} terminated array to be allocated buffers.
 	 */
 	struct tst_buffers *bufs;
 
 	/*
-	 * NULL-terminated array of capability settings
+	 * {NULL, NULL} terminated array of capability settings
 	 */
 	struct tst_cap *caps;
 
@@ -280,6 +296,12 @@ struct tst_test {
 
 	/* NULL terminated array of required commands */
 	const char *const *needs_cmds;
+
+	/* Requires a particular CGroup API version. */
+	const enum tst_cg_ver needs_cgroup_ver;
+
+	/* {} terminated array of required CGroup controllers */
+	const char *const *needs_cgroup_ctrls;
 };
 
 /*
@@ -309,10 +331,21 @@ const char *tst_strsig(int sig);
  */
 const char *tst_strstatus(int status);
 
-unsigned int tst_timeout_remaining(void);
 unsigned int tst_multiply_timeout(unsigned int timeout);
-void tst_set_timeout(int timeout);
 
+/*
+ * Returns remaining test runtime. Test that runs for more than a few seconds
+ * should check if they should exit by calling this function regularly.
+ *
+ * The function returns remaining runtime in seconds. If runtime was used up
+ * zero is returned.
+ */
+unsigned int tst_remaining_runtime(void);
+
+/*
+ * Sets maximal test runtime in seconds.
+ */
+void tst_set_max_runtime(int max_runtime);
 
 /*
  * Returns path to the test temporary directory in a newly allocated buffer.

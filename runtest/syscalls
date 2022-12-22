@@ -334,6 +334,8 @@ fcntl37 fcntl37
 fcntl37_64 fcntl37_64
 fcntl38 fcntl38
 fcntl38_64 fcntl38_64
+fcntl39 fcntl39
+fcntl39_64 fcntl39_64
 
 fdatasync01 fdatasync01
 fdatasync02 fdatasync02
@@ -585,6 +587,7 @@ inotify07 inotify07
 inotify08 inotify08
 inotify09 inotify09
 inotify10 inotify10
+inotify11 inotify11
 
 fanotify01 fanotify01
 fanotify02 fanotify02
@@ -644,6 +647,7 @@ keyctl05 keyctl05
 keyctl06 keyctl06
 keyctl07 keyctl07
 keyctl08 keyctl08
+keyctl09 keyctl09
 
 kcmp01 kcmp01
 kcmp02 kcmp02
@@ -950,9 +954,13 @@ pause03 pause03
 personality01 personality01
 personality02 personality02
 
+pidfd_getfd01 pidfd_getfd01
+pidfd_getfd02 pidfd_getfd02
+
 pidfd_open01 pidfd_open01
 pidfd_open02 pidfd_open02
 pidfd_open03 pidfd_open03
+pidfd_open04 pidfd_open04
 
 pidfd_send_signal01 pidfd_send_signal01
 pidfd_send_signal02 pidfd_send_signal02
@@ -1402,6 +1410,7 @@ setsockopt05 setsockopt05
 setsockopt06 setsockopt06
 setsockopt07 setsockopt07
 setsockopt08 setsockopt08
+setsockopt09 setsockopt09
 
 settimeofday01 settimeofday01
 settimeofday02 settimeofday02
@@ -1567,16 +1576,6 @@ sysinfo01 sysinfo01
 sysinfo02 sysinfo02
 sysinfo03 sysinfo03
 
-syslog01 syslog01
-syslog02 syslog02
-syslog03 syslog03
-syslog04 syslog04
-syslog05 syslog05
-syslog06 syslog06
-syslog07 syslog07
-syslog08 syslog08
-syslog09 syslog09
-syslog10 syslog10
 syslog11 syslog11
 syslog12 syslog12
 
@@ -1656,7 +1655,6 @@ umount03 umount03
 
 umount2_01 umount2_01
 umount2_02 umount2_02
-umount2_03 umount2_03
 
 userfaultfd01 userfaultfd01
 
@@ -1711,6 +1709,15 @@ waitpid13 waitpid13
 
 waitid01 waitid01
 waitid02 waitid02
+waitid03 waitid03
+waitid04 waitid04
+waitid05 waitid05
+waitid06 waitid06
+waitid07 waitid07
+waitid08 waitid08
+waitid09 waitid09
+waitid10 waitid10
+waitid11 waitid11
 
 write01 write01
 write02 write02
@@ -1736,6 +1743,9 @@ futex_wait02 futex_wait02
 futex_wait03 futex_wait03
 futex_wait04 futex_wait04
 futex_wait05 futex_wait05
+futex_waitv01 futex_waitv01
+futex_waitv02 futex_waitv02
+futex_waitv03 futex_waitv03
 futex_wake01 futex_wake01
 futex_wake02 futex_wake02
 futex_wake03 futex_wake03
@@ -1759,6 +1769,7 @@ statx05 statx05
 statx06 statx06
 statx07 statx07
 statx08 statx08
+statx09 statx09
 
 membarrier01 membarrier01
 

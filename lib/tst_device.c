@@ -25,6 +25,7 @@
 #include <sys/stat.h>
 #include <sys/ioctl.h>
 #include <sys/mount.h>
+#include <mntent.h>
 #include <errno.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -512,6 +513,16 @@ unsigned long tst_dev_bytes_written(const char *dev)
 	return dev_bytes_written;
 }
 
+static int count_match_len(const char *first, const char *second)
+{
+	int len = 0;
+
+	while (*first && *first++ == *second++)
+		len++;
+
+	return len;
+}
+
 void tst_find_backing_dev(const char *path, char *dev)
 {
 	struct stat buf;
@@ -520,6 +531,8 @@ void tst_find_backing_dev(const char *path, char *dev)
 	char *pre = NULL;
 	char *next = NULL;
 	unsigned int dev_major, dev_minor, line_mjr, line_mnr;
+	unsigned int len, best_match_len = 1;
+	char mnt_point[PATH_MAX];
 
 	if (stat(path, &buf) < 0)
 		tst_brkm(TWARN | TERRNO, NULL, "stat() failed");
@@ -530,16 +543,24 @@ void tst_find_backing_dev(const char *path, char *dev)
 	*dev = '\0';
 
 	while (fgets(line, sizeof(line), file)) {
-		if (sscanf(line, "%*d %*d %d:%d", &line_mjr, &line_mnr) != 2)
+		if (sscanf(line, "%*d %*d %d:%d %*s %s",
+			&line_mjr, &line_mnr, mnt_point) != 3)
 			continue;
 
+		pre = strstr(line, " - ");
+		pre = strtok_r(pre, " ", &next);
+		pre = strtok_r(NULL, " ", &next);
+		pre = strtok_r(NULL, " ", &next);
+
 		if (line_mjr == dev_major && line_mnr == dev_minor) {
-			pre = strstr(line, " - ");
-			pre = strtok_r(pre, " ", &next);
-			pre = strtok_r(NULL, " ", &next);
-			pre = strtok_r(NULL, " ", &next);
 			strcpy(dev, pre);
 			break;
+		}
+
+		len = count_match_len(path, mnt_point);
+		if (len > best_match_len) {
+			strcpy(dev, pre);
+			best_match_len = len;
 		}
 	}
 
@@ -553,4 +574,53 @@ void tst_find_backing_dev(const char *path, char *dev)
 
 	if (S_ISBLK(buf.st_mode) != 1)
 		tst_brkm(TCONF, NULL, "dev(%s) isn't a block dev", dev);
+}
+
+void tst_stat_mount_dev(const char *const mnt_path, struct stat *const st)
+{
+	struct mntent *mnt;
+	FILE *mntf = setmntent("/proc/self/mounts", "r");
+
+	if (!mntf) {
+		tst_brkm(TBROK | TERRNO, NULL, "Can't open /proc/self/mounts");
+		return;
+	}
+
+	mnt = getmntent(mntf);
+	if (!mnt) {
+		tst_brkm(TBROK | TERRNO, NULL, "Can't read mounts or no mounts?");
+		return;
+	}
+
+	do {
+		if (strcmp(mnt->mnt_dir, mnt_path)) {
+			mnt = getmntent(mntf);
+			continue;
+		}
+
+		if (stat(mnt->mnt_fsname, st)) {
+			tst_brkm(TBROK | TERRNO, NULL,
+				 "Can't stat '%s', mounted at '%s'",
+				 mnt->mnt_fsname, mnt_path);
+		}
+
+		return;
+	} while (mnt);
+
+	tst_brkm(TBROK, NULL, "Could not find mount device");
+}
+
+int tst_dev_block_size(const char *path)
+{
+	int fd;
+	int size;
+	char dev_name[1024];
+
+	tst_find_backing_dev(path, dev_name);
+
+	fd = SAFE_OPEN(NULL, dev_name, O_RDONLY);
+	SAFE_IOCTL(NULL, fd, BLKSSZGET, &size);
+	SAFE_CLOSE(NULL, fd);
+
+	return size;
 }

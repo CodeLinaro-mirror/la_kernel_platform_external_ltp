@@ -412,6 +412,10 @@ ltp_packages := \
   ltp_fcntl36_64 \
   ltp_fcntl37 \
   ltp_fcntl37_64 \
+  ltp_fcntl38 \
+  ltp_fcntl38_64 \
+  ltp_fcntl39 \
+  ltp_fcntl39_64 \
   ltp_fdatasync01 \
   ltp_fdatasync02 \
   ltp_fdatasync03 \
@@ -502,6 +506,9 @@ ltp_packages := \
   ltp_futex_wait04 \
   ltp_futex_wait05 \
   ltp_futex_wait_bitset01 \
+  ltp_futex_waitv01 \
+  ltp_futex_waitv02 \
+  ltp_futex_waitv03 \
   ltp_futex_wake01 \
   ltp_futex_wake02 \
   ltp_futex_wake04 \
@@ -653,6 +660,7 @@ ltp_packages := \
   ltp_inotify08 \
   ltp_inotify09 \
   ltp_inotify10 \
+  ltp_inotify11 \
   ltp_inotify_init1_01 \
   ltp_inotify_init1_02 \
   ltp_input01 \
@@ -662,6 +670,7 @@ ltp_packages := \
   ltp_input06 \
   ltp_io_cancel01 \
   ltp_io_cancel02 \
+  ltp_io_control01 \
   ltp_io_destroy01 \
   ltp_io_destroy02 \
   ltp_io_getevents01 \
@@ -719,6 +728,7 @@ ltp_packages := \
   ltp_keyctl06 \
   ltp_keyctl07 \
   ltp_keyctl08 \
+  ltp_keyctl09 \
   ltp_kill02 \
   ltp_kill03 \
   ltp_kill06 \
@@ -808,6 +818,8 @@ ltp_packages := \
   ltp_memcmp01 \
   ltp_memcontrol01 \
   ltp_memcontrol02 \
+  ltp_memcontrol03 \
+  ltp_memcontrol04 \
   ltp_memcpy01 \
   ltp_memctl_test01 \
   ltp_memfd_create01 \
@@ -1006,9 +1018,12 @@ ltp_packages := \
   ltp_perf_event_open03 \
   ltp_personality01 \
   ltp_personality02 \
+  ltp_pidfd_getfd01 \
+  ltp_pidfd_getfd02 \
   ltp_pidfd_open01 \
   ltp_pidfd_open02 \
   ltp_pidfd_open03 \
+  ltp_pidfd_open04 \
   ltp_pidfd_send_signal01 \
   ltp_pidfd_send_signal02 \
   ltp_pidfd_send_signal03 \
@@ -1104,6 +1119,8 @@ ltp_packages := \
   ltp_pty02 \
   ltp_pty03 \
   ltp_pty04 \
+  ltp_pty06 \
+  ltp_pty07 \
   ltp_pwrite01 \
   ltp_pwrite01_64 \
   ltp_pwrite02 \
@@ -1138,7 +1155,6 @@ ltp_packages := \
   ltp_read03 \
   ltp_read04 \
   ltp_read_all \
-  ltp_read_checkzero \
   ltp_readahead01 \
   ltp_readahead02 \
   ltp_readdir01 \
@@ -1380,6 +1396,7 @@ ltp_packages := \
   ltp_setsockopt06 \
   ltp_setsockopt07 \
   ltp_setsockopt08 \
+  ltp_setsockopt09 \
   ltp_settimeofday01 \
   ltp_settimeofday02 \
   ltp_setuid01 \
@@ -1453,6 +1470,7 @@ ltp_packages := \
   ltp_statx04 \
   ltp_statx06 \
   ltp_statx08 \
+  ltp_statx09 \
   ltp_stream01 \
   ltp_stream02 \
   ltp_stream03 \
@@ -1494,7 +1512,6 @@ ltp_packages := \
   ltp_sysinfo03 \
   ltp_syslog11 \
   ltp_syslog12 \
-  ltp_syslogtst \
   ltp_tbio \
   ltp_tee01 \
   ltp_tee02 \
@@ -1507,17 +1524,15 @@ ltp_packages := \
   ltp_test07 \
   ltp_test08 \
   ltp_test09 \
-  ltp_test10 \
   ltp_test11 \
-  ltp_test12 \
   ltp_test13 \
   ltp_test14 \
   ltp_test15 \
-  ltp_test18 \
   ltp_test19 \
   ltp_test20 \
   ltp_test22 \
   ltp_test_assert \
+  ltp_test_children_cleanup \
   ltp_test_exec \
   ltp_test_exec_child \
   ltp_test_guarded_buf \
@@ -1531,6 +1546,8 @@ ltp_packages := \
   ltp_test_macros05 \
   ltp_test_macros06 \
   ltp_test_parse_filesize \
+  ltp_test_runtime01 \
+  ltp_test_runtime02 \
   ltp_test_timer \
   ltp_test_zero_hugepage \
   ltp_testcases_bin_add_ipv6addr \
@@ -1910,8 +1927,8 @@ ltp_packages := \
   ltp_testcases_bin_nfs06.sh \
   ltp_testcases_bin_nfs07.sh \
   ltp_testcases_bin_nfs_lib.sh \
-  ltp_testcases_bin_nfslock01 \
-  ltp_testcases_bin_nfsstat01 \
+  ltp_testcases_bin_nfslock01.sh \
+  ltp_testcases_bin_nfsstat01.sh \
   ltp_testcases_bin_nft01.sh \
   ltp_testcases_bin_nm01.sh \
   ltp_testcases_bin_ns-echoclient \
@@ -2559,7 +2576,6 @@ ltp_packages := \
   ltp_umount03 \
   ltp_umount2_01 \
   ltp_umount2_02 \
-  ltp_umount2_03 \
   ltp_uname01 \
   ltp_uname02 \
   ltp_uname04 \
@@ -2604,6 +2620,15 @@ ltp_packages := \
   ltp_wait403 \
   ltp_waitid01 \
   ltp_waitid02 \
+  ltp_waitid03 \
+  ltp_waitid04 \
+  ltp_waitid05 \
+  ltp_waitid06 \
+  ltp_waitid07 \
+  ltp_waitid08 \
+  ltp_waitid09 \
+  ltp_waitid10 \
+  ltp_waitid11 \
   ltp_waitpid01 \
   ltp_waitpid02 \
   ltp_waitpid03 \
@@ -2617,6 +2642,15 @@ ltp_packages := \
   ltp_waitpid11 \
   ltp_waitpid12 \
   ltp_waitpid13 \
+  ltp_wqueue01 \
+  ltp_wqueue02 \
+  ltp_wqueue03 \
+  ltp_wqueue04 \
+  ltp_wqueue05 \
+  ltp_wqueue06 \
+  ltp_wqueue07 \
+  ltp_wqueue08 \
+  ltp_wqueue09 \
   ltp_write01 \
   ltp_write02 \
   ltp_write03 \

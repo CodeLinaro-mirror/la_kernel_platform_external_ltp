@@ -1,6 +1,6 @@
 #!/bin/sh
 # SPDX-License-Identifier: GPL-2.0-or-later
-# Copyright (c) Linux Test Project, 2014-2021
+# Copyright (c) Linux Test Project, 2014-2022
 # Author: Cyril Hrubis <chrubis@suse.cz>
 #
 # LTP test library for shell.
@@ -16,6 +16,10 @@ export TST_COUNT=1
 export TST_ITERATIONS=1
 export TST_TMPDIR_RHOST=0
 export TST_LIB_LOADED=1
+
+if [ -z "$TST_FS_TYPE" ]; then
+	export TST_FS_TYPE="${LTP_DEV_FS_TYPE:-ext2}"
+fi
 
 . tst_ansi_color.sh
 . tst_security.sh
@@ -338,23 +342,21 @@ tst_umount()
 tst_mkfs()
 {
 	local fs_type=${1:-$TST_FS_TYPE}
-	local device=${2:-$TST_DEVICE}
 	[ $# -ge 1 ] && shift
-	[ $# -ge 1 ] && shift
-	local fs_opts="$@"
 
-	if [ -z "$fs_type" ]; then
-		tst_brk TBROK "No fs_type specified"
-	fi
+	local opts="$@"
 
-	if [ -z "$device" ]; then
-		tst_brk TBROK "No device specified"
+	if [ -z "$opts" ]; then
+		if [ "$TST_NEEDS_DEVICE" != 1 ]; then
+			tst_brk "Using default parameters in tst_mkfs requires TST_NEEDS_DEVICE=1"
+		fi
+		opts="$TST_DEVICE"
 	fi
 
 	tst_require_cmds mkfs.$fs_type
 
-	tst_res TINFO "Formatting $device with $fs_type extra opts='$fs_opts'"
-	ROD_SILENT mkfs.$fs_type $fs_opts $device
+	tst_res TINFO "Formatting $fs_type with opts='$opts'"
+	ROD_SILENT mkfs.$fs_type $opts
 }
 
 # Detect whether running under hypervisor: Microsoft Hyper-V
@@ -449,11 +451,27 @@ tst_usage()
 		$TST_USAGE
 	else
 		echo "usage: $0"
-		echo "OPTIONS"
+		echo
+		echo "Options"
+		echo "-------"
 	fi
 
 	echo "-h      Prints this help"
 	echo "-i n    Execute test n times"
+
+	cat << EOF
+
+Environment Variables
+---------------------
+KCONFIG_PATH         Specify kernel config file
+KCONFIG_SKIP_CHECK   Skip kernel config check if variable set (not set by default)
+LTPROOT              Prefix for installed LTP (default: /opt/ltp)
+LTP_COLORIZE_OUTPUT  Force colorized output behaviour (y/1 always, n/0: never)
+LTP_DEV              Path to the block device to be used (for .needs_device)
+LTP_DEV_FS_TYPE      Filesystem used for testing (default: ext2)
+LTP_TIMEOUT_MUL      Timeout multiplier (must be a number >=1, ceiled to int)
+TMPDIR               Base directory for template directory (for .needs_tmpdir, default: /tmp)
+EOF
 }
 
 _tst_resstr()
@@ -614,6 +632,7 @@ tst_run()
 			NET_SKIP_VARIABLE_INIT|NEEDS_CHECKPOINTS);;
 			CHECKPOINT_WAIT|CHECKPOINT_WAKE);;
 			CHECKPOINT_WAKE2|CHECKPOINT_WAKE_AND_WAIT);;
+			DEV_EXTRA_OPTS|DEV_FS_OPTS|FORMAT_DEVICE);;
 			*) tst_res TWARN "Reserved variable TST_$_tst_i used!";;
 			esac
 		done
@@ -622,17 +641,6 @@ tst_run()
 			tst_res TWARN "Private variable or function _tst_$_tst_i used!"
 		done
 	fi
-
-	OPTIND=1
-
-	while getopts ":hi:$TST_OPTS" _tst_name $TST_ARGS; do
-		case $_tst_name in
-		'h') tst_usage; exit 0;;
-		'i') TST_ITERATIONS=$OPTARG;;
-		'?') tst_usage; exit 2;;
-		*) $TST_PARSE_ARGS "$_tst_name" "$OPTARG";;
-		esac
-	done
 
 	if ! tst_is_int "$TST_ITERATIONS"; then
 		tst_brk TBROK "Expected number (-i) not '$TST_ITERATIONS'"
@@ -658,6 +666,7 @@ tst_run()
 
 	_tst_setup_timer
 
+	[ "$TST_FORMAT_DEVICE" = 1 ] && TST_NEEDS_DEVICE=1
 	[ "$TST_NEEDS_DEVICE" = 1 ] && TST_NEEDS_TMPDIR=1
 
 	if [ "$TST_NEEDS_TMPDIR" = 1 ]; then
@@ -688,6 +697,10 @@ tst_run()
 	fi
 
 	[ -n "$TST_NEEDS_MODULE" ] && tst_require_module "$TST_NEEDS_MODULE"
+
+	if [ "$TST_FORMAT_DEVICE" = 1 ]; then
+		tst_mkfs $TST_FS_TYPE $TST_DEV_FS_OPTS $TST_DEVICE $TST_DEV_EXTRA_OPTS
+	fi
 
 	[ -n "$TST_NEEDS_CHECKPOINTS" ] && _tst_init_checkpoints
 
@@ -794,22 +807,26 @@ if [ -z "$TST_NO_DEFAULT_RUN" ]; then
 
 	TST_ARGS="$@"
 
-	while getopts ":hi:$TST_OPTS" tst_name; do
-		case $tst_name in
-		'h') TST_PRINT_HELP=1;;
-		*);;
+	OPTIND=1
+
+	while getopts ":hi:$TST_OPTS" _tst_name $TST_ARGS; do
+		case $_tst_name in
+		'h') tst_usage; exit 0;;
+		'i') TST_ITERATIONS=$OPTARG;;
+		'?') tst_usage; exit 2;;
+		*) $TST_PARSE_ARGS "$_tst_name" "$OPTARG";;
 		esac
 	done
 
 	shift $((OPTIND - 1))
 
 	if [ -n "$TST_POS_ARGS" ]; then
-		if [ -z "$TST_PRINT_HELP" -a $# -ne "$TST_POS_ARGS" ]; then
+		if [ $# -ne "$TST_POS_ARGS" ]; then
 			tst_brk TBROK "Invalid number of positional parameters:"\
 					  "have ($@) $#, expected ${TST_POS_ARGS}"
 		fi
 	else
-		if [ -z "$TST_PRINT_HELP" -a $# -ne 0 ]; then
+		if [ $# -ne 0 ]; then
 			tst_brk TBROK "Unexpected positional arguments '$@'"
 		fi
 	fi

@@ -24,7 +24,7 @@
 #include <libaio.h>
 #include "common.h"
 
-static int *run_child;
+static volatile int *run_child;
 
 static char *str_numchildren;
 static char *str_writesize;
@@ -133,7 +133,7 @@ static void cleanup(void)
 {
 	if (run_child) {
 		*run_child = 0;
-		SAFE_MUNMAP(run_child, sizeof(int));
+		SAFE_MUNMAP((void *)run_child, sizeof(int));
 	}
 }
 
@@ -141,7 +141,7 @@ static void run(void)
 {
 	char *filename = "aiodio_append";
 	int status;
-	int i;
+	int i, pid;
 
 	*run_child = 1;
 
@@ -152,9 +152,27 @@ static void run(void)
 		}
 	}
 
-	tst_res(TINFO, "Parent append to file");
+	pid = SAFE_FORK();
+	if (!pid) {
+		aiodio_append(filename, appends, alignment, writesize, numaio);
+		return;
+	}
 
-	aiodio_append(filename, appends, alignment, writesize, numaio);
+	tst_res(TINFO, "Child %i appends to a file", pid);
+
+	for (;;) {
+		if (SAFE_WAITPID(pid, NULL, WNOHANG))
+			break;
+
+		sleep(1);
+
+		if (!tst_remaining_runtime()) {
+			tst_res(TINFO, "Test out of runtime, exiting");
+			kill(pid, SIGKILL);
+			SAFE_WAITPID(pid, NULL, 0);
+			break;
+		}
+	}
 
 	if (SAFE_WAITPID(-1, &status, WNOHANG))
 		tst_res(TFAIL, "Non zero bytes read");
@@ -172,6 +190,7 @@ static struct tst_test test = {
 	.cleanup = cleanup,
 	.needs_tmpdir = 1,
 	.forks_child = 1,
+	.max_runtime = 1800,
 	.options = (struct tst_option[]) {
 		{"n:", &str_numchildren, "Number of threads (default 16)"},
 		{"s:", &str_writesize, "Size of the file to write (default 64K)"},

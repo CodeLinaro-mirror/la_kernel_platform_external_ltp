@@ -11,7 +11,6 @@ TST_TESTFUNC=do_test
 TST_NEEDS_ROOT=1
 TST_NEEDS_DEVICE=1
 TST_NEEDS_CMDS="uuidgen blkid blockdev mkswap"
-. tst_test.sh
 
 setup()
 {
@@ -129,6 +128,7 @@ mkswap_test()
 	fi
 
 	udevadm trigger --name-match=$TST_DEVICE
+	udevadm settle --exit-if-exists==$TST_DEVICE
 
 	if [ -n "$device" ]; then
 		mkswap_verify "$mkswap_op" "$op_arg" "$device" "$size" "$dev_file"
@@ -157,4 +157,5 @@ do_test()
 	esac
 }
 
+. tst_test.sh
 tst_run

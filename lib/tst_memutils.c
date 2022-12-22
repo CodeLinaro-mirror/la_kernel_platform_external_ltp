@@ -20,17 +20,17 @@ void tst_pollute_memory(size_t maxsize, int fillchar)
 {
 	size_t i, map_count = 0, safety = 0, blocksize = BLOCKSIZE;
 	unsigned long long freeram;
-	unsigned long min_free;
+	size_t min_free;
 	void **map_blocks;
 	struct sysinfo info;
 
-	SAFE_FILE_SCANF("/proc/sys/vm/min_free_kbytes", "%lu", &min_free);
+	SAFE_FILE_SCANF("/proc/sys/vm/min_free_kbytes", "%zi", &min_free);
 	min_free *= 1024;
 	/* Apply a margin because we cannot get below "min" watermark */
 	min_free += min_free / 10;
 
 	SAFE_SYSINFO(&info);
-	safety = MAX(4096 * SAFE_SYSCONF(_SC_PAGESIZE), 128 * 1024 * 1024);
+	safety = MAX(4096 * SAFE_SYSCONF(_SC_PAGESIZE), 128L * 1024 * 1024);
 	safety = MAX(safety, min_free);
 	safety /= info.mem_unit;
 
@@ -44,7 +44,7 @@ void tst_pollute_memory(size_t maxsize, int fillchar)
 	 * Use the lower value of both for pollutable memory. Usually this
 	 * means we will not evict any caches.
 	 */
-	freeram = MIN(info.freeram, (tst_available_mem() * 1024));
+	freeram = MIN((long long)info.freeram, (tst_available_mem() * 1024));
 
 	/* Not enough free memory to avoid invoking OOM killer */
 	if (freeram <= safety)
@@ -121,8 +121,10 @@ static int write_score(const char *path, int score)
 	if (!f)
 		return 1;
 
-	if (fprintf(f, "%d", score) <= 0)
+	if (fprintf(f, "%d", score) <= 0) {
+		fclose(f);
 		return 1;
+	}
 
 	if (fclose(f))
 		return 1;

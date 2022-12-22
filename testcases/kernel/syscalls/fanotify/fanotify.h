@@ -15,7 +15,7 @@
 #include <sys/fanotify.h>
 #include "lapi/fcntl.h"
 
-int safe_fanotify_init(const char *file, const int lineno,
+static inline int safe_fanotify_init(const char *file, const int lineno,
 	unsigned int flags, unsigned int event_f_flags)
 {
 	int rval;
@@ -81,6 +81,11 @@ static inline int safe_fanotify_mark(const char *file, const int lineno,
 #ifndef FAN_REPORT_PIDFD
 #define FAN_REPORT_PIDFD	0x00000080
 #endif
+#ifndef FAN_REPORT_TARGET_FID
+#define FAN_REPORT_TARGET_FID	0x00001000
+#define FAN_REPORT_DFID_NAME_TARGET (FAN_REPORT_DFID_NAME | \
+                                     FAN_REPORT_FID | FAN_REPORT_TARGET_FID)
+#endif
 
 /* Non-uapi convenience macros */
 #ifndef FAN_REPORT_DFID_NAME_FID
@@ -129,6 +134,9 @@ static inline int safe_fanotify_mark(const char *file, const int lineno,
 #endif
 #ifndef FAN_FS_ERROR
 #define FAN_FS_ERROR		0x00008000
+#endif
+#ifndef FAN_RENAME
+#define FAN_RENAME		0x10000000
 #endif
 
 /* Additional error status codes that can be returned to userspace */
@@ -183,6 +191,13 @@ typedef struct {
 #endif
 #ifndef FAN_EVENT_INFO_TYPE_ERROR
 #define FAN_EVENT_INFO_TYPE_ERROR	5
+#endif
+
+#ifndef FAN_EVENT_INFO_TYPE_OLD_DFID_NAME
+#define FAN_EVENT_INFO_TYPE_OLD_DFID_NAME	10
+#endif
+#ifndef FAN_EVENT_INFO_TYPE_NEW_DFID_NAME
+#define FAN_EVENT_INFO_TYPE_NEW_DFID_NAME	12
 #endif
 
 #ifndef HAVE_STRUCT_FANOTIFY_EVENT_INFO_HEADER
@@ -433,7 +448,7 @@ static inline int fanotify_mark_supported_by_kernel(uint64_t flag)
 		fanotify_events_supported_by_kernel(mask, init_flags, mark_type)); \
 } while (0)
 
-struct fanotify_event_info_header *get_event_info(
+static inline struct fanotify_event_info_header *get_event_info(
 					struct fanotify_event_metadata *event,
 					int info_type)
 {

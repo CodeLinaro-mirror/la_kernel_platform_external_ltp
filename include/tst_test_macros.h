@@ -163,7 +163,7 @@ extern void *TST_RET_PTR;
 			TST_MSG_(TPASS, " passed", #SCALL, ##__VA_ARGS__);     \
 	} while (0)                                                            \
 
-#define TST_EXP_FAIL_(PASS_COND, SCALL, SSCALL, ERRNO, ...)                    \
+#define TST_EXP_FAIL_SILENT_(PASS_COND, SCALL, SSCALL, ERRNO, ...)             \
 	do {                                                                   \
 		TEST(SCALL);                                                   \
 		                                                               \
@@ -181,8 +181,6 @@ extern void *TST_RET_PTR;
 		}                                                              \
 		                                                               \
 		if (TST_ERR == (ERRNO)) {                                      \
-			TST_MSG_(TPASS | TTERRNO, " ",                         \
-				 SSCALL, ##__VA_ARGS__);                       \
 			TST_PASS = 1;                                          \
 		} else {                                                       \
 			TST_MSGP_(TFAIL | TTERRNO, " expected %s",             \
@@ -191,11 +189,54 @@ extern void *TST_RET_PTR;
 		}                                                              \
 	} while (0)
 
-#define TST_EXP_FAIL(SCALL, ERRNO, ...) TST_EXP_FAIL_(TST_RET == 0, SCALL, #SCALL, ERRNO, ##__VA_ARGS__)
+#define TST_EXP_FAIL(SCALL, ERRNO, ...)                                        \
+	do {                                                                   \
+		TST_EXP_FAIL_SILENT_(TST_RET == 0, SCALL, #SCALL,              \
+			ERRNO, ##__VA_ARGS__);                                 \
+		if (TST_PASS)                                                  \
+			TST_MSG_(TPASS | TTERRNO, " ", #SCALL, ##__VA_ARGS__); \
+	} while (0)
 
-#define TST_EXP_FAIL2(SCALL, ERRNO, ...) TST_EXP_FAIL_(TST_RET >= 0, SCALL, #SCALL, ERRNO, ##__VA_ARGS__)
+#define TST_EXP_FAIL2(SCALL, ERRNO, ...)                                       \
+	do {                                                                   \
+		TST_EXP_FAIL_SILENT_(TST_RET >= 0, SCALL, #SCALL,              \
+			ERRNO, ##__VA_ARGS__);                                 \
+		if (TST_PASS)                                                  \
+			TST_MSG_(TPASS | TTERRNO, " ", #SCALL, ##__VA_ARGS__); \
+	} while (0)
+
+#define TST_EXP_FAIL_SILENT(SCALL, ERRNO, ...) \
+	TST_EXP_FAIL_SILENT_(TST_RET == 0, SCALL, #SCALL, ERRNO, ##__VA_ARGS__)
+
+#define TST_EXP_FAIL2_SILENT(SCALL, ERRNO, ...) \
+	TST_EXP_FAIL_SILENT_(TST_RET >= 0, SCALL, #SCALL, ERRNO, ##__VA_ARGS__)
 
 #define TST_EXP_EXPR(EXPR, FMT, ...)						\
 	tst_res_(__FILE__, __LINE__, (EXPR) ? TPASS : TFAIL, "Expect: " FMT, ##__VA_ARGS__);
+
+#define TST_EXP_EQ_(VAL_A, SVAL_A, VAL_B, SVAL_B, TYPE, PFS) do {\
+	TYPE tst_tmp_a__ = VAL_A; \
+	TYPE tst_tmp_b__ = VAL_B; \
+	if (tst_tmp_a__ == tst_tmp_b__) { \
+		tst_res_(__FILE__, __LINE__, TPASS, \
+			SVAL_A " == " SVAL_B " (" PFS ")", tst_tmp_a__); \
+	} else { \
+		tst_res_(__FILE__, __LINE__, TFAIL, \
+			SVAL_A " (" PFS ") != " SVAL_B " (" PFS ")", \
+			tst_tmp_a__, tst_tmp_b__); \
+	} \
+} while (0)
+
+#define TST_EXP_EQ_LI(VAL_A, VAL_B) \
+		TST_EXP_EQ_(VAL_A, #VAL_A, VAL_B, #VAL_B, long long, "%lli")
+
+#define TST_EXP_EQ_LU(VAL_A, VAL_B) \
+		TST_EXP_EQ_(VAL_A, #VAL_A, VAL_B, #VAL_B, unsigned long long, "%llu")
+
+#define TST_EXP_EQ_SZ(VAL_A, VAL_B) \
+		TST_EXP_EQ_(VAL_A, #VAL_A, VAL_B, #VAL_B, size_t, "%zu")
+
+#define TST_EXP_EQ_SSZ(VAL_A, VAL_B) \
+		TST_EXP_EQ_(VAL_A, #VAL_A, VAL_B, #VAL_B, ssize_t, "%zi")
 
 #endif	/* TST_TEST_MACROS_H__ */
