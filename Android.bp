@@ -65,6 +65,28 @@ license {
 
 build = ["gen.bp"]
 
+// The gen.bp file will be embedded in the gen_ltp_config tool,
+// which reads its data using pkgutil.get_data(). As far as I can
+// tell, there's no way to read a file in the root of the python
+// zip, so we have to use a genrule here to move gen.bp to an
+// arbitrary subfolder first.
+genrule {
+    name: "ltp_gen_bp_file",
+    srcs: ["gen.bp"],
+    out: ["android/tools/gen.bp"],
+    cmd: "cp $(in) $(out)"
+}
+
+filegroup {
+    name: "ltp_runtests",
+    srcs: ["runtest/*"],
+}
+
+filegroup {
+    name: "ltp_disabled_tests",
+    srcs: ["android/tools/disabled_tests.txt"],
+}
+
 genrule {
     name: "ltp_syscalls_h",
     tool_files: [
