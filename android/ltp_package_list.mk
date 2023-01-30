@@ -70,6 +70,8 @@ ltp_packages := \
   ltp_bpf_prog03 \
   ltp_bpf_prog04 \
   ltp_bpf_prog05 \
+  ltp_bpf_prog06 \
+  ltp_bpf_prog07 \
   ltp_brk01 \
   ltp_brk02 \
   ltp_cacheflush01 \
@@ -86,6 +88,7 @@ ltp_packages := \
   ltp_capset03 \
   ltp_capset04 \
   ltp_cfs_bandwidth01 \
+  ltp_cgroup_core01 \
   ltp_cgroup_fj_proc \
   ltp_cgroup_regression_6_2 \
   ltp_cgroup_regression_fork_processes \
@@ -207,6 +210,7 @@ ltp_packages := \
   ltp_dirty \
   ltp_dirtyc0w \
   ltp_dirtyc0w_child \
+  ltp_dirtypipe \
   ltp_dma_thread_diotest \
   ltp_dup01 \
   ltp_dup02 \
@@ -271,6 +275,8 @@ ltp_packages := \
   ltp_execve03 \
   ltp_execve04 \
   ltp_execve05 \
+  ltp_execve06 \
+  ltp_execve06_child \
   ltp_execve_child \
   ltp_execveat01 \
   ltp_execveat02 \
@@ -314,6 +320,7 @@ ltp_packages := \
   ltp_fanotify20 \
   ltp_fanotify21 \
   ltp_fanotify22 \
+  ltp_fanotify23 \
   ltp_fanotify_child \
   ltp_fanout01 \
   ltp_fchdir01 \
@@ -661,6 +668,7 @@ ltp_packages := \
   ltp_inotify09 \
   ltp_inotify10 \
   ltp_inotify11 \
+  ltp_inotify12 \
   ltp_inotify_init1_01 \
   ltp_inotify_init1_02 \
   ltp_input01 \
@@ -909,6 +917,7 @@ ltp_packages := \
   ltp_mount04 \
   ltp_mount05 \
   ltp_mount06 \
+  ltp_mount_setattr01 \
   ltp_move_mount01 \
   ltp_move_mount02 \
   ltp_move_pages01 \
@@ -983,7 +992,6 @@ ltp_packages := \
   ltp_open02 \
   ltp_open03 \
   ltp_open04 \
-  ltp_open05 \
   ltp_open06 \
   ltp_open07 \
   ltp_open08 \
@@ -1178,7 +1186,6 @@ ltp_packages := \
   ltp_removexattr01 \
   ltp_removexattr02 \
   ltp_rename01 \
-  ltp_rename02 \
   ltp_rename03 \
   ltp_rename04 \
   ltp_rename05 \
@@ -1918,6 +1925,7 @@ ltp_packages := \
   ltp_testcases_bin_mpls_lib.sh \
   ltp_testcases_bin_myfunctions.sh \
   ltp_testcases_bin_net_cmdlib.sh \
+  ltp_testcases_bin_netns_lib.sh \
   ltp_testcases_bin_netstat01.sh \
   ltp_testcases_bin_nfs01.sh \
   ltp_testcases_bin_nfs02.sh \
@@ -2508,6 +2516,7 @@ ltp_packages := \
   ltp_tst_brkm \
   ltp_tst_capability01 \
   ltp_tst_capability02 \
+  ltp_tst_cgctl \
   ltp_tst_cgroup01 \
   ltp_tst_cgroup02 \
   ltp_tst_check_drivers \

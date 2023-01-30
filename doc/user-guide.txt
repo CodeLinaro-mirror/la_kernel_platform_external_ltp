@@ -27,8 +27,9 @@ For running LTP network tests see `testcases/network/README.md`.
                           Variable is also used in shell tests, but ceiled to int.
 | 'LTP_RUNTIME_MUL'     | Multiplies maximal test iteration runtime. Tests
                           that run for more than a second or two are capped on
-			  runtime. You can scale the default runtime both up
-			  and down with this multiplier.
+                          runtime. You can scale the default runtime both up
+                          and down with this multiplier. NOTE: Not yet implemented
+                          in shell API.
 | 'LTP_VIRT_OVERRIDE'   | Overrides virtual machine detection in the test
                           library. Setting it to empty string tell the library
                           that system is not a virtual machine. Other possible
@@ -48,7 +49,7 @@ For running LTP network tests see `testcases/network/README.md`.
 The limit on how long a test can run does compose of two parts max_runtime and
 timeout. The limit does apply to a single test variant, that means for example
 that tests that run for all available filesystems will apply this limit for a
-single filesytem only.
+single filesystem only.
 
 The max_runtime is a cap on how long the run() function can take, for most
 testcases this part is set to zero. For tests that do run for more than a

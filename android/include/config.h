@@ -398,6 +398,9 @@
 /* Define to 1 if the system has the type `struct modify_ldt_ldt_s'. */
 /* #undef HAVE_STRUCT_MODIFY_LDT_LDT_S */
 
+/* Define to 1 if the system has the type `struct mount_attr'. */
+#define HAVE_STRUCT_MOUNT_ATTR 1
+
 /* Define to 1 if `aux_head' is a member of `struct perf_event_mmap_page'. */
 #define HAVE_STRUCT_PERF_EVENT_MMAP_PAGE_AUX_HEAD 1
 
