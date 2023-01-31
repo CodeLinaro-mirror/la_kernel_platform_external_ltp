@@ -678,6 +678,8 @@ static void parse_opts(int argc, char *argv[])
 			exit(0);
 		case 'i':
 			iterations = atoi(optarg);
+			if (iterations < 0)
+				tst_brk(TBROK, "Number of iterations (-i) must be >= 0");
 		break;
 		case 'I':
 			if (tst_test->max_runtime > 0)
@@ -1164,8 +1166,8 @@ static void do_setup(int argc, char *argv[])
 	if (tst_test->min_mem_avail > (unsigned long)(tst_available_mem() / 1024))
 		tst_brk(TCONF, "Test needs at least %luMB MemAvailable", tst_test->min_mem_avail);
 
-	if (tst_test->request_hugepages)
-		tst_request_hugepages(tst_test->request_hugepages);
+	if (tst_test->hugepages.number)
+		tst_reserve_hugepages(&tst_test->hugepages);
 
 	setup_ipc();
 
@@ -1257,7 +1259,7 @@ static void do_setup(int argc, char *argv[])
 	if (tst_test->needs_cgroup_ctrls)
 		do_cgroup_requires();
 	else if (tst_test->needs_cgroup_ver)
-		tst_brk(TBROK, "needs_cgroup_ver only works with needs_cgroup_controllers");
+		tst_brk(TBROK, "tst_test->needs_cgroup_ctrls must be set");
 }
 
 static void do_test_setup(void)
@@ -1594,7 +1596,7 @@ static int run_tcases_per_fs(void)
 
 	for (i = 0; filesystems[i]; i++) {
 
-		tst_res(TINFO, "Testing on %s", filesystems[i]);
+		tst_res(TINFO, "=== Testing on %s ===", filesystems[i]);
 		tdev.fs_type = filesystems[i];
 
 		prepare_device();

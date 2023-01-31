@@ -72,6 +72,7 @@ AC_CHECK_HEADERS_ONCE([ \
     sys/epoll.h \
     sys/fanotify.h \
     sys/inotify.h \
+    sys/pidfd.h
     sys/prctl.h \
     sys/shm.h \
     sys/timerfd.h \
@@ -113,6 +114,7 @@ AC_CHECK_FUNCS_ONCE([ \
     mkdirat \
     mknodat \
     modify_ldt \
+    mount_setattr \
     move_mount \
     name_to_handle_at \
     open_tree \
@@ -231,6 +233,13 @@ AC_CHECK_TYPES([struct __kernel_old_timeval, struct __kernel_old_timespec, struc
                 struct __kernel_old_itimerspec, struct __kernel_itimerspec],,,[#include <sys/socket.h>])
 
 AC_CHECK_TYPES([struct futex_waitv],,,[#include <linux/futex.h>])
+AC_CHECK_TYPES([struct mount_attr],,,[
+#ifdef HAVE_LINUX_MOUNT_H
+# include <linux/mount.h>
+#else
+# include <sys/mount.h>
+#endif
+])
 
 # Tools knobs
 
@@ -338,8 +347,19 @@ AC_ARG_WITH([open-posix-testsuite],
   [with_open_posix_testsuite=$withval],
   [with_open_posix_testsuite=no]
 )
+
+# Allow setting the directoy, where the open posix testsuite is installed to.
+# If nothing is defined, we have to pass our default value to submake
+AC_ARG_WITH([open-posix-testdir],
+  [AS_HELP_STRING([--with-open-posix-testdir=<dir>],
+    [set the directory, where the open posix testsuite will be installed under prefix])],
+  [],
+  [ac_configure_args="$ac_configure_args --with-open-posix-testdir=testcases/open_posix_testsuite"]
+)
+
 if test "x$with_open_posix_testsuite" = xyes; then
     AC_SUBST([WITH_OPEN_POSIX_TESTSUITE],["yes"])
+    AC_CONFIG_SUBDIRS([testcases/open_posix_testsuite])
 else
     AC_SUBST([WITH_OPEN_POSIX_TESTSUITE],["no"])
 fi
@@ -400,6 +420,23 @@ LTP_CHECK_SYSCALL_UTIMENSAT
 LTP_CHECK_TASKSTATS
 test "x$with_tirpc" = xyes && LTP_CHECK_TIRPC
 LTP_DETECT_HOST_CPU
+
+AC_MSG_CHECKING([whether linker can handle KVM payloads])
+ltp_backup_ldflags="$LDFLAGS"
+ltp_backup_flags="$[]_AC_LANG_PREFIX[]FLAGS"
+LDFLAGS="-T ${srcdir}/testcases/kernel/kvm/linker/${HOST_CPU}.lds"
+_AC_LANG_PREFIX[]FLAGS=
+AC_LINK_IFELSE([AC_LANG_PROGRAM()],
+  [
+    AC_MSG_RESULT([yes])
+    AC_SUBST([WITH_KVM_TESTSUITE],["yes"])
+  ],
+  [
+    AC_MSG_RESULT([no])
+    AC_SUBST([WITH_KVM_TESTSUITE],["no"])
+  ])
+_AC_LANG_PREFIX[]FLAGS="$ltp_backup_flags"
+LDFLAGS="$ltp_backup_ldflags"
 
 AC_OUTPUT
 

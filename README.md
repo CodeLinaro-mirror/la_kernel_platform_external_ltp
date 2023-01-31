@@ -16,8 +16,11 @@ Project pages are located at: http://linux-test-project.github.io/
 The latest image is always available at:
 https://github.com/linux-test-project/ltp/releases
 
-The discussion about the project happens at ltp mailing list:
+The discussion about the project happens at LTP mailing list:
 http://lists.linux.it/listinfo/ltp
+
+LTP mailing list is archived at:
+https://lore.kernel.org/ltp/
 
 The git repository is located at GitHub at:
 https://github.com/linux-test-project/ltp
@@ -150,7 +153,7 @@ $ testcases/bin/abort01
 Some have arguments
 
 ```
-$ testcases/bin/fork13 -i 37
+$ testcases/bin/mesgq\_nstest -m none
 ```
 
 The vast majority of test cases accept the -h (help) switch
@@ -206,4 +209,4 @@ Although we accept GitHub pull requests, the preferred way is sending patches to
 It's a good idea to test patches on GitHub Actions before posting to mailing
 list. Our GitHub Actions setup covers various architectures and distributions in
 order to make sure LTP compiles cleanly on most common configurations.
-For testing you need to just to push your changes to your own LTP fork on GitHub.
+For testing you need to just push your changes to your own LTP fork on GitHub.
