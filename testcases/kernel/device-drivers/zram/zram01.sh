@@ -11,13 +11,14 @@ TST_TESTFUNC="do_test"
 TST_NEEDS_CMDS="awk bc dd"
 TST_SETUP="setup"
 
-check_space_for_btrfs()
+check_space_for_fs()
 {
+	local fs="$1"
 	local ram_size
 
 	ram_size=$(awk '/MemTotal:/ {print $2}' /proc/meminfo)
 	if [ "$ram_size" -lt 1048576 ]; then
-		tst_res TINFO "not enough space for Btrfs"
+		tst_res TINFO "not enough space for $fs"
 		return 1
 	fi
 	return 0
@@ -38,13 +39,18 @@ initialize_vars()
 	local fs limit size stream=-1
 	dev_num=0
 
-	for fs in $(tst_supported_fs); do
-		[ "$fs" = "tmpfs" ] && continue
+	for fs in $(tst_supported_fs -s tmpfs); do
 		size="26214400"
 		limit="25M"
-		if [ "$fs" = "btrfs" ]; then
-			check_space_for_btrfs || continue
-			size="402653184"
+
+		if [ "$fs" = "btrfs" -o "$fs" = "xfs" ]; then
+			check_space_for_fs "$fs" || continue
+
+			if [ "$fs" = "btrfs" ]; then
+				size="402653184"
+			elif [ "$fs" = "xfs" ]; then
+				size=314572800
+			fi
 			limit="$((size/1024/1024))M"
 		fi
 

@@ -199,6 +199,10 @@ simply by setting right '$TST_FOO'.
 [options="header"]
 |=============================================================================
 | Variable name            | Action done
+| 'TST_ALL_FILESYSTEMS'    | Testing on all available filesystems
+                             ('tst_test.all_filesystems' equivalent).
+                             When 'TST_SKIP_FILESYSTEMS' any listed filesystem is not
+                             included in the resulting list of supported filesystems.
 | 'TST_DEV_EXTRA_OPTS'     | Pass extra 'mkfs' options _after_ device name,
                              to 'tst_mkfs', use with 'TST_FORMAT_DEVICE=1'.
 | 'TST_DEV_FS_OPTS'        | Pass 'mkfs' options _before_ the device name,
@@ -209,11 +213,16 @@ simply by setting right '$TST_FOO'.
                              Implies 'TST_NEEDS_DEVICE=1' (no need to set it).
 | 'TST_DEVICE'             | Block device name for 'tst_mount' and 'tst_mkfs', see
                              https://github.com/linux-test-project/ltp/wiki/Shell-Test-API#formatting-device-with-a-filesystem[Formatting device with a filesystem].
-| 'TST_FS_TYPE'            | Override the default filesystem to be used.
+| 'TST_FS_TYPE'            | Override the default filesystem to be used. Also
+                             contains currently used filesystem during looping
+                             filesystems in 'TST_ALL_FILESYSTEMS=1'
+                             ('tst_device->fs_type' equivalent).
 | 'TST_MNTPOINT'           | Holds path to mountpoint used in 'tst_mount', see
                              https://github.com/linux-test-project/ltp/wiki/Shell-Test-API#formatting-device-with-a-filesystem[Formatting device with a filesystem].
 | 'TST_MNT_PARAMS'         | Extra mount params for 'tst_mount', see
                              https://github.com/linux-test-project/ltp/wiki/Shell-Test-API#formatting-device-with-a-filesystem[Formatting device with a filesystem].
+| 'TST_MOUNT_DEVICE'       | Mount device, see
+                             https://github.com/linux-test-project/ltp/wiki/Shell-Test-API#mounting-and-unmounting-filesystems[Mounting and unmounting filesystems].
 | 'TST_NEEDS_ROOT'         | Exit the test with 'TCONF' unless executed under root.
                              Alternatively the 'tst_require_root' command can be used.
 | 'TST_NEEDS_TMPDIR'       | Create test temporary directory and cd into it.
@@ -227,6 +236,8 @@ simply by setting right '$TST_FOO'.
 | 'TST_NEEDS_KCONFIGS'     | Checks kernel kconfigs support for the test (see below).
 | 'TST_NEEDS_KCONFIGS_IFS' | Used for splitting '$TST_NEEDS_KCONFIGS' variable,
                              default value is comma, it only supports single character.
+| 'TST_SKIP_FILESYSTEMS'   | Comma separated list of filesystems on which test will be skipped
+                             (tst_test.skip_filesystems equivalent).
 | 'TST_TIMEOUT'            | Maximum timeout set for the test in sec. Must be int >= 1,
                              or -1 (special value to disable timeout), default is 300.
                              Variable is meant be set in tests, not by user.

@@ -16,8 +16,9 @@ Let's start with an example, following code is a simple test for a 'getenv()'.
 
 [source,c]
 -------------------------------------------------------------------------------
-/*
- * This is test for basic functionality of getenv().
+/*\
+ * [Description]
+ * Tests basic functionality of getenv().
  *
  *  - create an env variable and verify that getenv() can get get it
  *  - call getenv() with nonexisting variable name, check that it returns NULL
@@ -836,6 +837,8 @@ start for you. See 'testcases/kernel/device-drivers/block' for details.
 1.12 Useful macros
 ~~~~~~~~~~~~~~~~~~
 
+These macros are defined in 'include/tst_common.h'.
+
 [source,c]
 -------------------------------------------------------------------------------
 ARRAY_SIZE(arr)
@@ -850,6 +853,14 @@ LTP_ALIGN(x, a)
 -------------------------------------------------------------------------------
 
 Aligns the x to be next multiple of a. The a must be power of 2.
+
+[source,c]
+-------------------------------------------------------------------------------
+TST_TO_STR(s)  /* stringification */
+TST_TO_STR_(s) /* macro expansion */
+-------------------------------------------------------------------------------
+
+Macros for stringification.
 
 1.13 Filesystem type detection and skiplist
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1339,7 +1350,7 @@ long long tst_timer_elapsed_us(void);
 int tst_timer_expired_ms(long long ms);
 -------------------------------------------------------------------------------
 
-The 'tst_timer_check()' function checks if specified 'clk_id' is suppored and
+The 'tst_timer_check()' function checks if specified 'clk_id' is supported and
 exits the test with 'TCONF' otherwise. It's expected to be used in test
 'setup()' before any resources that needs to be cleaned up are initialized,
 hence it does not include a cleanup function parameter.
@@ -1602,20 +1613,21 @@ Pathnames can be optionally prefixed to specify how strictly (during
 
 [source,c]
 -------------------------------------------------------------------------------
-static const struct tst_path_val save_restore[] = {
-	{"/proc/sys/kernel/core_pattern", NULL},
-	{}
-};
-
 static void setup(void)
 {
 	FILE_PRINTF("/proc/sys/kernel/core_pattern", "/mypath");
+	SAFE_TRY_FILE_PRINTF("/proc/sys/user/max_user_namespaces", "%d", 10);
 }
 
 static struct tst_test test = {
 	...
 	.setup = setup,
-	.save_restore = save_restore,
+	.save_restore = (const struct tst_path_val[]) {
+		{"/proc/sys/kernel/core_pattern", NULL},
+		{"?/proc/sys/user/max_user_namespaces", NULL},
+		{"!/sys/kernel/mm/ksm/run", "1"},
+		{}
+	},
 };
 -------------------------------------------------------------------------------
 
@@ -1998,15 +2010,25 @@ For full documentation see the comments in 'include/tst_fuzzy_sync.h'.
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 Many of the LTP tests need to use hugepage in their testing, this allows the
-test can reserve hugepages from system only via '.request_hugepages = xx'.
+test can reserve hugepages from system via '.hugepages = {xx, TST_REQUEST}'.
 
-If set non-zero number of 'request_hugepages', test will try to reserve the
-expected number of hugepage for testing in setup phase. If system does not
-have enough hpage for using, it will try the best to reserve 80% available
-number of hpages. With success test stores the reserved hugepage number in
-'tst_hugepages'. For the system without hugetlb supporting, variable
-'tst_hugepages' will be set to 0. If the hugepage number needs to be set to 0
-on supported hugetlb system, please use '.request_hugepages = TST_NO_HUGEPAGES'.
+We achieved two policies for reserving hugepages:
+
+TST_REQUEST:
+  It will try the best to reserve available huge pages and return the number
+  of available hugepages in tst_hugepages, which may be 0 if hugepages are
+  not supported at all.
+
+TST_NEEDS:
+  This is an enforced requirement, LTP should strictly do hpages applying and
+  guarantee the 'HugePages_Free' no less than pages which makes that test can
+  use these specified numbers correctly. Otherwise, test exits with TCONF if
+  the attempt to reserve hugepages fails or reserves less than requested.
+
+With success test stores the reserved hugepage number in 'tst_hugepages'. For
+system without hugetlb supporting, variable 'tst_hugepages' will be set to 0.
+If the hugepage number needs to be set to 0 on supported hugetlb system, please
+use '.hugepages = {TST_NO_HUGEPAGES}'.
 
 Also, we do cleanup and restore work for the hpages resetting automatically.
 
@@ -2018,7 +2040,7 @@ static void run(void)
 {
 	...
 
-	if (tst_hugepages == test.request_hugepages)
+	if (tst_hugepages == test.hugepages.number)
 		TEST(do_hpage_test);
 	else
 		...
@@ -2027,7 +2049,7 @@ static void run(void)
 
 struct tst_test test = {
 	.test_all = run,
-	.request_hugepages = 2,
+	.hugepages = {2, TST_REQUEST},
 	...
 };
 -------------------------------------------------------------------------------
@@ -2045,13 +2067,14 @@ static void run(void)
 
 static void setup(void)
 {
-        if (tst_hugepages != test.requested_hugepages)
-                tst_brk(TCONF, "...");
+	/* TST_NEEDS achieved this automatically in the library */
+	if (tst_hugepages != test.hugepages.number)
+		tst_brk(TCONF, "...");
 }
 
 struct tst_test test = {
 	.test_all = run,
-	.request_hugepages = 2,
+	.hugepages = {2, TST_NEEDS},
 	...
 };
 -------------------------------------------------------------------------------
@@ -2132,13 +2155,13 @@ struct tst_test test = {
 	.setup = setup,
 	.test_all = run,
 	.cleanup = cleanup,
-	.needs_cgroup_controllers = (const char *const []){ "memory", NULL },
+	.needs_cgroup_ctrls = (const char *const []){ "memory", NULL },
 	...
 };
 -------------------------------------------------------------------------------
 
 Above, we first ensure the memory controller is available on the
-test's CGroup with '.needs_cgroup_controllers'. This populates a structure,
+test's CGroup with '.needs_cgroup_ctrls'. This populates a structure,
 'tst_cg', which represents the test's CGroup.
 
 We then write the current processes PID into 'cgroup.procs', which
@@ -2205,7 +2228,7 @@ static void cleanup(void)
 struct tst_test test = {
 	.setup = setup,
 	.test_all = run,
-	.needs_cgroup_controllers = (const char *const []){
+	.needs_cgroup_ctrls = (const char *const []){
 		"cpuset",
 		"memory",
 		NULL

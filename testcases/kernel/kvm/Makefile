@@ -9,17 +9,21 @@ ASFLAGS =
 CPPFLAGS += -I$(abs_srcdir)/include
 GUEST_CPPFLAGS = $(CPPFLAGS) -DCOMPILE_PAYLOAD
 GUEST_CFLAGS = -ffreestanding -O2 -Wall -fno-asynchronous-unwind-tables -mno-mmx -mno-sse
-GUEST_LDFLAGS = -nostdlib -Wl,--build-id=none
+GUEST_LDFLAGS = -nostdlib -Wl,--build-id=none -fno-stack-protector
 GUEST_LDLIBS =
+KVM_LD ?= $(LD)
 
 FILTER_OUT_MAKE_TARGETS := lib_guest lib_host lib_x86
 
 ifeq ($(HOST_CPU),x86_64)
 	ifneq (,$(findstring m32,$(CFLAGS)))
 		HOST_CPU = x86
-		GUEST_CFLAGS += -m32
-		ASFLAGS += --32
 	endif
+endif
+
+ifeq ($(HOST_CPU),x86)
+	GUEST_CFLAGS += -m32
+	ASFLAGS += --32
 endif
 
 # Some distros enable -pie by default. That breaks KVM payload linking.
@@ -50,11 +54,11 @@ include $(top_srcdir)/include/mk/generic_leaf_target.mk
 ifdef VERBOSE
 	$(CC) $(GUEST_CPPFLAGS) $(GUEST_CFLAGS) $(GUEST_LDFLAGS) -o $*-payload.elf $^ $(GUEST_LDLIBS)
 	objcopy -O binary -j .init.boot -j .text -j .data -j .init -j .preinit_array -j .init_array --gap-fill=0 $*-payload.elf $*-payload.bin
-	ld -r -T $(abs_srcdir)/linker/payload.lds --oformat=$(BIN_FORMAT) -o $@ $*-payload.bin
+	$(KVM_LD) -z noexecstack -r -T $(abs_srcdir)/linker/payload.lds --oformat=$(BIN_FORMAT) -o $@ $*-payload.bin
 else
 	@$(CC) $(GUEST_CPPFLAGS) $(GUEST_CFLAGS) $(GUEST_LDFLAGS) -o $*-payload.elf $^ $(GUEST_LDLIBS)
 	@objcopy -O binary -j .init.boot -j .text -j .data -j .init -j .preinit_array -j .init_array --gap-fill=0 $*-payload.elf $*-payload.bin
-	@ld -r -T $(abs_srcdir)/linker/payload.lds --oformat=$(BIN_FORMAT) -o $@ $*-payload.bin
+	@$(KVM_LD) -z noexecstack -r -T $(abs_srcdir)/linker/payload.lds --oformat=$(BIN_FORMAT) -o $@ $*-payload.bin
 	@echo KVM_CC $(target_rel_dir)$@
 endif
 	@rm $*-payload.elf $*-payload.bin

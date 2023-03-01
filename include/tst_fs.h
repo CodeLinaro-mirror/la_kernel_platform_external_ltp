@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later
- * Copyright (c) 2015-2016 Cyril Hrubis <chrubis@suse.cz>
+ * Copyright (c) 2015-2017 Cyril Hrubis <chrubis@suse.cz>
+ * Copyright (c) Linux Test Project, 2017-2022
  */
 
 #ifndef TST_FS_H__
@@ -51,8 +52,8 @@ enum {
  * @mult: mult should be TST_KB, TST_MB or TST_GB
  * the required free space is calculated by @size * @mult
  */
-int tst_fs_has_free_(void (*cleanup)(void), const char *path,
-                     unsigned int size, unsigned int mult);
+int tst_fs_has_free_(void (*cleanup)(void), const char *path, unsigned int size,
+		     unsigned int mult);
 
 /*
  * Returns filesystem magick for a given path.
@@ -92,7 +93,7 @@ const char *tst_fs_type_name(long f_type);
  * The code uses link(2) to create hard links to a single file until it gets
  * EMLINK or creates 65535 links.
  *
- * If limit is hit maximal number of hardlinks is returned and the the @dir is
+ * If limit is hit maximal number of hardlinks is returned and the @dir is
  * filled with hardlinks in format "testfile%i" where i belongs to [0, limit)
  * interval.
  *
@@ -176,7 +177,7 @@ enum tst_fs_impl {
 };
 
 /*
- * Returns if filesystem is suppored and if driver is in kernel or FUSE.
+ * Returns if filesystem is supported and if driver is in kernel or FUSE.
  *
  * @fs_type A filesystem name to check the support for.
  */
@@ -186,14 +187,14 @@ enum tst_fs_impl tst_fs_is_supported(const char *fs_type);
  * Returns NULL-terminated array of kernel-supported filesystems.
  *
  * @skiplist A NULL terminated array of filesystems to skip.
-*/
+ */
 const char **tst_get_supported_fs_types(const char *const *skiplist);
 
 /*
  * Returns 1 if filesystem is in skiplist 0 otherwise.
  *
  * @fs_type A filesystem type to lookup.
- * @skiplist A NULL terminated array of fileystemsytems to skip.
+ * @skiplist A NULL terminated array of filesystems to skip.
  */
 int tst_fs_in_skiplist(const char *fs_type, const char *const *skiplist);
 
@@ -214,7 +215,7 @@ static inline long tst_fs_type(const char *path)
 }
 
 static inline int tst_fs_has_free(const char *path, unsigned int size,
-                                  unsigned int mult)
+				  unsigned int mult)
 {
 	return tst_fs_has_free_(NULL, path, size, mult);
 }
@@ -240,7 +241,7 @@ static inline long tst_fs_type(void (*cleanup)(void), const char *path)
 }
 
 static inline int tst_fs_has_free(void (*cleanup)(void), const char *path,
-                                  unsigned int size, unsigned int mult)
+				  unsigned int size, unsigned int mult)
 {
 	return tst_fs_has_free_(cleanup, path, size, mult);
 }

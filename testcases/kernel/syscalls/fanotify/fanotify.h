@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
  * Copyright (c) 2012-2020 Linux Test Project.  All Rights Reserved.
  * Author: Jan Kara, November 2013
@@ -48,7 +48,9 @@ static inline int safe_fanotify_mark(const char *file, const int lineno,
 	rval = fanotify_mark(fd, flags, mask, dfd, pathname);
 
 	if (rval == -1) {
-		tst_brk_(file, lineno, TBROK | TERRNO, "fanotify_mark() failed");
+		tst_brk_(file, lineno, TBROK | TERRNO,
+			 "fanotify_mark(%d, 0x%x, 0x%lx, ..., %s) failed",
+			 fd, flags, mask, pathname);
 	}
 
 	if (rval < -1) {
@@ -84,7 +86,7 @@ static inline int safe_fanotify_mark(const char *file, const int lineno,
 #ifndef FAN_REPORT_TARGET_FID
 #define FAN_REPORT_TARGET_FID	0x00001000
 #define FAN_REPORT_DFID_NAME_TARGET (FAN_REPORT_DFID_NAME | \
-                                     FAN_REPORT_FID | FAN_REPORT_TARGET_FID)
+				     FAN_REPORT_FID | FAN_REPORT_TARGET_FID)
 #endif
 
 /* Non-uapi convenience macros */
@@ -101,6 +103,29 @@ static inline int safe_fanotify_mark(const char *file, const int lineno,
 #ifndef FAN_MARK_FILESYSTEM
 #define FAN_MARK_FILESYSTEM	0x00000100
 #endif
+#ifndef FAN_MARK_EVICTABLE
+#define FAN_MARK_EVICTABLE	0x00000200
+#endif
+#ifndef FAN_MARK_IGNORE
+#define FAN_MARK_IGNORE		0x00000400
+#endif
+#ifndef FAN_MARK_IGNORE_SURV
+#define FAN_MARK_IGNORE_SURV	(FAN_MARK_IGNORE | FAN_MARK_IGNORED_SURV_MODIFY)
+#endif
+/* Non-uapi convenience macros */
+#ifndef FAN_MARK_IGNORED_SURV
+#define FAN_MARK_IGNORED_SURV	(FAN_MARK_IGNORED_MASK | FAN_MARK_IGNORED_SURV_MODIFY)
+#endif
+#ifndef FAN_MARK_PARENT
+#define FAN_MARK_PARENT		FAN_MARK_ONLYDIR
+#endif
+#ifndef FAN_MARK_SUBDIR
+#define FAN_MARK_SUBDIR		FAN_MARK_ONLYDIR
+#endif
+#ifndef FAN_MARK_TYPES
+#define FAN_MARK_TYPES (FAN_MARK_INODE | FAN_MARK_MOUNT | FAN_MARK_FILESYSTEM)
+#endif
+
 /* New dirent event masks */
 #ifndef FAN_ATTRIB
 #define FAN_ATTRIB		0x00000004
@@ -162,12 +187,12 @@ static inline int safe_fanotify_mark(const char *file, const int lineno,
 
 struct fanotify_group_type {
 	unsigned int flag;
-	const char * name;
+	const char *name;
 };
 
 struct fanotify_mark_type {
 	unsigned int flag;
-	const char * name;
+	const char *name;
 };
 
 #ifndef __kernel_fsid_t
@@ -403,15 +428,13 @@ static inline void fanotify_init_flags_err_msg(const char *flags_str,
 #define FANOTIFY_INIT_FLAGS_ERR_MSG(flags, fail) \
 	fanotify_init_flags_err_msg(#flags, __FILE__, __LINE__, tst_res_, (fail))
 
-#define REQUIRE_FANOTIFY_INIT_FLAGS_SUPPORTED_ON_FS(flags, fname) do { \
+#define REQUIRE_FANOTIFY_INIT_FLAGS_SUPPORTED_ON_FS(flags, fname) \
 	fanotify_init_flags_err_msg(#flags, __FILE__, __LINE__, tst_brk_, \
-		fanotify_init_flags_supported_on_fs(flags, fname)); \
-	} while (0)
+		fanotify_init_flags_supported_on_fs(flags, fname))
 
-#define REQUIRE_FANOTIFY_INIT_FLAGS_SUPPORTED_BY_KERNEL(flags) do { \
+#define REQUIRE_FANOTIFY_INIT_FLAGS_SUPPORTED_BY_KERNEL(flags) \
 	fanotify_init_flags_err_msg(#flags, __FILE__, __LINE__, tst_brk_, \
-		fanotify_init_flags_supported_by_kernel(flags)); \
-	} while (0)
+		fanotify_init_flags_supported_by_kernel(flags))
 
 static inline int fanotify_mark_supported_by_kernel(uint64_t flag)
 {
@@ -434,10 +457,9 @@ static inline int fanotify_mark_supported_by_kernel(uint64_t flag)
 	return rval;
 }
 
-#define REQUIRE_MARK_TYPE_SUPPORTED_BY_KERNEL(mark_type) do { \
+#define REQUIRE_MARK_TYPE_SUPPORTED_BY_KERNEL(mark_type) \
 	fanotify_init_flags_err_msg(#mark_type, __FILE__, __LINE__, tst_brk_, \
-				    fanotify_mark_supported_by_kernel(mark_type)); \
-} while (0)
+				    fanotify_mark_supported_by_kernel(mark_type))
 
 #define REQUIRE_FANOTIFY_EVENTS_SUPPORTED_ON_FS(init_flags, mark_type, mask, fname) do { \
 	if (mark_type)							\

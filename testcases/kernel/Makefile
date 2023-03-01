@@ -45,6 +45,10 @@ ifeq ($(WITH_POWER_MANAGEMENT_TESTSUITE),yes)
 SUBDIRS			+= power_management
 endif
 
+ifeq ($(WITH_KVM_TESTSUITE),yes)
+SUBDIRS			+= kvm
+endif
+
 endif
 
 ifeq ($(ANDROID),1)
