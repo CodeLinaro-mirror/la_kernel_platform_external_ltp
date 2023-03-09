@@ -4,7 +4,7 @@
       "name": "vts_ltp_test_arm",
       "options": [
         {
-          // TODO (b/262943169)
+          // TODO(b/262943169)
           "exclude-filter": "cve.cve-2021-4034_32bit"
         },
         {
@@ -43,7 +43,7 @@
           "exclude-filter": "syscalls.futex_wait05_32bit"
         },
         {
-          // TODO (b/191622991)
+          // TODO(b/191622991)
           "exclude-filter": "controllers.cgroup_fj_function_memory_32bit#controllers.cgroup_fj_function_memory_32bit"
         },
         {
@@ -173,11 +173,11 @@
       "name": "vts_ltp_test_arm_64",
       "options": [
         {
-          // TODO (b/262943169)
+          // TODO(b/262943169)
           "exclude-filter": "cve.cve-2021-4034_64bit"
         },
         {
-          // TODO (b/191622991)
+          // TODO(b/191622991)
           "exclude-filter": "controllers.cgroup_fj_function_memory_64bit#controllers.cgroup_fj_function_memory_64bit"
         },
         {
