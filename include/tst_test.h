@@ -95,6 +95,18 @@ pid_t safe_fork(const char *filename, unsigned int lineno);
 	({int ret = expr;                                           \
 	  ret != 0 ? tst_res(TINFO, #expr " failed"), ret : ret; }) \
 
+/*
+ * Functions to convert ERRNO to its name and SIGNAL to its name.
+ */
+const char *tst_strerrno(int err);
+const char *tst_strsig(int sig);
+/*
+ * Returns string describing status as returned by wait().
+ *
+ * BEWARE: Not thread safe.
+ */
+const char *tst_strstatus(int status);
+
 #include "tst_safe_macros.h"
 #include "tst_safe_file_ops.h"
 #include "tst_safe_net.h"
@@ -176,11 +188,15 @@ struct tst_test {
 	int all_filesystems:1;
 	int skip_in_lockdown:1;
 	int skip_in_compat:1;
+	/*
+	 * If set, the hugetlbfs will be mounted at .mntpoint.
+	 */
+	int needs_hugetlbfs:1;
 
 	/*
-	 * The skip_filesystem is a NULL terminated list of filesystems the
+	 * The skip_filesystems is a NULL terminated list of filesystems the
 	 * test does not support. It can also be used to disable whole class of
-	 * filesystems with a special keyworks such as "fuse".
+	 * filesystems with a special keywords such as "fuse".
 	 */
 	const char *const *skip_filesystems;
 
@@ -329,18 +345,6 @@ void tst_run_tcases(int argc, char *argv[], struct tst_test *self)
  */
 void tst_reinit(void);
 
-/*
- * Functions to convert ERRNO to its name and SIGNAL to its name.
- */
-const char *tst_strerrno(int err);
-const char *tst_strsig(int sig);
-/*
- * Returns string describing status as returned by wait().
- *
- * BEWARE: Not thread safe.
- */
-const char *tst_strstatus(int status);
-
 unsigned int tst_multiply_timeout(unsigned int timeout);
 
 /*
@@ -358,9 +362,20 @@ unsigned int tst_remaining_runtime(void);
 void tst_set_max_runtime(int max_runtime);
 
 /*
+ * Create and open a random file inside the given dir path.
+ * It unlinks the file after opening and return file descriptor.
+ */
+int tst_creat_unlinked(const char *path, int flags);
+
+/*
  * Returns path to the test temporary directory in a newly allocated buffer.
  */
 char *tst_get_tmpdir(void);
+
+/*
+ * Returns path to the test temporary directory root (TMPDIR).
+ */
+const char *tst_get_tmpdir_root(void);
 
 /*
  * Validates exit status of child processes

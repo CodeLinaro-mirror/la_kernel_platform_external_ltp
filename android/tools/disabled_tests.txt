@@ -494,6 +494,11 @@ statx07
 # Needs pthread_cancel() and friends
 af_alg02
 
+# Disabled from LTP20230127
+# b/277959438
+# Needs pthread_cancel() and friends
+nice05
+
 # Depends on HDLC line discipline (not enabled on Android).
 # b/191224903
 pty05
@@ -612,3 +617,7 @@ set_mempolicy05
 # b/246845416
 kvm_pagefault01
 kvm_pagefault01-payload.elf
+
+# Redefines cacheflush
+# b/277960476
+hugemmap15

@@ -402,7 +402,14 @@ if [ $? -ne 0 ]; then
 fi
 
 # Post 4.16 kernel updates stat in batch (> 32 pages) every time
-PAGESIZES=$(($PAGESIZE * 33))
+# Post 6.1 kernel updates stat in batch (> 64 pages) every time
+# 1813e51eece0ad6 ("memcg: increase MEMCG_CHARGE_BATCH to 64")
+# has been merged since 5.14.0-191.el9.
+if tst_kvcmp -lt "6.1 RHEL9:5.14.0-191" ; then
+	PAGESIZES=$(($PAGESIZE * 33))
+else
+	PAGESIZES=$(($PAGESIZE * 65))
+fi
 
 # On recent Linux kernels (at least v5.4) updating stats happens in batches
 # (PAGESIZES) and also might depend on workload and number of CPUs.  The kernel

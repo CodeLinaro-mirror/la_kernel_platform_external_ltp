@@ -89,8 +89,8 @@ ltp_packages := \
   ltp_capset04 \
   ltp_cfs_bandwidth01 \
   ltp_cgroup_core01 \
+  ltp_cgroup_core02 \
   ltp_cgroup_fj_proc \
-  ltp_cgroup_regression_6_2 \
   ltp_cgroup_regression_fork_processes \
   ltp_cgroup_regression_getdelays \
   ltp_cgroup_xattr \
@@ -180,7 +180,6 @@ ltp_packages := \
   ltp_creat07_child \
   ltp_creat08 \
   ltp_creat09 \
-  ltp_create-files \
   ltp_create_datafile \
   ltp_crypto_user01 \
   ltp_crypto_user02 \
@@ -194,6 +193,7 @@ ltp_packages := \
   ltp_cve-2017-17053 \
   ltp_cve-2017-2618 \
   ltp_cve-2017-2671 \
+  ltp_cve-2022-4378 \
   ltp_data_space \
   ltp_delete_module01 \
   ltp_delete_module02 \
@@ -210,6 +210,8 @@ ltp_packages := \
   ltp_dirty \
   ltp_dirtyc0w \
   ltp_dirtyc0w_child \
+  ltp_dirtyc0w_shmem \
+  ltp_dirtyc0w_shmem_child \
   ltp_dirtypipe \
   ltp_dma_thread_diotest \
   ltp_dup01 \
@@ -445,7 +447,6 @@ ltp_packages := \
   ltp_flock04 \
   ltp_flock06 \
   ltp_fork01 \
-  ltp_fork02 \
   ltp_fork03 \
   ltp_fork04 \
   ltp_fork05 \
@@ -587,7 +588,6 @@ ltp_packages := \
   ltp_gethostname01 \
   ltp_getitimer01 \
   ltp_getitimer02 \
-  ltp_getitimer03 \
   ltp_getpagesize01 \
   ltp_getpeername01 \
   ltp_getpgid01 \
@@ -643,10 +643,38 @@ ltp_packages := \
   ltp_hangup01 \
   ltp_ht_affinity \
   ltp_ht_enabled \
+  ltp_hugefallocate01 \
+  ltp_hugefallocate02 \
+  ltp_hugefork01 \
+  ltp_hugefork02 \
   ltp_hugemmap01 \
   ltp_hugemmap02 \
   ltp_hugemmap04 \
   ltp_hugemmap06 \
+  ltp_hugemmap07 \
+  ltp_hugemmap08 \
+  ltp_hugemmap09 \
+  ltp_hugemmap10 \
+  ltp_hugemmap11 \
+  ltp_hugemmap12 \
+  ltp_hugemmap13 \
+  ltp_hugemmap14 \
+  ltp_hugemmap16 \
+  ltp_hugemmap17 \
+  ltp_hugemmap18 \
+  ltp_hugemmap19 \
+  ltp_hugemmap20 \
+  ltp_hugemmap21 \
+  ltp_hugemmap22 \
+  ltp_hugemmap23 \
+  ltp_hugemmap24 \
+  ltp_hugemmap25 \
+  ltp_hugemmap26 \
+  ltp_hugemmap27 \
+  ltp_hugemmap28 \
+  ltp_hugemmap29 \
+  ltp_hugemmap30 \
+  ltp_hugemmap31 \
   ltp_icmp_rate_limit01 \
   ltp_ima_boot_aggregate \
   ltp_ima_mmap \
@@ -913,7 +941,7 @@ ltp_packages := \
   ltp_mount01 \
   ltp_mount02 \
   ltp_mount03 \
-  ltp_mount03_setuid_test \
+  ltp_mount03_suid_child \
   ltp_mount04 \
   ltp_mount05 \
   ltp_mount06 \
@@ -1008,6 +1036,7 @@ ltp_packages := \
   ltp_openat01 \
   ltp_openat02_child \
   ltp_openat03 \
+  ltp_openat04 \
   ltp_openat201 \
   ltp_openat202 \
   ltp_openat203 \
@@ -1078,6 +1107,7 @@ ltp_packages := \
   ltp_prctl07 \
   ltp_prctl08 \
   ltp_prctl09 \
+  ltp_prctl10 \
   ltp_pread01 \
   ltp_pread01_64 \
   ltp_pread02 \
@@ -1156,8 +1186,6 @@ ltp_packages := \
   ltp_quotactl07 \
   ltp_quotactl08 \
   ltp_quotactl09 \
-  ltp_random-access \
-  ltp_random-access-del-create \
   ltp_read01 \
   ltp_read02 \
   ltp_read03 \
@@ -1338,7 +1366,6 @@ ltp_packages := \
   ltp_sethostname03 \
   ltp_setitimer01 \
   ltp_setitimer02 \
-  ltp_setitimer03 \
   ltp_setns01 \
   ltp_setpgid01 \
   ltp_setpgid02 \
@@ -1589,8 +1616,7 @@ ltp_packages := \
   ltp_testcases_bin_cgroup_regression_5_1.sh \
   ltp_testcases_bin_cgroup_regression_5_2.sh \
   ltp_testcases_bin_cgroup_regression_6_1.sh \
-  ltp_testcases_bin_cgroup_regression_9_1.sh \
-  ltp_testcases_bin_cgroup_regression_9_2.sh \
+  ltp_testcases_bin_cgroup_regression_6_2.sh \
   ltp_testcases_bin_cgroup_regression_test.sh \
   ltp_testcases_bin_change_password.sh \
   ltp_testcases_bin_check_envval \
@@ -1659,8 +1685,6 @@ ltp_packages := \
   ltp_testcases_bin_freeze_sleep_thaw.sh \
   ltp_testcases_bin_freeze_thaw.sh \
   ltp_testcases_bin_freeze_write_freezing.sh \
-  ltp_testcases_bin_fs-bench-test.sh \
-  ltp_testcases_bin_fs-bench-test2.sh \
   ltp_testcases_bin_fs_bind01.sh \
   ltp_testcases_bin_fs_bind02.sh \
   ltp_testcases_bin_fs_bind03.sh \
@@ -1917,7 +1941,6 @@ ltp_packages := \
   ltp_testcases_bin_memcg_usage_in_bytes_test.sh \
   ltp_testcases_bin_memcg_use_hierarchy_test.sh \
   ltp_testcases_bin_mkdir_tests.sh \
-  ltp_testcases_bin_modaltr.sh \
   ltp_testcases_bin_mpls01.sh \
   ltp_testcases_bin_mpls02.sh \
   ltp_testcases_bin_mpls03.sh \
