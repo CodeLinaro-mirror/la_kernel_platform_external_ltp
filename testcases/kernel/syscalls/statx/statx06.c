@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0 or later
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * Copyright (c) Zilogic Systems Pvt. Ltd., 2018
  * Email : code@zilogic.com
@@ -67,7 +67,7 @@ static void write_file(void)
 {
 	char data[SIZE] = "hi";
 
-	SAFE_WRITE(0, fd, data, sizeof(data));
+	SAFE_WRITE(SAFE_WRITE_ANY, fd, data, sizeof(data));
 }
 
 static void read_file(void)

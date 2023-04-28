@@ -515,7 +515,6 @@ In particular, 'tst_parse_filesize' function accepts prefix multiplies such as
 "k/K for kilobytes, "m/M" for megabytes and "g/G" for gigabytes. For example,
 10K are converted into 10240 bytes.
 
-.Example Usage
 [source,c]
 -------------------------------------------------------------------------------
 #include <limits.h>
@@ -523,12 +522,6 @@ In particular, 'tst_parse_filesize' function accepts prefix multiplies such as
 
 static char *str_threads;
 static int threads = 10;
-
-static struct tst_option options[] = {
-	{"t:", &str_threads, "Number of threads (default 10)"},
-	...
-	{}
-};
 
 static void setup(void)
 {
@@ -551,7 +544,9 @@ static void test_threads(void)
 
 static struct tst_test test = {
 	...
-	.options = options,
+	.options = (struct tst_option[]) {
+		{"t:", &str_threads, "Number of threads (default 10)"},
+		{},
 	...
 };
 -------------------------------------------------------------------------------
@@ -563,7 +558,7 @@ static struct tst_test test = {
 Testcases for newly added kernel functionality require kernel newer than a
 certain version to run. All you need to skip a test on older kernels is to
 set the '.min_kver' string in the 'struct tst_test' to a minimal required
-kernel version, e.g. '.min_kver = "2.6.30"'.
+kernel version, e.g. '.min_kver = "4.10.0"'.
 
 For more complicated operations such as skipping a test for a certain range
 of kernel versions, following functions could be used:
@@ -589,11 +584,27 @@ positive means that it's newer.
 
 The second function 'tst_kvercmp2()' allows for specifying per-vendor table of
 kernel versions as vendors typically backport fixes to their kernels and the
-test may be relevant even if the kernel version does not suggests so. See
-'testcases/kernel/syscalls/inotify/inotify04.c' for example usage.
+test may be relevant even if the kernel version does not suggests so.
+
+[source,c]
+-------------------------------------------------------------------------------
+if (tst_kvercmp(5, 19, 0) >= 0)
+	tst_res(TCONF, "Test valid only for kernel < 5.19");
+
+static struct tst_kern_exv kvers[] = {
+	{ "UBUNTU", "4.4.0-48.69" },
+	{ NULL, NULL},
+};
+
+if (tst_kvercmp2(4, 4, 27, kvers) < 0)
+	/* code for kernel < v4.4.27 or ubuntu kernel < 4.4.0-48.69 */
+-------------------------------------------------------------------------------
 
 WARNING: The shell 'tst_kvercmp' maps the result into unsigned integer - the
          process exit value.
+
+NOTE: See also LTP
+      https://github.com/linux-test-project/ltp/wiki/Supported-kernel,-libc,-toolchain-versions#13-minimal-supported-kernel-version[minimal supported kernel version].
 
 1.7 Fork()-ing
 ~~~~~~~~~~~~~~
@@ -894,6 +905,15 @@ If test needs to adjust expectations based on filesystem type it's also
 possible to detect filesystem type at the runtime. This is preferably used
 when only subset of the test is not applicable for a given filesystem.
 
+NOTE: ext2, ext3 or ext4 in '.skip_filesystems' on tests which does *not* use
+      '.all_filesystems' needs to be defined as 'ext2/ext3/ext4'. The reason
+      is that it is hard to detect used filesystem due to overlapping the functionality.
+      OTOH tests which use '.skip_filesystems' *with* '.all_filesystems' can skip
+      only filesystems which are actually used in '.all_filesystems': ext2, ext3,
+      ext4, xfs, btrfs, vfat, exfat, ntfs, tmpfs (defined in 'fs_type_whitelist[]').
+      It does not make sense to list other filesystems.
+
+
 [source,c]
 -------------------------------------------------------------------------------
 #include "tst_test.h"
@@ -1067,12 +1087,12 @@ is created for that intention.
 -------------------------------------------------------------------------------
 #include "tst_test.h"
 
-voud tst_find_backing_dev(const char *path, char *dev);
+void tst_find_backing_dev(const char *path, char *dev, size_t dev_size);
 -------------------------------------------------------------------------------
 
-This function finds the block dev that this path belongs to, it uses stat function
-to get the major/minor number of the path. Then scan them in '/proc/self/mountinfo'
-and list 2th column value after ' - ' string as its block dev if match succeeds.
+This function finds the block dev that this path belongs to, using uevent in sysfs.
+For Btrfs it uses '/sys/fs/btrfs/UUID/devices/DEV_NAME/uevent'; for other
+filesystems it uses '/sys/dev/block/MAJOR:MINOR/uevent'.
 
 [source,c]
 -------------------------------------------------------------------------------
@@ -1597,35 +1617,39 @@ LTP library can be instructed to save and restore value of specified
 field 'save_restore'. It is a NULL-terminated array of struct
 'tst_path_val' where each tst_path_val.path represents a file, whose
 value is saved at the beginning and restored at the end of the test.
-If non-NULL value is passed it is written to the respective file at
-the beginning of the test. Only the first line of a specified file
-is saved and restored.
+If non-NULL string is passed in tst_path_val.val, it is written
+to the respective file at the beginning of the test. Only the first line
+of a specified file is saved and restored.
 
-Pathnames can be optionally prefixed to specify how strictly (during
-'store') are handled errors:
+By default, the test will end with TCONF if the file is read-only or
+does not exist. If the optional write of new value fails, the test will end
+with 'TBROK'. This behavior can be changed using tst_path_val.flags:
 
-* (no prefix) - test ends with 'TCONF', if file doesn't exist
-* '?'         - test prints info message and continues,
-                if file doesn't exist or open/read fails
-* '!'         - test ends with 'TBROK', if file doesn't exist
+* 'TST_SR_TBROK_MISSING' – End test with 'TBROK' if the file does not exist
+* 'TST_SR_TCONF_MISSING' – End test with 'TCONF' if the file does not exist
+* 'TST_SR_SKIP_MISSING' – Continue without saving the file if it does not exist
+* 'TST_SR_TBROK_RO' – End test with 'TBROK' if the file is read-only
+* 'TST_SR_TCONF_RO' – End test with 'TCONF' if the file is read-only
+* 'TST_SR_SKIP_RO' – Continue without saving the file if it is read-only
+* 'TST_SR_IGNORE_ERR' – Ignore errors when writing new value into the file
+
+Common flag combinations also have shortcuts:
+
+* 'TST_SR_TCONF' – Equivalent to 'TST_SR_TCONF_MISSING | TST_SR_TCONF_RO'
+* 'TST_SR_TBROK' – Equivalent to 'TST_SR_TBROK_MISSING | TST_SR_TBROK_RO'
+* 'TST_SR_SKIP' – Equivalent to 'TST_SR_SKIP_MISSING | TST_SR_SKIP_RO'
 
 'restore' is always strict and will TWARN if it encounters any error.
 
 [source,c]
 -------------------------------------------------------------------------------
-static void setup(void)
-{
-	FILE_PRINTF("/proc/sys/kernel/core_pattern", "/mypath");
-	SAFE_TRY_FILE_PRINTF("/proc/sys/user/max_user_namespaces", "%d", 10);
-}
-
 static struct tst_test test = {
 	...
 	.setup = setup,
 	.save_restore = (const struct tst_path_val[]) {
-		{"/proc/sys/kernel/core_pattern", NULL},
-		{"?/proc/sys/user/max_user_namespaces", NULL},
-		{"!/sys/kernel/mm/ksm/run", "1"},
+		{"/proc/sys/kernel/core_pattern", NULL, TST_SR_TCONF},
+		{"/proc/sys/user/max_user_namespaces", NULL, TST_SR_SKIP},
+		{"/sys/kernel/mm/ksm/run", "1", TST_SR_TBROK},
 		{}
 	},
 };
