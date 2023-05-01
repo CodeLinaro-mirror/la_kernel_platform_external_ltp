@@ -364,7 +364,6 @@ flock06 flock06
 fmtmsg01 fmtmsg01
 
 fork01 fork01
-fork02 fork02
 fork03 fork03
 fork04 fork04
 fork05 fork05
@@ -466,7 +465,6 @@ gethostname01 gethostname01
 
 getitimer01 getitimer01
 getitimer02 getitimer02
-getitimer03 getitimer03
 
 getpagesize01 getpagesize01
 
@@ -903,6 +901,7 @@ nice01 nice01
 nice02 nice02
 nice03 nice03
 nice04 nice04
+nice05 nice05
 
 open01 open01
 open01A symlink01 -T open01
@@ -919,10 +918,10 @@ open12 open12
 open13 open13
 open14 open14
 
-#openat test cases
 openat01 openat01
 openat02 openat02
 openat03 openat03
+openat04 openat04
 
 openat201 openat201
 openat202 openat202
@@ -941,6 +940,7 @@ mincore04 mincore04
 
 madvise01 madvise01
 madvise02 madvise02
+madvise03 madvise03
 madvise05 madvise05
 madvise06 madvise06
 madvise07 madvise07
@@ -1005,6 +1005,7 @@ prctl06 prctl06
 prctl07 prctl07
 prctl08 prctl08
 prctl09 prctl09
+prctl10 prctl10
 
 pread01 pread01
 pread01_64 pread01_64
@@ -1030,11 +1031,12 @@ profil01 profil01
 process_vm_readv01 process_vm01 -r
 process_vm_readv02 process_vm_readv02
 process_vm_readv03 process_vm_readv03
-process_vm_writev01 process_vm01 -w
+process_vm_writev01 process_vm01
 process_vm_writev02 process_vm_writev02
 
 prot_hsymlinks prot_hsymlinks
 dirtyc0w dirtyc0w
+dirtyc0w_shmem dirtyc0w_shmem
 dirtypipe dirtypipe
 
 pselect01 pselect01
@@ -1339,7 +1341,6 @@ sethostname03 sethostname03
 
 setitimer01 setitimer01
 setitimer02 setitimer02
-setitimer03 setitimer03
 
 setns01 setns01
 setns02 setns02

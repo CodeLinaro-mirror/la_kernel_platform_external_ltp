@@ -53,7 +53,7 @@ static void test_mnt_id(struct statx *buf)
 {
 	FILE *file;
 	char line[PATH_MAX];
-	int pid;
+	int pid, flag = 0;
 	unsigned int line_mjr, line_mnr;
 	uint64_t mnt_id;
 
@@ -65,23 +65,29 @@ static void test_mnt_id(struct statx *buf)
 	file = SAFE_FOPEN("/proc/self/mountinfo", "r");
 
 	while (fgets(line, sizeof(line), file)) {
-		if (sscanf(line, "%ld %*d %d:%d", &mnt_id, &line_mjr, &line_mnr) != 3)
+		if (sscanf(line, "%"SCNu64" %*d %d:%d", &mnt_id, &line_mjr, &line_mnr) != 3)
 			continue;
 
-		if (line_mjr == buf->stx_dev_major && line_mnr == buf->stx_dev_minor)
-			break;
+		if (line_mjr == buf->stx_dev_major && line_mnr == buf->stx_dev_minor) {
+			if (buf->stx_mnt_id == mnt_id) {
+				flag = 1;
+				break;
+			}
+			tst_res(TINFO, "%s doesn't contain %"PRIu64" %d:%d",
+				line, (uint64_t)buf->stx_mnt_id, buf->stx_dev_major, buf->stx_dev_minor);
+		}
 	}
 
 	SAFE_FCLOSE(file);
 
-	if (buf->stx_mnt_id == mnt_id)
+	if (flag)
 		tst_res(TPASS,
 			"statx.stx_mnt_id equals to mount_id(%"PRIu64") in /proc/self/mountinfo",
 			mnt_id);
 	else
 		tst_res(TFAIL,
-			"statx.stx_mnt_id(%"PRIu64") is different from mount_id(%"PRIu64") in /proc/self/mountinfo",
-			(uint64_t)buf->stx_mnt_id, mnt_id);
+			"statx.stx_mnt_id(%"PRIu64") doesn't exist in /proc/self/mountinfo",
+			(uint64_t)buf->stx_mnt_id);
 
 	pid = getpid();
 	snprintf(line, PATH_MAX, "/proc/%d/fdinfo/%d", pid, file_fd);
@@ -198,7 +204,7 @@ static void setup(void)
 	memset(data_buff, '@', sizeof(data_buff));
 
 	file_fd =  SAFE_OPEN(TESTFILE, O_RDWR|O_CREAT, MODE);
-	SAFE_WRITE(1, file_fd, data_buff, sizeof(data_buff));
+	SAFE_WRITE(SAFE_WRITE_ALL, file_fd, data_buff, sizeof(data_buff));
 
 	SAFE_MKNOD(DEVICEFILE, S_IFBLK | 0777, makedev(MAJOR, MINOR));
 }

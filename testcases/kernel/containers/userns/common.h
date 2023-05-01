@@ -8,7 +8,7 @@
 #define COMMON_H
 
 #include "tst_test.h"
-#include "lapi/namespaces_constants.h"
+#include "lapi/sched.h"
 
 #define UID_MAP 0
 #define GID_MAP 1
@@ -51,7 +51,7 @@ static inline void updatemap(int cpid, int type, int idnum, int parentmappid)
 	sprintf(content, "%d %d 1", idnum, parentmappid);
 
 	fd = SAFE_OPEN(path, O_WRONLY, 0644);
-	SAFE_WRITE(1, fd, content, strlen(content));
+	SAFE_WRITE(SAFE_WRITE_ALL, fd, content, strlen(content));
 	SAFE_CLOSE(fd);
 }
 

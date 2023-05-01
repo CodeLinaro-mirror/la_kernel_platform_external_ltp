@@ -20,7 +20,6 @@
 #include <errno.h>
 #include <unistd.h>
 #include <sys/types.h>
-#include <sched.h>
 #include <stdlib.h>
 
 #ifdef HAVE_SYS_XATTR_H
@@ -32,7 +31,7 @@
 #endif
 
 #include "tst_test.h"
-#include "lapi/namespaces_constants.h"
+#include "lapi/sched.h"
 
 #if defined(HAVE_SYS_XATTR_H) && defined(HAVE_LIBACL)
 
@@ -176,7 +175,6 @@ static struct tst_test test = {
 	.cleanup = cleanup,
 	.tcnt = ARRAY_SIZE(tcases),
 	.test = do_getxattr,
-	.min_kver = "3.8",
 };
 
 #else /* HAVE_SYS_XATTR_H && HAVE_LIBACL*/
