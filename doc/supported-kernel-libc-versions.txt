@@ -51,7 +51,12 @@ distribution you may as well reconsider you life choices.
 | s390x         | cross compilation
 |==================================
 
-1.3 Supported libc
+1.3 Minimal supported kernel version
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Minimal supported kernel version is 3.10.
+
+1.4 Supported libc
 ~~~~~~~~~~~~~~~~~~
 
 [align="center",options="header"]
@@ -64,3 +69,9 @@ distribution you may as well reconsider you life choices.
                                  https://github.com/linux-test-project/ltp/blob/master/ci/alpine.sh[CI script]
                                  for list of files which need to be deleted in order to compile under musl).
 | binder (Android) | Please use https://android.googlesource.com/platform/external/ltp/[AOSP fork].
+|==================================
+
+1.5 Used C standard
+~~~~~~~~~~~~~~~~~~~
+
+LTP compiles with '-std=gnu99'.

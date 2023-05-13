@@ -184,7 +184,7 @@ static void run(unsigned int n)
 
 	/* Prepare test data for deallocation test */
 	size = WRITE_BLOCKS * blocksize;
-	SAFE_WRITE(1, fd, wbuf, size);
+	SAFE_WRITE(SAFE_WRITE_ALL, fd, wbuf, size);
 
 	/* Allocation test */
 	offset = size + block_offset;
@@ -202,7 +202,7 @@ static void run(unsigned int n)
 	}
 
 	if (tc->fill_fs)
-		tst_fill_fs(MNTPOINT, 1);
+		tst_fill_fs(MNTPOINT, 1, TST_FILL_RANDOM);
 
 	SAFE_LSEEK(fd, offset, SEEK_SET);
 	TEST(write(fd, wbuf, size));

@@ -720,6 +720,20 @@ tst_run()
 	[ "$TST_FORMAT_DEVICE" = 1 -o "$TST_ALL_FILESYSTEMS" = 1 ] && TST_NEEDS_DEVICE=1
 	[ "$TST_NEEDS_DEVICE" = 1 ] && TST_NEEDS_TMPDIR=1
 
+	if [ "$TST_NEEDS_TMPDIR" = 1 ]; then
+		if [ -z "$TMPDIR" ]; then
+			export TMPDIR="/tmp"
+		fi
+
+		TST_TMPDIR=$(mktemp -d "$TMPDIR/LTP_$TST_ID.XXXXXXXXXX")
+
+		chmod 777 "$TST_TMPDIR"
+
+		TST_STARTWD=$(pwd)
+		cd "$TST_TMPDIR"
+	fi
+
+	# needs to be after cd $TST_TMPDIR to keep test_dev.img under $TST_TMPDIR
 	if [ "$TST_NEEDS_DEVICE" = 1 ]; then
 		TST_DEVICE=$(tst_device acquire)
 
@@ -732,19 +746,6 @@ tst_run()
 		if [ -z "$TST_FS_TYPE" ]; then
 			export TST_FS_TYPE="${LTP_DEV_FS_TYPE:-ext2}"
 		fi
-	fi
-
-	if [ "$TST_NEEDS_TMPDIR" = 1 ]; then
-		if [ -z "$TMPDIR" ]; then
-			export TMPDIR="/tmp"
-		fi
-
-		TST_TMPDIR=$(mktemp -d "$TMPDIR/LTP_$TST_ID.XXXXXXXXXX")
-
-		chmod 777 "$TST_TMPDIR"
-
-		TST_STARTWD=$(pwd)
-		cd "$TST_TMPDIR"
 	fi
 
 	if [ "$TST_ALL_FILESYSTEMS" != 1 -a "$TST_SKIP_FILESYSTEMS" ]; then
@@ -837,6 +838,8 @@ _tst_run_test()
 	_tst_rescmp "$_tst_res"
 	TST_COUNT=$((TST_COUNT+1))
 }
+
+export LC_ALL=C
 
 if [ -z "$TST_ID" ]; then
 	_tst_filename=$(basename $0) || \

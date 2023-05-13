@@ -186,6 +186,9 @@ int safe_getgroups(const char *file, const int lineno, int size, gid_t list[]);
 #define SAFE_STRTOUL(str, min, max) \
 	safe_strtoul(__FILE__, __LINE__, NULL, (str), (min), (max))
 
+#define SAFE_STRTOF(str, min, max) \
+	safe_strtof(__FILE__, __LINE__, NULL, (str), (min), (max))
+
 #define SAFE_SYSCONF(name) \
 	safe_sysconf(__FILE__, __LINE__, NULL, name)
 
@@ -297,6 +300,23 @@ static inline int safe_ftruncate(const char *file, const int lineno,
 }
 #define SAFE_FTRUNCATE(fd, length) \
 	safe_ftruncate(__FILE__, __LINE__, (fd), (length))
+
+static inline int safe_posix_fadvise(const char *file, const int lineno,
+                                int fd, off_t offset, off_t len, int advice)
+{
+	int rval;
+
+	rval = posix_fadvise(fd, offset, len, advice);
+
+	if (rval)
+		tst_brk_(file, lineno, TBROK,
+			"posix_fadvise(%d,%ld,%ld,%d) failed: %s",
+			fd, (long)offset, (long)len, advice, tst_strerrno(rval));
+
+	return rval;
+}
+#define SAFE_POSIX_FADVISE(fd, offset, len, advice) \
+	safe_posix_fadvise(__FILE__, __LINE__, (fd), (offset), (len), (advice))
 
 static inline int safe_truncate(const char *file, const int lineno,
                                 const char *path, off_t length)
