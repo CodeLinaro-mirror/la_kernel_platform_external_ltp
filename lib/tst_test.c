@@ -14,6 +14,7 @@
 #include <sys/mount.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <math.h>
 
 #define TST_NO_DEFAULT_MAIN
 #include "tst_test.h"
@@ -677,15 +678,13 @@ static void parse_opts(int argc, char *argv[])
 			print_test_tags();
 			exit(0);
 		case 'i':
-			iterations = atoi(optarg);
-			if (iterations < 0)
-				tst_brk(TBROK, "Number of iterations (-i) must be >= 0");
+			iterations = SAFE_STRTOL(optarg, 1, INT_MAX);
 		break;
 		case 'I':
 			if (tst_test->max_runtime > 0)
-				tst_test->max_runtime = atoi(optarg);
+				tst_test->max_runtime = SAFE_STRTOL(optarg, 1, INT_MAX);
 			else
-				duration = atof(optarg);
+				duration = SAFE_STRTOF(optarg, 0.1, HUGE_VALF);
 		break;
 		case 'C':
 #ifdef UCLINUX
@@ -1021,6 +1020,36 @@ static void prepare_and_mount_dev_fs(const char *mntpoint)
 	}
 }
 
+static void prepare_and_mount_hugetlb_fs(void)
+{
+	SAFE_MOUNT("none", tst_test->mntpoint, "hugetlbfs", 0, NULL);
+	mntpoint_mounted = 1;
+}
+
+int tst_creat_unlinked(const char *path, int flags)
+{
+	char template[PATH_MAX];
+	int len, c, range;
+	int fd;
+	int start[3] = {'0', 'a', 'A'};
+
+	snprintf(template, PATH_MAX, "%s/ltp_%.3sXXXXXX",
+			path, tid);
+
+	len = strlen(template) - 1;
+	while (template[len] == 'X') {
+		c = rand() % 3;
+		range = start[c] == '0' ? 10 : 26;
+		c = start[c] + (rand() % range);
+		template[len--] = (char)c;
+	}
+
+	flags |= O_CREAT|O_EXCL|O_RDWR;
+	fd = SAFE_OPEN(template, flags);
+	SAFE_UNLINK(template);
+	return fd;
+}
+
 static const char *limit_tmpfs_mount_size(const char *mnt_data,
 		char *buf, size_t buf_size, const char *fs_type)
 {
@@ -1181,8 +1210,7 @@ static void do_setup(int argc, char *argv[])
 		const struct tst_path_val *pvl = tst_test->save_restore;
 
 		while (pvl->path) {
-			if (!tst_sys_conf_save(pvl->path))
-				tst_sys_conf_set(pvl->path, pvl->val);
+			tst_sys_conf_save(pvl);
 			pvl++;
 		}
 	}
@@ -1191,15 +1219,16 @@ static void do_setup(int argc, char *argv[])
 		SAFE_MKDIR(tst_test->mntpoint, 0777);
 
 	if ((tst_test->needs_devfs || tst_test->needs_rofs ||
-	     tst_test->mount_device || tst_test->all_filesystems) &&
+	     tst_test->mount_device || tst_test->all_filesystems ||
+		 tst_test->needs_hugetlbfs) &&
 	     !tst_test->mntpoint) {
 		tst_brk(TBROK, "tst_test->mntpoint must be set!");
 	}
 
 	if (!!tst_test->needs_rofs + !!tst_test->needs_devfs +
-	    !!tst_test->needs_device > 1) {
+	    !!tst_test->needs_device + !!tst_test->needs_hugetlbfs > 1) {
 		tst_brk(TBROK,
-			"Two or more of needs_{rofs, devfs, device} are set");
+			"Two or more of needs_{rofs, devfs, device, hugetlbfs} are set");
 	}
 
 	if (tst_test->needs_devfs)
@@ -1216,6 +1245,9 @@ static void do_setup(int argc, char *argv[])
 			tst_test->format_device = 1;
 		}
 	}
+
+	if (tst_test->needs_hugetlbfs)
+		prepare_and_mount_hugetlb_fs();
 
 	if (tst_test->needs_device && !mntpoint_mounted) {
 		tdev.dev = tst_acquire_device_(NULL, tst_test->dev_min_size);
@@ -1542,6 +1574,7 @@ static int fork_testrun(void)
 	int status;
 
 	SAFE_SIGNAL(SIGINT, sigint_handler);
+	SAFE_SIGNAL(SIGTERM, sigint_handler);
 
 	alarm(results->timeout);
 
@@ -1553,6 +1586,7 @@ static int fork_testrun(void)
 		tst_disable_oom_protection(0);
 		SAFE_SIGNAL(SIGALRM, SIG_DFL);
 		SAFE_SIGNAL(SIGUSR1, SIG_DFL);
+		SAFE_SIGNAL(SIGTERM, SIG_DFL);
 		SAFE_SIGNAL(SIGINT, SIG_DFL);
 		SAFE_SETPGID(0, 0);
 		testrun();
@@ -1560,6 +1594,7 @@ static int fork_testrun(void)
 
 	SAFE_WAITPID(test_pid, &status, 0);
 	alarm(0);
+	SAFE_SIGNAL(SIGTERM, SIG_DFL);
 	SAFE_SIGNAL(SIGINT, SIG_DFL);
 
 	if (tst_test->taint_check && tst_taint_check()) {
