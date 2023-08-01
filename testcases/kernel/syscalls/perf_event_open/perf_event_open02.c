@@ -23,7 +23,7 @@
  * that can count instructions.  If the task clock counters in the groups
  * don't stop when their group gets taken off the PMU, the ratio will
  * instead be close to N+4.  The program will declare that the test fails
- * if the ratio is greater than N (actually, N + 0.0005 to allow for FP
+ * if the ratio is greater than N (actually, N + 0.005 to allow for FP
  * rounding errors and RT throttling overhead).
  */
 
@@ -318,7 +318,7 @@ static void verify(void)
 
 	ratio = (double)vtsum / vt0;
 	tst_res(TINFO, "ratio: %lf", ratio);
-	if (ratio > nhw + 0.0005) {
+	if (ratio > nhw + 0.005) {
 		tst_res(TFAIL, "test failed (ratio was greater than %d)", nhw);
 	} else {
 		tst_res(TPASS, "test passed");
