@@ -15,6 +15,11 @@
 #include "tst_timer_test.h"
 
 #define MAX_SAMPLES 500
+#if defined (__arm__) || defined(__aarch64__)
+#define BASE_THRESHOLD 500
+#else
+#define BASE_THRESHOLD 400
+#endif
 
 static const char *scall;
 static void (*setup)(void);
@@ -166,8 +171,10 @@ static int cmp(const void *a, const void *b)
 /*
  * The threshold per one syscall is computed as a sum of:
  *
- *  400 us                 - accomodates for context switches, process
- *                           migrations between CPUs on SMP, etc.
+ *  400 or 500 us          - accomodates for context switches, process
+ *                           migrations between CPUs on SMP, etc.  Increase to
+ *                           500 on arm/arm64 to allow for increased little CPU
+ *                           scheduling
  *  2*monotonic_resolution - accomodates for granurality of the CLOCK_MONOTONIC
  *  slack_per_scall        - max of 0.1% of the sleep capped on 100ms or
  *                           current->timer_slack_ns, which is slack allowed
@@ -188,7 +195,7 @@ static long long compute_threshold(long long requested_us,
 
 	slack_per_scall = MAX(slack_per_scall, timerslack);
 
-	return (400 + 2 * monotonic_resolution + slack_per_scall) * nsamples
+	return (BASE_THRESHOLD + 2 * monotonic_resolution + slack_per_scall) * nsamples
 		+ 3000/nsamples;
 }
 
