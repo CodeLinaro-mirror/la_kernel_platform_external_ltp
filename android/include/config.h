@@ -63,6 +63,9 @@
 /* Define to 1 if you have the `epoll_pwait' function. */
 #define HAVE_EPOLL_PWAIT 1
 
+/* Define to 1 if you have the `epoll_pwait2' function. */
+#define HAVE_EPOLL_PWAIT2 1
+
 /* Define to 1 if you have the `execveat' function. */
 /* #undef HAVE_EXECVEAT */
 
