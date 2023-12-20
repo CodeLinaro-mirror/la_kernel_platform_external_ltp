@@ -114,6 +114,9 @@
 /* Define to 1 if you have `io_set_eventfd' function. */
 /* #undef HAVE_IO_SET_EVENTFD */
 
+/* Define to 1 if you have the <linux/ioprio.h> header file. */
+#define HAVE_LINUX_IOPRIO_H 1
+
 /* Define to 1 if you have the `kcmp' function. */
 /* #undef HAVE_KCMP */
 

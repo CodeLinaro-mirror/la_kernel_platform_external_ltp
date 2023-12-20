@@ -134,21 +134,20 @@ def show_diff(ltp_tests_1, ltp_tests_2):
         ltp_tests_1: dictionary of tests keyed by test suite names
         ltp_tests_2: dictionary of tests keyed by test suite names
     '''
-    DEFAULT_WIDTH = 8
-    test_suites1 = set(sorted(ltp_tests_1.keys()))
-    test_suites2 = set(sorted(ltp_tests_2.keys()))
+    test_suites1 = set(ltp_tests_1.keys())
+    test_suites2 = set(ltp_tests_2.keys())
 
     # Generate lists of deleted, added and common test suites between
     # LTP1 & LTP2
     deleted_test_suites = sorted(test_suites1.difference(test_suites2))
     added_test_suites = sorted(test_suites2.difference(test_suites1))
-    common_test_suites = sorted(test_suites1.intersection(test_suites2))
+    common_test_suites = test_suites1.intersection(test_suites2)
 
     deleted_tests = []
     added_tests = []
     for suite in common_test_suites:
-        tests1 = set(sorted(ltp_tests_1[suite]))
-        tests2 = set(sorted(ltp_tests_2[suite]))
+        tests1 = set(ltp_tests_1[suite])
+        tests2 = set(ltp_tests_2[suite])
 
         exclusive_test1 = tests1.difference(tests2)
         exclusive_test2 = tests2.difference(tests1)
@@ -156,7 +155,13 @@ def show_diff(ltp_tests_1, ltp_tests_2):
             deleted_tests.append(suite + '.' + e)
         for e in exclusive_test2:
             added_tests.append(suite + '.' + e)
+    deleted_tests = sorted(deleted_tests)
+    added_tests = sorted(added_tests)
+    print_columns(added_test_suites, deleted_test_suites, added_tests, deleted_tests)
 
+
+def print_columns(added_test_suites, deleted_test_suites, added_tests, deleted_tests):
+    DEFAULT_WIDTH = 8
     # find the maximum width of a test suite name or test name
     # we have to print to decide the alignment.
     if not deleted_test_suites:
@@ -172,26 +177,26 @@ def show_diff(ltp_tests_1, ltp_tests_2):
 
     # total rows we have to print
     total_rows = max(len(deleted_test_suites), len(added_test_suites))
-    deleted_text = 'Deleted ({})'.format(len(deleted_test_suites))
     added_text = 'Added ({})'.format(len(added_test_suites))
+    deleted_text = 'Deleted ({})'.format(len(deleted_test_suites))
     if total_rows > 0:
         print('{:*^{len}}'.format(' Tests Suites ', len=width*2+2))
-        print('{:>{len}} {:>{len}}'.format(deleted_text, added_text, len=width))
+        print('{:<{len}} {:<{len}}'.format(added_text, deleted_text, len=width))
         for i in range(total_rows):
-            print('{:>{len}} {:>{len}}'.format('' if i >= len(deleted_test_suites) else str(deleted_test_suites[i]),
-                                 '' if i >= len(added_test_suites) else str(added_test_suites[i]), len=width))
+            print('{:<{len}} {:<{len}}'.format('' if i >= len(added_test_suites) else str(added_test_suites[i]),
+                                 '' if i >= len(deleted_test_suites) else str(deleted_test_suites[i]), len=width))
 
     print('')
     # total rows we have to print
     total_rows = max(len(deleted_tests), len(added_tests))
-    deleted_text = 'Deleted ({})'.format(len(deleted_tests))
     added_text = 'Added ({})'.format(len(added_tests))
+    deleted_text = 'Deleted ({})'.format(len(deleted_tests))
     if total_rows:
         print('{:*^{len}}'.format(' Tests ', len=width*2+2))
-        print('{:>{len}} {:>{len}}'.format(deleted_text, added_text, len=width))
+        print('{:^{len}} {:^{len}}'.format(added_text, deleted_text, len=width))
         for i in range(total_rows):
-            print('{:>{len}} {:>{len}}'.format('' if i >= len(deleted_tests) else str(deleted_tests[i]),
-                                 '' if i >= len(added_tests) else str(added_tests[i]), len=width))
+            print('{:<{len}} {:<{len}}'.format('' if i >= len(added_tests) else str(added_tests[i]),
+                                 '' if i >= len(deleted_tests) else str(deleted_tests[i]), len=width))
 def main():
     arg_parser = argparse.ArgumentParser(
         description='Diff 2 LTP projects for supported test cases')

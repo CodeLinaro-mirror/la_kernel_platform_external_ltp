@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 #
 # Copyright 2016 - The Android Open Source Project
 #
@@ -23,6 +24,7 @@ import fileinput
 import pprint
 
 AR = 'ar'
+AS = 'as'
 CC = 'gcc'
 
 class MakeParser(object):
@@ -31,6 +33,7 @@ class MakeParser(object):
     Attributes:
         ltp_root: string, LTP root directory
         ar_parser: archive (ar) command argument parser
+        as_parser: assembly (as) command argument parser
         cc_parser: gcc command argument parser
         result: list of string, result string buffer
         dir_stack: list of string, directory stack for parsing make commands
@@ -42,6 +45,11 @@ class MakeParser(object):
         ar_parser.add_argument('-r', dest='r', action='store_true')
         ar_parser.add_argument('-c', dest='c', action='store')
         self.ar_parser = ar_parser
+
+        as_parser = argparse.ArgumentParser()
+        as_parser.add_argument('-c', dest='compile', action='store_true')
+        as_parser.add_argument('-o', dest='target', action='store')
+        self.as_parser = as_parser
 
         cc_parser = argparse.ArgumentParser()
         cc_parser.add_argument('-D', dest='defines', action='append')
@@ -78,10 +86,10 @@ class MakeParser(object):
         return [self.GetRelativePath(i) for i in paths if i[-1] in extensions]
 
     def ParseAr(self, line):
-        '''Parse a archive command line.
+        '''Parse an archive command line.
 
         Args:
-            line: string, a line of ar command to parse
+            line: string, a line of as command to parse
         '''
         args, unparsed = self.ar_parser.parse_known_args(line.split()[1:])
 
@@ -104,6 +112,24 @@ class MakeParser(object):
         assert target != None
 
         self.result.append("ar['%s'] = %s" % (target, sources))
+
+    def ParseAs(self, line):
+        '''Parse an assembly command line.
+
+        Args:
+            line: string, a line of as command to parse
+        '''
+        args, unparsed = self.as_parser.parse_known_args(line.split()[1:])
+
+        sources = self.GetRelativePathForExtensions(unparsed, ['S'])
+
+        assert len(sources) > 0
+        target = self.GetRelativePath(args.target)
+
+        if args.compile:
+            self.result.append("cc_compile['%s'] = %s" % (target, sources))
+        else:
+            raise Exception("Unparsed assembly line: %s" % line)
 
     def ParseCc(self, line):
         '''Parse a gcc command line.
@@ -179,6 +205,8 @@ class MakeParser(object):
                     self.dir_stack.pop()
                 elif line.startswith(AR):
                     self.ParseAr(line)
+                elif line.startswith(AS):
+                    self.ParseAs(line)
                 elif line.startswith(CC):
                     self.ParseCc(line)
 

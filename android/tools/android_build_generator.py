@@ -363,6 +363,8 @@ class BuildGenerator(object):
                 # some targets may have a mix of .c and .o files in srcs
                 # find the .c files to build those .o from cc_compile targets
                 if i.endswith('.o'):
+                    if i not in cc_compile:
+                        raise Exception("Not found: %s when trying to compile target %s" % (i, target))
                     local_src_files.extend(cc_compile[i])
                 else:
                     local_src_files.append(i)
