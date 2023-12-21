@@ -97,6 +97,15 @@ genrule {
     out: ["lapi/syscalls.h"],
 }
 
+genrule {
+    name: "ltp_version_h",
+    srcs: [
+        "VERSION",
+    ],
+    cmd: "echo \"#define LTP_VERSION \\\"$$(cat $(in))\\\"\" > $(out)",
+    out: ["ltp-version.h"],
+}
+
 cc_defaults {
     name: "ltp_defaults",
 
@@ -153,7 +162,10 @@ cc_defaults {
         },
     },
 
-    generated_headers: ["ltp_syscalls_h"],
+    generated_headers: [
+        "ltp_syscalls_h",
+        "ltp_version_h",
+    ],
 
     static_libs: ["libcap"],
 

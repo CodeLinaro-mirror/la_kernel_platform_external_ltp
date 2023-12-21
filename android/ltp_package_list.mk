@@ -90,6 +90,7 @@ ltp_packages := \
   ltp_cfs_bandwidth01 \
   ltp_cgroup_core01 \
   ltp_cgroup_core02 \
+  ltp_cgroup_core03 \
   ltp_cgroup_fj_proc \
   ltp_cgroup_regression_fork_processes \
   ltp_cgroup_regression_getdelays \
@@ -140,6 +141,7 @@ ltp_packages := \
   ltp_clone09 \
   ltp_clone301 \
   ltp_clone302 \
+  ltp_clone303 \
   ltp_close01 \
   ltp_close02 \
   ltp_close_range01 \
@@ -256,8 +258,16 @@ ltp_packages := \
   ltp_epoll_wait02 \
   ltp_epoll_wait03 \
   ltp_epoll_wait04 \
+  ltp_epoll_wait05 \
+  ltp_epoll_wait06 \
+  ltp_epoll_wait07 \
   ltp_event_generator \
   ltp_eventfd01 \
+  ltp_eventfd02 \
+  ltp_eventfd03 \
+  ltp_eventfd04 \
+  ltp_eventfd05 \
+  ltp_eventfd06 \
   ltp_eventfd2_01 \
   ltp_eventfd2_02 \
   ltp_eventfd2_03 \
@@ -294,6 +304,9 @@ ltp_packages := \
   ltp_f2 \
   ltp_f3 \
   ltp_faccessat01 \
+  ltp_faccessat02 \
+  ltp_faccessat201 \
+  ltp_faccessat202 \
   ltp_fallocate01 \
   ltp_fallocate02 \
   ltp_fallocate03 \
@@ -357,8 +370,6 @@ ltp_packages := \
   ltp_fcntl04_64 \
   ltp_fcntl05 \
   ltp_fcntl05_64 \
-  ltp_fcntl06 \
-  ltp_fcntl06_64 \
   ltp_fcntl07 \
   ltp_fcntl07_64 \
   ltp_fcntl08 \
@@ -470,6 +481,7 @@ ltp_packages := \
   ltp_fs_perms \
   ltp_fsconfig01 \
   ltp_fsconfig02 \
+  ltp_fsconfig03 \
   ltp_fsetxattr01 \
   ltp_fsetxattr02 \
   ltp_fsmount01 \
@@ -675,6 +687,7 @@ ltp_packages := \
   ltp_hugemmap29 \
   ltp_hugemmap30 \
   ltp_hugemmap31 \
+  ltp_hugemmap32 \
   ltp_icmp_rate_limit01 \
   ltp_ima_boot_aggregate \
   ltp_ima_mmap \
@@ -829,6 +842,7 @@ ltp_packages := \
   ltp_madvise08 \
   ltp_madvise09 \
   ltp_madvise10 \
+  ltp_madvise11 \
   ltp_mallinfo01 \
   ltp_mallinfo02 \
   ltp_mallinfo2_01 \
@@ -907,7 +921,6 @@ ltp_packages := \
   ltp_mmap04 \
   ltp_mmap05 \
   ltp_mmap06 \
-  ltp_mmap07 \
   ltp_mmap08 \
   ltp_mmap09 \
   ltp_mmap1 \
@@ -922,6 +935,7 @@ ltp_packages := \
   ltp_mmap18 \
   ltp_mmap19 \
   ltp_mmap2 \
+  ltp_mmap20 \
   ltp_mmap3 \
   ltp_mmapstress01 \
   ltp_mmapstress02 \
@@ -945,6 +959,7 @@ ltp_packages := \
   ltp_mount04 \
   ltp_mount05 \
   ltp_mount06 \
+  ltp_mount07 \
   ltp_mount_setattr01 \
   ltp_move_mount01 \
   ltp_move_mount02 \
@@ -963,10 +978,12 @@ ltp_packages := \
   ltp_mprotect02 \
   ltp_mprotect03 \
   ltp_mprotect04 \
+  ltp_mprotect05 \
   ltp_mremap01 \
   ltp_mremap02 \
   ltp_mremap03 \
   ltp_mremap05 \
+  ltp_mremap06 \
   ltp_msgget05 \
   ltp_msync01 \
   ltp_msync02 \
@@ -985,7 +1002,6 @@ ltp_packages := \
   ltp_nanosleep02 \
   ltp_nanosleep04 \
   ltp_netstress \
-  ltp_newns \
   ltp_newuname01 \
   ltp_nextafter01 \
   ltp_nfs01_open_files \
@@ -1079,6 +1095,7 @@ ltp_packages := \
   ltp_pipe11 \
   ltp_pipe12 \
   ltp_pipe13 \
+  ltp_pipe14 \
   ltp_pipe2_01 \
   ltp_pipe2_02 \
   ltp_pipe2_02_child \
@@ -1126,6 +1143,7 @@ ltp_packages := \
   ltp_preadv203_64 \
   ltp_print_caps \
   ltp_proc01 \
+  ltp_process_madvise01 \
   ltp_process_vm01 \
   ltp_process_vm_readv02 \
   ltp_process_vm_readv03 \
@@ -1359,8 +1377,6 @@ ltp_packages := \
   ltp_setgroups02_16 \
   ltp_setgroups03 \
   ltp_setgroups03_16 \
-  ltp_setgroups04 \
-  ltp_setgroups04_16 \
   ltp_sethostname01 \
   ltp_sethostname02 \
   ltp_sethostname03 \
@@ -1484,6 +1500,7 @@ ltp_packages := \
   ltp_ssetmask01 \
   ltp_stack_clash \
   ltp_stack_space \
+  ltp_starvation \
   ltp_stat01 \
   ltp_stat01_64 \
   ltp_stat02 \
@@ -1505,6 +1522,9 @@ ltp_packages := \
   ltp_statx06 \
   ltp_statx08 \
   ltp_statx09 \
+  ltp_statx10 \
+  ltp_statx11 \
+  ltp_statx12 \
   ltp_stream01 \
   ltp_stream02 \
   ltp_stream03 \
@@ -1547,6 +1567,7 @@ ltp_packages := \
   ltp_syslog11 \
   ltp_syslog12 \
   ltp_tbio \
+  ltp_tcindex01 \
   ltp_tee01 \
   ltp_tee02 \
   ltp_test01 \
@@ -1957,6 +1978,7 @@ ltp_packages := \
   ltp_testcases_bin_nfs05.sh \
   ltp_testcases_bin_nfs06.sh \
   ltp_testcases_bin_nfs07.sh \
+  ltp_testcases_bin_nfs08.sh \
   ltp_testcases_bin_nfs_lib.sh \
   ltp_testcases_bin_nfslock01.sh \
   ltp_testcases_bin_nfsstat01.sh \
@@ -2352,7 +2374,6 @@ ltp_packages := \
   ltp_testcases_bin_test_controllers.sh \
   ltp_testcases_bin_test_ioctl \
   ltp_testcases_bin_test_robind.sh \
-  ltp_testcases_bin_testall.sh \
   ltp_testcases_bin_tracepath01.sh \
   ltp_testcases_bin_traceroute01.sh \
   ltp_testcases_bin_tst_ansi_color.sh \
@@ -2448,9 +2469,7 @@ ltp_packages := \
   ltp_testcases_data_file01_in.ar \
   ltp_testcases_data_file01_in.bash \
   ltp_testcases_data_file01_in.c \
-  ltp_testcases_data_file01_in.csh \
   ltp_testcases_data_file01_in.jpg \
-  ltp_testcases_data_file01_in.ksh \
   ltp_testcases_data_file01_in.m4 \
   ltp_testcases_data_file01_in.mp3 \
   ltp_testcases_data_file01_in.pl \
@@ -2519,14 +2538,6 @@ ltp_packages := \
   ltp_times03 \
   ltp_tkill01 \
   ltp_tkill02 \
-  ltp_tomoyo_accept_test \
-  ltp_tomoyo_file_test \
-  ltp_tomoyo_filesystem_test \
-  ltp_tomoyo_new_file_test \
-  ltp_tomoyo_new_test \
-  ltp_tomoyo_policy_io_test \
-  ltp_tomoyo_policy_memory_test \
-  ltp_tomoyo_rewrite_test \
   ltp_tpci \
   ltp_trace_sched \
   ltp_trerrno \
@@ -2557,6 +2568,7 @@ ltp_packages := \
   ltp_tst_fs_fill_hardlinks \
   ltp_tst_fs_fill_subdirs \
   ltp_tst_fs_has_free \
+  ltp_tst_fsfreeze \
   ltp_tst_fuzzy_sync01 \
   ltp_tst_fuzzy_sync02 \
   ltp_tst_fuzzy_sync03 \
@@ -2566,6 +2578,7 @@ ltp_packages := \
   ltp_tst_getconf \
   ltp_tst_hexdump \
   ltp_tst_kvcmp \
+  ltp_tst_lockdown_enabled \
   ltp_tst_ncpus \
   ltp_tst_ncpus_conf \
   ltp_tst_ncpus_max \
@@ -2580,6 +2593,9 @@ ltp_packages := \
   ltp_tst_net_iface_prefix \
   ltp_tst_net_ip_prefix \
   ltp_tst_net_vars \
+  ltp_tst_ns_create \
+  ltp_tst_ns_exec \
+  ltp_tst_ns_ifmove \
   ltp_tst_print_result \
   ltp_tst_process_state \
   ltp_tst_random \
@@ -2590,6 +2606,7 @@ ltp_packages := \
   ltp_tst_rod \
   ltp_tst_safe_fileops \
   ltp_tst_safe_macros \
+  ltp_tst_secureboot_enabled \
   ltp_tst_sleep \
   ltp_tst_strerrno \
   ltp_tst_strsig \
@@ -2628,6 +2645,10 @@ ltp_packages := \
   ltp_utime06 \
   ltp_utimensat01 \
   ltp_utimes01 \
+  ltp_utsname01 \
+  ltp_utsname02 \
+  ltp_utsname03 \
+  ltp_utsname04 \
   ltp_variant \
   ltp_verify_caps_exec \
   ltp_vfork \
