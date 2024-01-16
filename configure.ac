@@ -10,7 +10,6 @@ AC_CONFIG_FILES([ \
     include/mk/features.mk \
     lib/ltp.pc \
     m4/Makefile \
-    execltp \
 ])
 
 AC_ARG_VAR(HOSTCC, [The C compiler on the host])
@@ -57,6 +56,7 @@ AC_CHECK_HEADERS_ONCE([ \
     linux/if_ether.h \
     linux/if_packet.h \
     linux/io_uring.h \
+    linux/ioprio.h \
     linux/keyctl.h \
     linux/mempolicy.h \
     linux/module.h \
@@ -93,6 +93,7 @@ AC_CHECK_FUNCS_ONCE([ \
     epoll_pwait \
     epoll_pwait2 \
     execveat \
+    faccessat2 \
     fallocate \
     fchownat \
     fsconfig \
@@ -160,7 +161,7 @@ AC_CHECK_FUNCS(mkdtemp,[],AC_MSG_ERROR(mkdtemp() not found!))
 AC_CHECK_MEMBERS([struct fanotify_event_info_fid.fsid.__val],,,[#include <sys/fanotify.h>])
 AC_CHECK_MEMBERS([struct perf_event_mmap_page.aux_head],,,[#include <linux/perf_event.h>])
 AC_CHECK_MEMBERS([struct sigaction.sa_sigaction],[],[],[#include <signal.h>])
-AC_CHECK_MEMBERS([struct statx.stx_mnt_id],,,[
+AC_CHECK_MEMBERS([struct statx.stx_mnt_id, struct statx.stx_dio_mem_align],,,[
 #define _GNU_SOURCE
 #include <sys/stat.h>
 ])
@@ -236,10 +237,10 @@ AC_CHECK_TYPES([struct __kernel_old_timeval, struct __kernel_old_timespec, struc
 
 AC_CHECK_TYPES([struct futex_waitv],,,[#include <linux/futex.h>])
 AC_CHECK_TYPES([struct mount_attr],,,[
-#ifdef HAVE_LINUX_MOUNT_H
-# include <linux/mount.h>
-#else
+#ifdef HAVE_MOUNT_SETATTR
 # include <sys/mount.h>
+#elif HAVE_LINUX_MOUNT_H
+# include <linux/mount.h>
 #endif
 ])
 

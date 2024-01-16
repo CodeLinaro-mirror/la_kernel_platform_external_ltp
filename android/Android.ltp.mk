@@ -81,16 +81,8 @@ module_prebuilt := testcases/data/file01/in.c
 module_src_files := testcases/commands/file/datafiles/in.c
 include $(ltp_build_prebuilt)
 
-module_prebuilt := testcases/data/file01/in.csh
-module_src_files := testcases/commands/file/datafiles/in.csh
-include $(ltp_build_prebuilt)
-
 module_prebuilt := testcases/data/file01/in.jpg
 module_src_files := testcases/commands/file/datafiles/in.jpg
-include $(ltp_build_prebuilt)
-
-module_prebuilt := testcases/data/file01/in.ksh
-module_src_files := testcases/commands/file/datafiles/in.ksh
 include $(ltp_build_prebuilt)
 
 module_prebuilt := testcases/data/file01/in.m4

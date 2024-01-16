@@ -258,6 +258,12 @@ periodically running:
 
 `git clean -dfx && make autotools && ./configure && make -j`
 
+Commit the LTP version string
+```
+git describe <release commit> > VERSION
+git add VERSION
+```
+
 ### Update the Android build targets
 
 Building LTP with the Android build system requires the additional Android
