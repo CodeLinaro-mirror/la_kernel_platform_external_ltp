@@ -24,13 +24,30 @@
 #include <linux/pkt_sched.h>
 #include <linux/pkt_cls.h>
 #include "tst_test.h"
-#include "tst_rtnetlink.h"
+#include "tst_netlink.h"
 #include "tst_netdevice.h"
 #include "lapi/sched.h"
 #include "lapi/if_ether.h"
 #include "lapi/rtnetlink.h"
 
 #define DEVNAME "ltp_dummy1"
+
+#ifndef TCA_TCINDEX_MAX
+enum {
+       TCA_TCINDEX_UNSPEC,
+       TCA_TCINDEX_HASH,
+       TCA_TCINDEX_MASK,
+       TCA_TCINDEX_SHIFT,
+       TCA_TCINDEX_FALL_THROUGH,
+       TCA_TCINDEX_CLASSID,
+       TCA_TCINDEX_POLICE,
+       TCA_TCINDEX_ACT,
+       __TCA_TCINDEX_MAX
+};
+
+#define TCA_TCINDEX_MAX     (__TCA_TCINDEX_MAX - 1)
+#endif
+
 
 static const uint32_t qd_handle = TC_H_MAKE(1 << 16, 0);
 static const uint32_t clsid = TC_H_MAKE(1 << 16, 1);
@@ -46,15 +63,15 @@ static const struct tc_htb_glob qd_opt = {
 static struct tc_htb_opt cls_opt = {};
 
 /* htb qdisc and class options */
-static const struct tst_rtnl_attr_list qd_config[] = {
-	{TCA_OPTIONS, NULL, 0, (const struct tst_rtnl_attr_list[]){
+static const struct tst_netlink_attr_list qd_config[] = {
+	{TCA_OPTIONS, NULL, 0, (const struct tst_netlink_attr_list[]){
 		{TCA_HTB_INIT, &qd_opt, sizeof(qd_opt), NULL},
 		{0, NULL, -1, NULL}
 	}},
 	{0, NULL, -1, NULL}
 };
-static const struct tst_rtnl_attr_list cls_config[] = {
-	{TCA_OPTIONS, NULL, 0, (const struct tst_rtnl_attr_list[]){
+static const struct tst_netlink_attr_list cls_config[] = {
+	{TCA_OPTIONS, NULL, 0, (const struct tst_netlink_attr_list[]){
 		{TCA_HTB_PARMS, &cls_opt, sizeof(cls_opt), NULL},
 		{0, NULL, -1, NULL}
 	}},
@@ -62,8 +79,8 @@ static const struct tst_rtnl_attr_list cls_config[] = {
 };
 
 /* tcindex filter options */
-static const struct tst_rtnl_attr_list f_config[] = {
-	{TCA_OPTIONS, NULL, 0, (const struct tst_rtnl_attr_list[]){
+static const struct tst_netlink_attr_list f_config[] = {
+	{TCA_OPTIONS, NULL, 0, (const struct tst_netlink_attr_list[]){
 		{TCA_TCINDEX_MASK, &mask, sizeof(mask), NULL},
 		{TCA_TCINDEX_SHIFT, &shift, sizeof(shift), NULL},
 		{TCA_TCINDEX_CLASSID, &clsid, sizeof(clsid), NULL},
@@ -95,7 +112,7 @@ static void run(void)
 		1, "tcindex");
 	ret = tst_netdev_add_traffic_filter(__FILE__, __LINE__, 0, DEVNAME,
 		qd_handle, 10, ETH_P_IP, 1, "tcindex", f_config);
-	TST_ERR = tst_rtnl_errno;
+	TST_ERR = tst_netlink_errno;
 	NETDEV_REMOVE_QDISC(DEVNAME, AF_UNSPEC, TC_H_ROOT, qd_handle, "htb");
 
 	if (ret)
@@ -127,6 +144,10 @@ static struct tst_test test = {
 	.save_restore = (const struct tst_path_val[]) {
 		{"/proc/sys/user/max_user_namespaces", "1024", TST_SR_SKIP},
 		{}
+	},
+	.needs_drivers = (const char *const []) {
+		"dummy",
+		NULL
 	},
 	.tags = (const struct tst_tag[]) {
 		{"linux-git", "8c710f75256b"},

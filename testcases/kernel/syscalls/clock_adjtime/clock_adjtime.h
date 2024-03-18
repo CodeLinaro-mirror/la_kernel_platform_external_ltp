@@ -251,4 +251,5 @@ TIMEX_GET_SET_FIELD_TYPE(uint, uint);
 TIMEX_GET_SET_FIELD_TYPE(long, long long);
 
 #undef TIMEX_GET_SET_FIELD_TYPE
-#endif
+
+#endif /* CLOCK_ADJTIME_H__ */
