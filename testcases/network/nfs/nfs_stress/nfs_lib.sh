@@ -4,9 +4,9 @@
 # Copyright (c) 2015-2018 Oracle and/or its affiliates. All Rights Reserved.
 # Copyright (c) International Business Machines  Corp., 2001
 
-VERSION=${VERSION:=3}
+VERSION=${VERSION:=4.2}
 NFILES=${NFILES:=1000}
-SOCKET_TYPE="${SOCKET_TYPE:-udp}"
+SOCKET_TYPE="${SOCKET_TYPE:-tcp}"
 NFS_TYPE=${NFS_TYPE:=nfs}
 
 nfs_usage()
@@ -214,7 +214,7 @@ nfs_cleanup()
 		local_dir="$(get_local_dir $i $n)"
 		if grep -q "$local_dir" /proc/mounts; then
 			tst_res TINFO "Unmounting $local_dir"
-			umount $local_dir
+			umount $local_dir || tst_res TWARN "Unmount failed"
 		fi
 		n=$(( n + 1 ))
 	done
