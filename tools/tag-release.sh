@@ -1,17 +1,17 @@
-#!/bin/sh
+#!/bin/sh -eu
+# SPDX-License-Identifier: GPL-2.0-or-later
 # Copyright (c) 2023 Petr Vorel <pvorel@suse.cz>
 # Tag LTP release.
 # https://github.com/linux-test-project/ltp/wiki/LTP-Release-Procedure
-set -e
+
+basedir="$(dirname "$0")"
+cd "$basedir/.."
+. "$basedir/lib.sh"
 
 upstream_git="linux-test-project/ltp"
 tag="$(date +%Y%m%d)"
 old_tag="$(git describe --abbrev=0)"
 tag_msg="LTP $tag"
-
-. $(dirname "$0")/lib.sh
-
-cd $(dirname "$0")/..
 
 if ! git ls-remote --get-url origin | grep -q $upstream_git; then
 	quit "Not an upstream project"

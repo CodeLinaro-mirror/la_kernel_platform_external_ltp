@@ -18,6 +18,7 @@ ltp_packages := \
   ltp_abs01 \
   ltp_accept01 \
   ltp_accept02 \
+  ltp_accept03 \
   ltp_accept4_01 \
   ltp_access01 \
   ltp_access02 \
@@ -348,6 +349,7 @@ ltp_packages := \
   ltp_fchmod05 \
   ltp_fchmod06 \
   ltp_fchmodat01 \
+  ltp_fchmodat02 \
   ltp_fchown01 \
   ltp_fchown01_16 \
   ltp_fchown02 \
@@ -461,16 +463,14 @@ ltp_packages := \
   ltp_fork03 \
   ltp_fork04 \
   ltp_fork05 \
-  ltp_fork06 \
   ltp_fork07 \
   ltp_fork08 \
   ltp_fork09 \
   ltp_fork10 \
-  ltp_fork11 \
-  ltp_fork12 \
   ltp_fork13 \
   ltp_fork14 \
   ltp_fork_exec_loop \
+  ltp_fork_procs \
   ltp_fpathconf01 \
   ltp_fptest01 \
   ltp_fptest02 \
@@ -579,7 +579,6 @@ ltp_packages := \
   ltp_getdents01 \
   ltp_getdents02 \
   ltp_getdomainname01 \
-  ltp_getdtablesize01 \
   ltp_getegid01 \
   ltp_getegid01_16 \
   ltp_getegid02 \
@@ -640,6 +639,7 @@ ltp_packages := \
   ltp_getsockopt01 \
   ltp_getsockopt02 \
   ltp_gettid01 \
+  ltp_gettid02 \
   ltp_gettimeofday01 \
   ltp_gettimeofday02 \
   ltp_getuid01 \
@@ -794,6 +794,7 @@ ltp_packages := \
   ltp_ksm04 \
   ltp_ksm05 \
   ltp_ksm06 \
+  ltp_ksm07 \
   ltp_lchown01 \
   ltp_lchown01_16 \
   ltp_lchown02 \
@@ -805,7 +806,6 @@ ltp_packages := \
   ltp_lgetxattr01 \
   ltp_lgetxattr02 \
   ltp_link02 \
-  ltp_link03 \
   ltp_link04 \
   ltp_link05 \
   ltp_link08 \
@@ -1009,6 +1009,7 @@ ltp_packages := \
   ltp_nfs05_make_tree \
   ltp_nfs_flock \
   ltp_nfs_flock_dgen \
+  ltp_nft02 \
   ltp_nftw01 \
   ltp_nftw6401 \
   ltp_nice01 \
@@ -1061,6 +1062,7 @@ ltp_packages := \
   ltp_page01 \
   ltp_page02 \
   ltp_pathconf01 \
+  ltp_pathconf02 \
   ltp_pause01 \
   ltp_pause02 \
   ltp_pause03 \
@@ -1096,6 +1098,7 @@ ltp_packages := \
   ltp_pipe12 \
   ltp_pipe13 \
   ltp_pipe14 \
+  ltp_pipe15 \
   ltp_pipe2_01 \
   ltp_pipe2_02 \
   ltp_pipe2_02_child \
@@ -1143,6 +1146,7 @@ ltp_packages := \
   ltp_preadv203_64 \
   ltp_print_caps \
   ltp_proc01 \
+  ltp_proc_sched_rt01 \
   ltp_process_madvise01 \
   ltp_process_vm01 \
   ltp_process_vm_readv02 \
@@ -1166,6 +1170,7 @@ ltp_packages := \
   ltp_ptrace03 \
   ltp_ptrace04 \
   ltp_ptrace05 \
+  ltp_ptrace06 \
   ltp_ptrace07 \
   ltp_ptrace08 \
   ltp_ptrace09 \
@@ -1303,6 +1308,7 @@ ltp_packages := \
   ltp_sched_setscheduler01 \
   ltp_sched_setscheduler02 \
   ltp_sched_setscheduler03 \
+  ltp_sched_setscheduler04 \
   ltp_sched_tc0 \
   ltp_sched_tc1 \
   ltp_sched_tc2 \
@@ -1377,6 +1383,8 @@ ltp_packages := \
   ltp_setgroups02_16 \
   ltp_setgroups03 \
   ltp_setgroups03_16 \
+  ltp_setgroups04 \
+  ltp_setgroups04_16 \
   ltp_sethostname01 \
   ltp_sethostname02 \
   ltp_sethostname03 \
@@ -1447,6 +1455,7 @@ ltp_packages := \
   ltp_setsockopt07 \
   ltp_setsockopt08 \
   ltp_setsockopt09 \
+  ltp_setsockopt10 \
   ltp_settimeofday01 \
   ltp_settimeofday02 \
   ltp_setuid01 \
@@ -1497,6 +1506,8 @@ ltp_packages := \
   ltp_splice03 \
   ltp_splice04 \
   ltp_splice05 \
+  ltp_splice06 \
+  ltp_splice07 \
   ltp_ssetmask01 \
   ltp_stack_clash \
   ltp_stack_space \
@@ -1545,7 +1556,6 @@ ltp_packages := \
   ltp_symlink02 \
   ltp_symlink03 \
   ltp_symlink04 \
-  ltp_symlink05 \
   ltp_symlinkat01 \
   ltp_sync01 \
   ltp_sync_file_range01 \
@@ -1815,8 +1825,6 @@ ltp_packages := \
   ltp_testcases_bin_fs_racer_file_rm.sh \
   ltp_testcases_bin_fs_racer_file_symlink.sh \
   ltp_testcases_bin_fsx.sh \
-  ltp_testcases_bin_fsxtest \
-  ltp_testcases_bin_fsxtest02 \
   ltp_testcases_bin_ftp-download-stress.sh \
   ltp_testcases_bin_ftp-download-stress01-rmt.sh \
   ltp_testcases_bin_ftp-download-stress02-rmt.sh \
@@ -2528,7 +2536,6 @@ ltp_packages := \
   ltp_timer_settime03 \
   ltp_timerfd01 \
   ltp_timerfd02 \
-  ltp_timerfd03 \
   ltp_timerfd04 \
   ltp_timerfd_create01 \
   ltp_timerfd_gettime01 \
@@ -2601,6 +2608,7 @@ ltp_packages := \
   ltp_tst_random \
   ltp_tst_record_childstatus \
   ltp_tst_res \
+  ltp_tst_res_flags \
   ltp_tst_res_hexd \
   ltp_tst_resm \
   ltp_tst_rod \
