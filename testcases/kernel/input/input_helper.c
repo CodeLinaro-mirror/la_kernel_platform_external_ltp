@@ -41,7 +41,7 @@ static int try_open_device(void)
 	int ret, fd = -1;
 	unsigned int i;
 
-	for (i = 0; i < 100; i++) {
+	for (i = 0; i < 1024; i++) {
 		snprintf(path, sizeof(path), "/dev/input/event%i", i);
 
 		fd = open(path, O_RDONLY);
