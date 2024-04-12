@@ -20,15 +20,16 @@
 
 #define __GLIBC_PREREQ(a, b) 1
 
-#define DEV_BSIZE 512
+// TODO: remove after https://android-review.git.corp.google.com/c/platform/bionic/+/3034234
 #define NGROUPS NGROUPS_MAX
+// TODO: remove after https://android-review.git.corp.google.com/c/platform/bionic/+/3034152
+#define LINE_MAX _POSIX2_LINE_MAX
+// TODO: remove after https://android-review.git.corp.google.com/c/platform/bionic/+/3034233
 #define SHMLBA sysconf(_SC_PAGESIZE)
-#define SIGCLD SIGCHLD
-#define S_IREAD S_IRUSR
-#define S_IWRITE S_IWUSR
+
 #define _UTSNAME_DOMAIN_LENGTH SYS_NMLN
 #define _UTSNAME_LENGTH SYS_NMLN
-#define LINE_MAX _POSIX2_LINE_MAX
+
 /* Bionic doesn't support extended patterns and
  * as of LTP20180515, this only used by read_all.c
  * which is run from runtest/fs.
@@ -40,7 +41,6 @@
  */
 #define FNM_EXTMATCH 0
 
-enum __ptrace_request { ENUM_PTRACE_UNUSED };
 typedef unsigned long ulong;
 
 static inline void *valloc(size_t size)
@@ -65,10 +65,5 @@ static inline int getdtablesize(void)
 
 static inline void pthread_testcancel(void) { }
 static inline int pthread_cancel(pthread_t thread) { return 0; }
-static inline int pthread_yield(void)
-{
-    extern int sched_yield(void);
-    return sched_yield();
-}
 
 #endif /* __BIONIC_COMPAT_H */
