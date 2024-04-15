@@ -7,7 +7,6 @@
 
 #define _GNU_SOURCE
 #include <limits.h>
-#include <linux/icmp.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
@@ -20,12 +19,8 @@
 
 #define __GLIBC_PREREQ(a, b) 1
 
-// TODO: remove after https://android-review.git.corp.google.com/c/platform/bionic/+/3034234
-#define NGROUPS NGROUPS_MAX
 // TODO: remove after https://android-review.git.corp.google.com/c/platform/bionic/+/3034152
 #define LINE_MAX _POSIX2_LINE_MAX
-// TODO: remove after https://android-review.git.corp.google.com/c/platform/bionic/+/3034233
-#define SHMLBA sysconf(_SC_PAGESIZE)
 
 #define _UTSNAME_DOMAIN_LENGTH SYS_NMLN
 #define _UTSNAME_LENGTH SYS_NMLN
