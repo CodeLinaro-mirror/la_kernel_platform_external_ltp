@@ -20,6 +20,7 @@
 //     DEPENDING ON IT IN YOUR PROJECT. ***
 package {
     default_applicable_licenses: ["external_ltp_license"],
+    default_team: "trendy_team_android_kernel",
 }
 
 // Added automatically by a large-scale-change that took the approach of
@@ -74,7 +75,7 @@ genrule {
     name: "ltp_gen_bp_file",
     srcs: ["gen.bp"],
     out: ["android/tools/gen.bp"],
-    cmd: "cp $(in) $(out)"
+    cmd: "cp $(in) $(out)",
 }
 
 filegroup {
@@ -170,7 +171,10 @@ cc_defaults {
     static_libs: ["libcap"],
 
     // TODO: recover libaio when the external project created
-    shared_libs: ["libselinux", "libasyncio"],
+    shared_libs: [
+        "libselinux",
+        "libasyncio",
+    ],
 }
 
 cc_defaults {

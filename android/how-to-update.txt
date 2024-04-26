@@ -7,4 +7,4 @@ You'll need docker installed, so that a clean environment can be created.
         git clean -x -f -d
 (2) run the gen_android_build.sh script
         android/tools/gen_android_build.sh
-(3) commit changes to gen.bp, android/Android.ltp.mk, android/ltp_package_list.mk
+(3) commit changes to gen.bp, testcases/Android.bp, android/Android.bp
