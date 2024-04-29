@@ -25271,7 +25271,7 @@ cc_test {
     name: "ltp_tst_device",
     stem: "tst_device",
     defaults: ["ltp_test_defaults"],
-    srcs: ["lib/tests/tst_device.c"],
+    srcs: ["lib/newlib_tests/tst_device.c"],
     local_include_dirs: ["include/old"],
     static_libs: ["libltp_ltp"],
 }
@@ -26735,4 +26735,3 @@ cc_test {
     local_include_dirs: ["include/old"],
     static_libs: ["libltp_ltp"],
 }
-
