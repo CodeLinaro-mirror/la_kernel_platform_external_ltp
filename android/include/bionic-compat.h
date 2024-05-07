@@ -17,9 +17,6 @@
 #include <sys/utsname.h>
 #include <unistd.h>
 
-// TODO: remove after https://android-review.git.corp.google.com/c/platform/bionic/+/3034152
-#define LINE_MAX _POSIX2_LINE_MAX
-
 /* Bionic doesn't support extended patterns and
  * as of LTP20180515, this only used by read_all.c
  * which is run from runtest/fs.
