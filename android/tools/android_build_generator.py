@@ -42,7 +42,8 @@ class BuildGenerator(object):
 
     Attributes:
         _bp_result: directory of list of strings for blueprint file keyed by target name
-        _mk_result: directory of list of strings for makefile keyed by target name
+        _prebuilt_bp_result: directory of list of strings for blueprint keyed by target
+            name
         _custom_cflags: dict of string (module name) to lists of strings (cflags
             to add for said module)
         _unused_custom_cflags: set of strings; tracks the modules with custom
@@ -52,7 +53,7 @@ class BuildGenerator(object):
 
     def __init__(self, custom_cflags):
         self._bp_result = {}
-        self._mk_result = {}
+        self._prebuilt_bp_result = {}
         self._custom_cflags = custom_cflags
         self._unused_custom_cflags = set(custom_cflags)
         self._packages = []
@@ -247,25 +248,34 @@ class BuildGenerator(object):
 
         self._bp_result[module] = bp_result
 
-    def BuildPrebuilt(self, install_target, local_src_file):
-        '''Build a prebuild module.
+    def BuildPrebuiltBp(self, install_target, local_src_file):
+        '''Build a prebuild module for using Android.bp.
 
         Args:
             install_target: string
             local_src_file: string
         '''
         base_name = os.path.basename(install_target)
-        mk_result = []
-        mk_result.append('module_prebuilt := %s' % install_target)
-        mk_result.append('module_src_files := %s' % local_src_file)
+        # The original local_src_file is from external/ltp, but for bp the root
+        # will be external/ltp/testcases.
+        src = local_src_file.replace('testcases/', '', 1)
+        module = 'ltp_%s' % install_target.replace('/', '_')
         module_dir = os.path.dirname(install_target)
         module_stem = os.path.basename(install_target)
-        module = 'ltp_%s' % install_target.replace('/', '_')
-        self._packages.append(module)
 
-        mk_result.append('include $(ltp_build_prebuilt)')
-        mk_result.append('')
-        self._mk_result[base_name] = mk_result
+        bp_result = []
+        bp_result.append('sh_test {')
+        bp_result.append('    name: "%s",' % module)
+        bp_result.append('    src: "%s",' % src)
+        bp_result.append('    sub_dir: "ltp/%s",' % module_dir)
+        bp_result.append('    filename: "%s",' % module_stem)
+        bp_result.append('    compile_multilib: "both",')
+        bp_result.append('    auto_gen_config: false,')
+        bp_result.append('}')
+        bp_result.append('')
+
+        self._prebuilt_bp_result[base_name] = bp_result
+        self._packages.append(module)
 
     def HandleParsedRule(self, line, rules):
         '''Prepare parse rules.
@@ -456,7 +466,7 @@ class BuildGenerator(object):
             if target.startswith("testcases/bin/"):
                 self.BuildShellScript(target, local_src_files[0])
             else:
-                self.BuildPrebuilt(target, local_src_files[0])
+                self.BuildPrebuiltBp(target, local_src_files[0])
 
     def WriteAndroidBp(self, output_path):
         '''Write parse result to blueprint file.
@@ -470,28 +480,49 @@ class BuildGenerator(object):
                 f.write('\n')
             self._bp_result = {}
 
-    def WriteAndroidMk(self, output_path):
-        '''Write parse result to make file.
+    def WritePrebuiltAndroidBp(self, output_path):
+        '''Write parse result to blueprint file.
 
         Args:
             output_path: string
         '''
         with open(output_path, 'a') as f:
-            for k in sorted(self._mk_result.keys()):
-                f.write('\n'.join(self._mk_result[k]))
+            f.write('package {\n')
+            f.write('    default_applicable_licenses: ["external_ltp_license"],\n')
+            f.write('}\n\n')
+            for k in sorted(self._prebuilt_bp_result.keys()):
+                f.write('\n'.join(self._prebuilt_bp_result[k]))
                 f.write('\n')
-            self._mk_result = {}
+            self._prebuilt_bp_result = {}
 
-    def WritePackageList(self, output_path):
-        '''Write parse result to package list file.
+    def WriteLtpMainAndroidBp(self, output_path):
+        '''Write the blueprint file of ltp main module.
 
         Args:
             output_path: string
         '''
+        bp_result = []
+        bp_result.append('package {')
+        bp_result.append('    default_applicable_licenses: ["external_ltp_license"],')
+        bp_result.append('}')
+        bp_result.append('')
+        bp_result.append('sh_test {')
+        bp_result.append('    name: "ltp",')
+        bp_result.append('    src: "tools/disabled_tests.txt",')
+        bp_result.append('    sub_dir: "ltp",')
+        bp_result.append('    data: [":ltp_runtests"],')
+        bp_result.append('    filename_from_src: true,')
+        bp_result.append('    compile_multilib: "both",')
+        bp_result.append('    auto_gen_config: false,')
+        bp_result.append('    required: [')
+        for package in sorted(self._packages):
+            bp_result.append('        "%s",' % package)
+        bp_result.append('    ],')
+        bp_result.append('}')
+
         with open(output_path, 'a') as f:
-            f.write('ltp_packages := \\\n  ')
-            f.write(' \\\n  '.join(sorted(self._packages)))
-            self._packages = []
+            f.write('\n'.join(bp_result))
+            f.write('\n')
 
     def ParseAll(self, ltp_root):
         '''Parse outputs from both 'make' and 'make install'.
@@ -515,19 +546,20 @@ def main():
     parser.add_argument(
         '--ltp_root', dest='ltp_root', required=True, help='LTP root dir')
     parser.add_argument(
-        '--output_mk_path',
-        dest='output_mk_path',
+        '--output_prebuilt_ltp_testcase_bp_path',
+        dest='output_prebuilt_ltp_testcase_bp_path',
         required=True,
-        help='output makefile path')
+        help='output prebuilt test case blueprint path')
+    parser.add_argument(
+        '--output_ltp_main_bp_path',
+        dest='output_ltp_main_bp_path',
+        required=True,
+        help='output ltp main blueprint path')
     parser.add_argument(
         '--output_bp_path',
         dest='output_bp_path',
         required=True,
         help='output blueprint path')
-    parser.add_argument(
-        '--output_plist_path',
-        required=True,
-        help='output package list path')
     parser.add_argument(
         '--custom_cflags_file',
         dest='custom_cflags_file',
@@ -544,9 +576,9 @@ def main():
 
     generator = BuildGenerator(custom_cflags)
     generator.ParseAll(args.ltp_root)
-    generator.WriteAndroidMk(args.output_mk_path)
+    generator.WritePrebuiltAndroidBp(args.output_prebuilt_ltp_testcase_bp_path)
+    generator.WriteLtpMainAndroidBp(args.output_ltp_main_bp_path)
     generator.WriteAndroidBp(args.output_bp_path)
-    generator.WritePackageList(args.output_plist_path)
 
     unused_cflags_targs = generator.GetUnusedCustomCFlagsTargets()
     if unused_cflags_targs:
