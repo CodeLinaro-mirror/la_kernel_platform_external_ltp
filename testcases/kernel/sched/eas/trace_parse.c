@@ -263,6 +263,7 @@ static void *parse_event_data(unsigned int event_type, char *data)
  * Next letter is if NEED_RESCHED is set.
  * Next letter is if this is in hard or soft IRQ context.
  * Next letter is the preempt disable depth.
+ * Next letter is the migrate disable.
  * Next is some number of spaces.
  * Next twelve letters are the timestamp.
  * Next char is colon.
@@ -298,7 +299,6 @@ static int parse_trace_record(struct trace_record *tr, char *line) {
 		printf("%s", line);
 		return -1;
 	}
-	line[idx-1] = 0;
 	if (sscanf(&line[17], "%hd", &tr->pid) != 1) {
 		printf("Malformatted trace record, error parsing"
 		       "pid:\n");
@@ -319,7 +319,6 @@ static int parse_trace_record(struct trace_record *tr, char *line) {
 		printf("%s", line);
 		return -1;
 	}
-	line[idx] = 0;
 	idx++;
 	if (sscanf(&line[field_start], "[%hd]", &tr->cpu) != 1) {
 		printf("Malformatted trace record, error parsing CPU:\n");
@@ -362,13 +361,6 @@ static int parse_trace_record(struct trace_record *tr, char *line) {
 	tr->irq_context = line[idx];
 	idx++;
 
-	if (line[idx+1] != ' ') {
-		printf("Malformatted trace record, no space between"
-		       "flags and timestamp:\n");
-		printf("%s", line);
-		return -1;
-	}
-	line[idx+1] = 0;
 	if (line[idx] == '.') {
 		tr->preempt_depth = 0;
 	} else if (sscanf(&line[idx], "%hx", &tr->preempt_depth) != 1) {
@@ -377,7 +369,27 @@ static int parse_trace_record(struct trace_record *tr, char *line) {
 		printf("%s", line);
 		return -1;
 	}
-	idx += 2;
+	idx++;
+
+	/* migrate_disable may not always exist */
+	if (line[idx] != ' ') {
+		if (line[idx] == '.')
+			tr->migrate_disable = 0;
+		else if (sscanf(&line[idx], "%d", &tr->migrate_disable) != 1) {
+			printf("Malformatted trace record, error parsing migrate_disable:\n");
+			printf("%s", line);
+			return -1;
+		}
+		idx++;
+	}
+
+	if (line[idx] != ' ') {
+		printf("Malformatted trace record, no space between:"
+		       "flags and timestamp:\n");
+		printf("%s", line);
+		return -1;
+	}
+	idx++;
 
 	while (line[idx] && line[idx] == ' ') idx++;
 	if (!line[idx]) {
