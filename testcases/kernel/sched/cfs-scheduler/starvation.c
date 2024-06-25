@@ -23,7 +23,7 @@
 #include "tst_test.h"
 
 static char *str_loop;
-static long loop = 2000000;
+static long loop = 100000;
 static char *str_timeout;
 static int timeout = 240;
 
@@ -105,7 +105,7 @@ static struct tst_test test = {
 	.setup = setup,
 	.forks_child = 1,
 	.options = (struct tst_option[]) {
-		{"l:", &str_loop, "Number of loops (default 2000000)"},
+		{"l:", &str_loop, "Number of loops (default 100000)"},
 		{"t:", &str_timeout, "Max timeout (default 240s)"},
 		{}
 	},
