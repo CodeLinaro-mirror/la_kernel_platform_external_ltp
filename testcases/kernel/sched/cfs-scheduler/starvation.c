@@ -55,7 +55,7 @@ static void setup(void)
 	CPU_ZERO(&mask);
 
 	/* Restrict test to a single cpu */
-	if (!sched_getaffinity(0, sizeof(mask), &mask))
+	if (sched_getaffinity(0, sizeof(mask), &mask) < 0)
 		tst_brk(TBROK | TERRNO, "sched_getaffinity() failed");
 
 	if (CPU_COUNT(&mask) == 0)
@@ -70,7 +70,7 @@ static void setup(void)
 
 	tst_res(TINFO, "Setting affinity to CPU %d", cpu);
 
-	if (!sched_setaffinity(0, sizeof(mask), &mask))
+	if (sched_setaffinity(0, sizeof(mask), &mask) < 0)
 		tst_brk(TBROK | TERRNO, "sched_setaffinity() failed");
 
 	if (tst_parse_long(str_loop, &loop, 1, LONG_MAX))
