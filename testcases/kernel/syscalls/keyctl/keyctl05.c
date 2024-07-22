@@ -195,8 +195,10 @@ static void test_update_setperm_race(void)
 
 static void setup(void)
 {
+#ifndef __ANDROID__
 	/* There is no way to trigger automatic dns_resolver module loading. */
 	tst_cmd((const char*[]){"modprobe", MODULE, NULL}, NULL, NULL, 0);
+#endif
 
 	fips_enabled = tst_fips_enabled();
 }
