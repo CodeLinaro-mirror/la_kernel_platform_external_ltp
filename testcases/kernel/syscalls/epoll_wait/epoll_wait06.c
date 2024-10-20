@@ -26,6 +26,7 @@
 #include <fcntl.h>
 #include "tst_test.h"
 #include "tst_epoll.h"
+#include "pgsize_helpers.h"
 
 static size_t write_size;
 static size_t read_size;
@@ -34,7 +35,16 @@ static int epfd;
 
 static void setup(void)
 {
-	write_size = getpagesize();
+	/*
+	 * NOTE: The sematics of this test don't hold across page boundaries for
+	 *       EPOLLET.
+	 *
+	 * The documentation says that it "might" / "probably" won't recieve a
+	 * new event for exisitng data. So we can't be guaranteed that it won't.
+	 *
+	 * https://man7.org/linux/man-pages/man7/epoll.7.html
+	 */
+	write_size = kernel_page_size();
 	read_size = write_size / 2;
 
 	SAFE_PIPE2(fds, O_NONBLOCK);

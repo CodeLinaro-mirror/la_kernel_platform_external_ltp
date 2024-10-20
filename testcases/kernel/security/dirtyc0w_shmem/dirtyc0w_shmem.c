@@ -22,6 +22,7 @@
 #include <pwd.h>
 
 #include "tst_test.h"
+#include "pgsize_helpers.h"
 
 #define TMP_DIR "tmp_dirtyc0w_shmem"
 #define TEST_FILE TMP_DIR"/testfile"
@@ -62,7 +63,7 @@ static void dirtyc0w_shmem_test(void)
 	int pid;
 	char c;
 
-	SAFE_FILE_PRINTF(TEST_FILE, STR);
+	SAFE_FILE_PRINTF_PGSIZE_EMULATION(TEST_FILE, STR);
 	SAFE_CHMOD(TEST_FILE, 0444);
 
 	pid = SAFE_FORK();
