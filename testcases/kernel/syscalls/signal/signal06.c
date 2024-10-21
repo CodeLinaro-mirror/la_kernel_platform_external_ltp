@@ -49,6 +49,7 @@
 
 #include "test.h"
 #include "lapi/syscalls.h"
+#include "pgsize_helpers.h"
 
 char *TCID = "signal06";
 int TST_TOTAL = 5;
@@ -61,7 +62,7 @@ int TST_TOTAL = 5;
 volatile double D;
 volatile int FLAGE;
 
-char altstack[4096 * 10] __attribute__((aligned(4096)));
+char altstack[MAX_PAGE_SIZE * 10] __attribute__((aligned(MAX_PAGE_SIZE)));
 
 void test(void)
 {
