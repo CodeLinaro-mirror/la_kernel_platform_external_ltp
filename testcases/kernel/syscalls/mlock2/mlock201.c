@@ -25,17 +25,19 @@
 #include "tst_test.h"
 #include "lapi/syscalls.h"
 #include "lapi/mlock2.h"
+#include "pgsize_helpers.h"
 
 #define PAGES	8
 #define HPAGES	(PAGES / 2)
 
 static size_t pgsz;
-static unsigned char vec[PAGES+1];
+
+static DECLARE_MINCORE_VECTOR(vec, PAGES+1);
 
 static struct tcase {
 	size_t populate_pages;
 	size_t lock_pages;
-	size_t offset;
+	ssize_t offset; /* Can be negative */
 	size_t exp_vmlcks;
 	size_t exp_present_pages;
 	int flag;
@@ -78,12 +80,12 @@ static size_t check_locked_pages(char *addr, size_t len, size_t num_pgs)
 
 	SAFE_MINCORE(addr, len, vec);
 
-	for (n = 0; n < num_pgs; n++) {
+	for (n = 0; n < nr_pgs_to_nr_kernel_pgs(num_pgs); n++) {
 		if (vec[n] & 1)
 			act_pages++;
 	}
 
-	return act_pages;
+	return nr_kernel_pgs_to_nr_pgs(act_pages);
 }
 
 static void verify_mlock2(unsigned int n)
@@ -137,6 +139,7 @@ end2:
 static void setup(void)
 {
 	pgsz = getpagesize();
+	MLOCK_PAGE_SIZE_EMULATION_OFFSET(tcases);
 }
 
 static struct tst_test test = {
