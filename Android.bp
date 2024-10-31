@@ -111,6 +111,9 @@ genrule {
 cc_defaults {
     name: "ltp_defaults",
 
+    // Upstream explicitly chooses this in its makefile.
+    c_std: "gnu99",
+
     cflags: [
         // Hacks for bionic compatibility
         "-include bionic-compat.h",
