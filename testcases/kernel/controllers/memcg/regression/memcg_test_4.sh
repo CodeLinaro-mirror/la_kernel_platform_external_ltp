@@ -29,7 +29,9 @@ sleep 1
 echo 40M > "$test_path/$memory_limit"
 
 # turn off swap, and swapoff will be killed
-swapoff -a
+for s in $(cut -F1 /proc/swaps | tail -n +2); do
+	swapoff $s
+done
 sleep 1
 echo $pid > "$mount_point/$task_list" 2> /dev/null
 echo $$ > "$mount_point/$task_list"  2> /dev/null

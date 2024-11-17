@@ -15,7 +15,6 @@ SUBDIRS			:= syscalls
 # Build lib
 SUBDIRS			+= lib
 
-ifneq ($(UCLINUX),1)
 # KEEP THIS LIST ALPHABETIZED PLEASE!
 SUBDIRS			+= connectors \
 			   containers \
@@ -33,6 +32,7 @@ SUBDIRS			+= connectors \
 			   logging \
 			   mem \
 			   numa \
+			   power_management \
 			   pty \
 			   sched \
 			   security \
@@ -41,13 +41,8 @@ SUBDIRS			+= connectors \
 			   uevents \
 			   watchqueue \
 
-ifeq ($(WITH_POWER_MANAGEMENT_TESTSUITE),yes)
-SUBDIRS			+= power_management
-endif
-
 ifeq ($(WITH_KVM_TESTSUITE),yes)
 SUBDIRS			+= kvm
-endif
 
 endif
 
