@@ -41,6 +41,7 @@ AC_CHECK_DECLS([SEM_STAT_ANY],,,[#include <sys/sem.h>])
 
 AC_CHECK_HEADERS_ONCE([ \
     asm/ldt.h \
+    asm/prctl.h \
     cpuid.h \
     emmintrin.h \
     ifaddrs.h \
@@ -77,6 +78,7 @@ AC_CHECK_HEADERS_ONCE([ \
     sys/inotify.h \
     sys/pidfd.h
     sys/prctl.h \
+    sys/random.h \
     sys/shm.h \
     sys/timerfd.h \
     sys/ustat.h \
@@ -187,14 +189,6 @@ AC_CHECK_TYPES([struct iovec],,,[#include <sys/uio.h>])
 AC_CHECK_TYPES([struct ipc64_perm],,,[#include <sys/ipcbuf.h>])
 AC_CHECK_TYPES([struct loop_config],,,[#include <linux/loop.h>])
 
-AC_CHECK_TYPES([struct __kernel_itimerspec],,,[#include <linux/time_types.h>])
-AC_CHECK_TYPES([struct __kernel_old_timespec],,,[#include <linux/time_types.h>])
-AC_CHECK_TYPES([struct __kernel_old_timeval],,,[#include <linux/time_types.h>])
-AC_CHECK_TYPES([struct __kernel_timespec],,,[#include <linux/time_types.h>])
-
-AC_CHECK_TYPES([struct __kernel_timex],,,[#include <sys/timex.h>])
-AC_CHECK_TYPES([struct __kernel_timex_timeval],,,[#include <sys/timex.h>])
-
 AC_CHECK_TYPES([struct mmsghdr],,,[
 #define _GNU_SOURCE
 #include <sys/types.h>
@@ -229,8 +223,19 @@ AC_CHECK_TYPES([struct xt_entry_match, struct xt_entry_target],,,[
 #include <linux/netfilter_ipv4/ip_tables.h>
 ])
 
+AC_CHECK_TYPES([struct __kernel_itimerspec],,,[#include <linux/time_types.h>])
+AC_CHECK_TYPES([struct __kernel_old_timespec],,,[#include <linux/time_types.h>])
+AC_CHECK_TYPES([struct __kernel_old_timeval],,,[#include <linux/time_types.h>])
+AC_CHECK_TYPES([struct __kernel_old_itimerval],,,[#include <linux/time_types.h>])
+AC_CHECK_TYPES([struct __kernel_old_itimerspec],,,[#include <linux/time_types.h>])
+AC_CHECK_TYPES([struct __kernel_timespec],,,[#include <linux/time_types.h>])
+
+AC_CHECK_TYPES([struct __kernel_timex],,,[#include <sys/timex.h>])
+AC_CHECK_TYPES([struct __kernel_timex_timeval],,,[#include <sys/timex.h>])
+
 AC_CHECK_TYPES([struct __kernel_old_timeval, struct __kernel_old_timespec, struct __kernel_timespec,
-                struct __kernel_old_itimerspec, struct __kernel_itimerspec],,,[#include <sys/socket.h>])
+                struct __kernel_old_itimerspec, struct __kernel_itimerspec,
+                struct __kernel_old_itimerval],,,[#include <sys/socket.h>])
 
 AC_CHECK_TYPES([struct futex_waitv],,,[#include <linux/futex.h>])
 AC_CHECK_TYPES([struct mount_attr],,,[
@@ -395,7 +400,6 @@ LTP_CHECK_KERNEL_DEVEL
 LTP_CHECK_KEYUTILS_SUPPORT
 LTP_CHECK_LIBMNL
 LTP_CHECK_LINUXRANDOM
-LTP_CHECK_NOMMU_LINUX
 LTP_CHECK_SELINUX
 LTP_CHECK_SYNC_ADD_AND_FETCH
 LTP_CHECK_SYSCALL_EVENTFD
@@ -403,7 +407,9 @@ LTP_CHECK_SYSCALL_FCNTL
 LTP_CHECK_FSVERITY
 
 AX_CHECK_COMPILE_FLAG([-no-pie], [LTP_CFLAGS_NOPIE=1])
+AX_CHECK_COMPILE_FLAG([-ffixed-ebp], [LTP_CFLAGS_FFIXED_EBP=1])
 AC_SUBST([LTP_CFLAGS_NOPIE])
+AC_SUBST([LTP_CFLAGS_FFIXED_EBP])
 
 if test "x$with_numa" = xyes; then
 	LTP_CHECK_SYSCALL_NUMA

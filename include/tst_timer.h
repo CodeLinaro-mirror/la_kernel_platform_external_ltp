@@ -97,6 +97,8 @@ static inline long long tst_timeval_diff_ms(struct timeval t1,
 	return tst_timeval_to_ms(tst_timeval_diff(t1, t2));
 }
 
+#ifndef __kernel_timespec
+
 typedef __kernel_long_t	__kernel_old_time_t;
 
 #ifndef HAVE_STRUCT___KERNEL_OLD_TIMEVAL
@@ -134,6 +136,14 @@ struct __kernel_itimerspec {
 	struct __kernel_timespec it_interval;    /* timer period */
 	struct __kernel_timespec it_value;       /* timer expiration */
 };
+#endif
+
+#ifndef HAVE_STRUCT___KERNEL_OLD_ITIMERVAL
+struct __kernel_old_itimerval {
+	struct __kernel_old_timeval it_interval;	/* timer interval */
+	struct __kernel_old_timeval it_value;		/* current value */
+};
+#endif
 #endif
 
 enum tst_ts_type {
@@ -367,6 +377,11 @@ static inline int sys_timerfd_settime64(int fd, int flags, void *its,
 				      void *old_its)
 {
 	return tst_syscall(__NR_timerfd_settime64, fd, flags, its, old_its);
+}
+
+static inline int sys_setitimer(int which, void *new_value, void *old_value)
+{
+	return tst_syscall(__NR_setitimer, which, new_value, old_value);
 }
 
 /*
