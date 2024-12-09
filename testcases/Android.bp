@@ -20,7 +20,7 @@ package {
 sh_test {
     name: "ltp_testcases_data_mc_member_ManyGroups",
     src: "network/multicast/mc_member/datafiles/ManyGroups",
-    sub_dir: "ltp/testcases/data/mc_member",
+    sub_dir: "vts_ltp_tests/testcases/data/mc_member",
     filename: "ManyGroups",
     compile_multilib: "both",
     auto_gen_config: false,
@@ -29,7 +29,7 @@ sh_test {
 sh_test {
     name: "ltp_testcases_data_mc_member_TooManyGroups",
     src: "network/multicast/mc_member/datafiles/TooManyGroups",
-    sub_dir: "ltp/testcases/data/mc_member",
+    sub_dir: "vts_ltp_tests/testcases/data/mc_member",
     filename: "TooManyGroups",
     compile_multilib: "both",
     auto_gen_config: false,
@@ -38,7 +38,7 @@ sh_test {
 sh_test {
     name: "ltp_testcases_data_ld01_d1.c",
     src: "commands/ld/datafiles/d1.c",
-    sub_dir: "ltp/testcases/data/ld01",
+    sub_dir: "vts_ltp_tests/testcases/data/ld01",
     filename: "d1.c",
     compile_multilib: "both",
     auto_gen_config: false,
@@ -47,7 +47,7 @@ sh_test {
 sh_test {
     name: "ltp_testcases_data_unzip01_dir.out",
     src: "commands/unzip/datafiles/dir.out",
-    sub_dir: "ltp/testcases/data/unzip01",
+    sub_dir: "vts_ltp_tests/testcases/data/unzip01",
     filename: "dir.out",
     compile_multilib: "both",
     auto_gen_config: false,
@@ -56,7 +56,7 @@ sh_test {
 sh_test {
     name: "ltp_testcases_data_ld01_f1.c",
     src: "commands/ld/datafiles/f1.c",
-    sub_dir: "ltp/testcases/data/ld01",
+    sub_dir: "vts_ltp_tests/testcases/data/ld01",
     filename: "f1.c",
     compile_multilib: "both",
     auto_gen_config: false,
@@ -65,7 +65,7 @@ sh_test {
 sh_test {
     name: "ltp_testcases_data_rpc01_file.1",
     src: "network/rpc/basic_tests/rpc01/datafiles/file.1",
-    sub_dir: "ltp/testcases/data/rpc01",
+    sub_dir: "vts_ltp_tests/testcases/data/rpc01",
     filename: "file.1",
     compile_multilib: "both",
     auto_gen_config: false,
@@ -74,7 +74,7 @@ sh_test {
 sh_test {
     name: "ltp_testcases_data_rpc01_file.2",
     src: "network/rpc/basic_tests/rpc01/datafiles/file.2",
-    sub_dir: "ltp/testcases/data/rpc01",
+    sub_dir: "vts_ltp_tests/testcases/data/rpc01",
     filename: "file.2",
     compile_multilib: "both",
     auto_gen_config: false,
@@ -83,7 +83,7 @@ sh_test {
 sh_test {
     name: "ltp_testcases_data_binfmt_misc02_file.extension",
     src: "kernel/fs/binfmt_misc/datafiles/file.extension",
-    sub_dir: "ltp/testcases/data/binfmt_misc02",
+    sub_dir: "vts_ltp_tests/testcases/data/binfmt_misc02",
     filename: "file.extension",
     compile_multilib: "both",
     auto_gen_config: false,
@@ -92,7 +92,7 @@ sh_test {
 sh_test {
     name: "ltp_testcases_data_binfmt_misc02_file.magic",
     src: "kernel/fs/binfmt_misc/datafiles/file.magic",
-    sub_dir: "ltp/testcases/data/binfmt_misc02",
+    sub_dir: "vts_ltp_tests/testcases/data/binfmt_misc02",
     filename: "file.magic",
     compile_multilib: "both",
     auto_gen_config: false,
@@ -101,7 +101,7 @@ sh_test {
 sh_test {
     name: "ltp_testcases_data_ar01_file1.in",
     src: "commands/ar/datafiles/file1.in",
-    sub_dir: "ltp/testcases/data/ar01",
+    sub_dir: "vts_ltp_tests/testcases/data/ar01",
     filename: "file1.in",
     compile_multilib: "both",
     auto_gen_config: false,
@@ -110,7 +110,7 @@ sh_test {
 sh_test {
     name: "ltp_testcases_data_ar01_file10.in",
     src: "commands/ar/datafiles/file10.in",
-    sub_dir: "ltp/testcases/data/ar01",
+    sub_dir: "vts_ltp_tests/testcases/data/ar01",
     filename: "file10.in",
     compile_multilib: "both",
     auto_gen_config: false,
@@ -119,7 +119,7 @@ sh_test {
 sh_test {
     name: "ltp_testcases_data_ar01_file2.in",
     src: "commands/ar/datafiles/file2.in",
-    sub_dir: "ltp/testcases/data/ar01",
+    sub_dir: "vts_ltp_tests/testcases/data/ar01",
     filename: "file2.in",
     compile_multilib: "both",
     auto_gen_config: false,
@@ -128,7 +128,7 @@ sh_test {
 sh_test {
     name: "ltp_testcases_data_ar01_file3.in",
     src: "commands/ar/datafiles/file3.in",
-    sub_dir: "ltp/testcases/data/ar01",
+    sub_dir: "vts_ltp_tests/testcases/data/ar01",
     filename: "file3.in",
     compile_multilib: "both",
     auto_gen_config: false,
@@ -137,7 +137,7 @@ sh_test {
 sh_test {
     name: "ltp_testcases_data_ar01_file4.in",
     src: "commands/ar/datafiles/file4.in",
-    sub_dir: "ltp/testcases/data/ar01",
+    sub_dir: "vts_ltp_tests/testcases/data/ar01",
     filename: "file4.in",
     compile_multilib: "both",
     auto_gen_config: false,
@@ -146,7 +146,7 @@ sh_test {
 sh_test {
     name: "ltp_testcases_data_file01_in.ar",
     src: "commands/file/datafiles/in.ar",
-    sub_dir: "ltp/testcases/data/file01",
+    sub_dir: "vts_ltp_tests/testcases/data/file01",
     filename: "in.ar",
     compile_multilib: "both",
     auto_gen_config: false,
@@ -155,7 +155,7 @@ sh_test {
 sh_test {
     name: "ltp_testcases_data_file01_in.bash",
     src: "commands/file/datafiles/in.bash",
-    sub_dir: "ltp/testcases/data/file01",
+    sub_dir: "vts_ltp_tests/testcases/data/file01",
     filename: "in.bash",
     compile_multilib: "both",
     auto_gen_config: false,
@@ -164,7 +164,7 @@ sh_test {
 sh_test {
     name: "ltp_testcases_data_file01_in.c",
     src: "commands/file/datafiles/in.c",
-    sub_dir: "ltp/testcases/data/file01",
+    sub_dir: "vts_ltp_tests/testcases/data/file01",
     filename: "in.c",
     compile_multilib: "both",
     auto_gen_config: false,
@@ -173,7 +173,7 @@ sh_test {
 sh_test {
     name: "ltp_testcases_data_file01_in.jpg",
     src: "commands/file/datafiles/in.jpg",
-    sub_dir: "ltp/testcases/data/file01",
+    sub_dir: "vts_ltp_tests/testcases/data/file01",
     filename: "in.jpg",
     compile_multilib: "both",
     auto_gen_config: false,
@@ -182,7 +182,7 @@ sh_test {
 sh_test {
     name: "ltp_testcases_data_file01_in.m4",
     src: "commands/file/datafiles/in.m4",
-    sub_dir: "ltp/testcases/data/file01",
+    sub_dir: "vts_ltp_tests/testcases/data/file01",
     filename: "in.m4",
     compile_multilib: "both",
     auto_gen_config: false,
@@ -191,7 +191,7 @@ sh_test {
 sh_test {
     name: "ltp_testcases_data_file01_in.mp3",
     src: "commands/file/datafiles/in.mp3",
-    sub_dir: "ltp/testcases/data/file01",
+    sub_dir: "vts_ltp_tests/testcases/data/file01",
     filename: "in.mp3",
     compile_multilib: "both",
     auto_gen_config: false,
@@ -200,7 +200,7 @@ sh_test {
 sh_test {
     name: "ltp_testcases_data_file01_in.pl",
     src: "commands/file/datafiles/in.pl",
-    sub_dir: "ltp/testcases/data/file01",
+    sub_dir: "vts_ltp_tests/testcases/data/file01",
     filename: "in.pl",
     compile_multilib: "both",
     auto_gen_config: false,
@@ -209,7 +209,7 @@ sh_test {
 sh_test {
     name: "ltp_testcases_data_file01_in.png",
     src: "commands/file/datafiles/in.png",
-    sub_dir: "ltp/testcases/data/file01",
+    sub_dir: "vts_ltp_tests/testcases/data/file01",
     filename: "in.png",
     compile_multilib: "both",
     auto_gen_config: false,
@@ -218,7 +218,7 @@ sh_test {
 sh_test {
     name: "ltp_testcases_data_file01_in.py",
     src: "commands/file/datafiles/in.py",
-    sub_dir: "ltp/testcases/data/file01",
+    sub_dir: "vts_ltp_tests/testcases/data/file01",
     filename: "in.py",
     compile_multilib: "both",
     auto_gen_config: false,
@@ -227,7 +227,7 @@ sh_test {
 sh_test {
     name: "ltp_testcases_data_file01_in.sh",
     src: "commands/file/datafiles/in.sh",
-    sub_dir: "ltp/testcases/data/file01",
+    sub_dir: "vts_ltp_tests/testcases/data/file01",
     filename: "in.sh",
     compile_multilib: "both",
     auto_gen_config: false,
@@ -236,7 +236,7 @@ sh_test {
 sh_test {
     name: "ltp_testcases_data_file01_in.src.rpm",
     src: "commands/file/datafiles/in.src.rpm",
-    sub_dir: "ltp/testcases/data/file01",
+    sub_dir: "vts_ltp_tests/testcases/data/file01",
     filename: "in.src.rpm",
     compile_multilib: "both",
     auto_gen_config: false,
@@ -245,7 +245,7 @@ sh_test {
 sh_test {
     name: "ltp_testcases_data_file01_in.tar",
     src: "commands/file/datafiles/in.tar",
-    sub_dir: "ltp/testcases/data/file01",
+    sub_dir: "vts_ltp_tests/testcases/data/file01",
     filename: "in.tar",
     compile_multilib: "both",
     auto_gen_config: false,
@@ -254,7 +254,7 @@ sh_test {
 sh_test {
     name: "ltp_testcases_data_file01_in.tar.bz2",
     src: "commands/file/datafiles/in.tar.bz2",
-    sub_dir: "ltp/testcases/data/file01",
+    sub_dir: "vts_ltp_tests/testcases/data/file01",
     filename: "in.tar.bz2",
     compile_multilib: "both",
     auto_gen_config: false,
@@ -263,7 +263,7 @@ sh_test {
 sh_test {
     name: "ltp_testcases_data_file01_in.tar.gz",
     src: "commands/file/datafiles/in.tar.gz",
-    sub_dir: "ltp/testcases/data/file01",
+    sub_dir: "vts_ltp_tests/testcases/data/file01",
     filename: "in.tar.gz",
     compile_multilib: "both",
     auto_gen_config: false,
@@ -272,7 +272,7 @@ sh_test {
 sh_test {
     name: "ltp_testcases_data_file01_in.txt",
     src: "commands/file/datafiles/in.txt",
-    sub_dir: "ltp/testcases/data/file01",
+    sub_dir: "vts_ltp_tests/testcases/data/file01",
     filename: "in.txt",
     compile_multilib: "both",
     auto_gen_config: false,
@@ -281,7 +281,7 @@ sh_test {
 sh_test {
     name: "ltp_testcases_data_file01_in.wav",
     src: "commands/file/datafiles/in.wav",
-    sub_dir: "ltp/testcases/data/file01",
+    sub_dir: "vts_ltp_tests/testcases/data/file01",
     filename: "in.wav",
     compile_multilib: "both",
     auto_gen_config: false,
@@ -290,7 +290,7 @@ sh_test {
 sh_test {
     name: "ltp_testcases_data_file01_in.zip",
     src: "commands/file/datafiles/in.zip",
-    sub_dir: "ltp/testcases/data/file01",
+    sub_dir: "vts_ltp_tests/testcases/data/file01",
     filename: "in.zip",
     compile_multilib: "both",
     auto_gen_config: false,
@@ -299,7 +299,7 @@ sh_test {
 sh_test {
     name: "ltp_testcases_data_ima_kexec_kexec.policy",
     src: "kernel/security/integrity/ima/datafiles/ima_kexec/kexec.policy",
-    sub_dir: "ltp/testcases/data/ima_kexec",
+    sub_dir: "vts_ltp_tests/testcases/data/ima_kexec",
     filename: "kexec.policy",
     compile_multilib: "both",
     auto_gen_config: false,
@@ -308,7 +308,7 @@ sh_test {
 sh_test {
     name: "ltp_testcases_data_ima_keys_keycheck.policy",
     src: "kernel/security/integrity/ima/datafiles/ima_keys/keycheck.policy",
-    sub_dir: "ltp/testcases/data/ima_keys",
+    sub_dir: "vts_ltp_tests/testcases/data/ima_keys",
     filename: "keycheck.policy",
     compile_multilib: "both",
     auto_gen_config: false,
@@ -317,7 +317,7 @@ sh_test {
 sh_test {
     name: "ltp_testcases_data_ld01_main.c",
     src: "commands/ld/datafiles/main.c",
-    sub_dir: "ltp/testcases/data/ld01",
+    sub_dir: "vts_ltp_tests/testcases/data/ld01",
     filename: "main.c",
     compile_multilib: "both",
     auto_gen_config: false,
@@ -326,7 +326,7 @@ sh_test {
 sh_test {
     name: "ltp_testcases_data_ima_policy_measure.policy",
     src: "kernel/security/integrity/ima/datafiles/ima_policy/measure.policy",
-    sub_dir: "ltp/testcases/data/ima_policy",
+    sub_dir: "vts_ltp_tests/testcases/data/ima_policy",
     filename: "measure.policy",
     compile_multilib: "both",
     auto_gen_config: false,
@@ -335,7 +335,7 @@ sh_test {
 sh_test {
     name: "ltp_testcases_data_ima_policy_measure.policy-invalid",
     src: "kernel/security/integrity/ima/datafiles/ima_policy/measure.policy-invalid",
-    sub_dir: "ltp/testcases/data/ima_policy",
+    sub_dir: "vts_ltp_tests/testcases/data/ima_policy",
     filename: "measure.policy-invalid",
     compile_multilib: "both",
     auto_gen_config: false,
@@ -344,7 +344,7 @@ sh_test {
 sh_test {
     name: "ltp_testcases_data_ld01_rd1.c",
     src: "commands/ld/datafiles/rd1.c",
-    sub_dir: "ltp/testcases/data/ld01",
+    sub_dir: "vts_ltp_tests/testcases/data/ld01",
     filename: "rd1.c",
     compile_multilib: "both",
     auto_gen_config: false,
@@ -353,7 +353,7 @@ sh_test {
 sh_test {
     name: "ltp_testcases_data_ld01_rf1.c",
     src: "commands/ld/datafiles/rf1.c",
-    sub_dir: "ltp/testcases/data/ld01",
+    sub_dir: "vts_ltp_tests/testcases/data/ld01",
     filename: "rf1.c",
     compile_multilib: "both",
     auto_gen_config: false,
@@ -362,7 +362,7 @@ sh_test {
 sh_test {
     name: "ltp_testcases_data_lvm_runfile.tpl",
     src: "misc/lvm/datafiles/runfile.tpl",
-    sub_dir: "ltp/testcases/data/lvm",
+    sub_dir: "vts_ltp_tests/testcases/data/lvm",
     filename: "runfile.tpl",
     compile_multilib: "both",
     auto_gen_config: false,
@@ -371,7 +371,7 @@ sh_test {
 sh_test {
     name: "ltp_testcases_data_ima_selinux_selinux.policy",
     src: "kernel/security/integrity/ima/datafiles/ima_selinux/selinux.policy",
-    sub_dir: "ltp/testcases/data/ima_selinux",
+    sub_dir: "vts_ltp_tests/testcases/data/ima_selinux",
     filename: "selinux.policy",
     compile_multilib: "both",
     auto_gen_config: false,
@@ -380,7 +380,7 @@ sh_test {
 sh_test {
     name: "ltp_testcases_data_unzip01_test.zip",
     src: "commands/unzip/datafiles/test.zip",
-    sub_dir: "ltp/testcases/data/unzip01",
+    sub_dir: "vts_ltp_tests/testcases/data/unzip01",
     filename: "test.zip",
     compile_multilib: "both",
     auto_gen_config: false,
@@ -389,7 +389,7 @@ sh_test {
 sh_test {
     name: "ltp_testcases_data_ima_keys_x509_ima.der",
     src: "kernel/security/integrity/ima/datafiles/ima_keys/x509_ima.der",
-    sub_dir: "ltp/testcases/data/ima_keys",
+    sub_dir: "vts_ltp_tests/testcases/data/ima_keys",
     filename: "x509_ima.der",
     compile_multilib: "both",
     auto_gen_config: false,
