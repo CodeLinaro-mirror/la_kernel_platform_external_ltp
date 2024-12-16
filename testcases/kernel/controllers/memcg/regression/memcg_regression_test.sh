@@ -221,6 +221,7 @@ test_4()
 	local test_path
 	test_path="$test_dir/0"
 	create_testpath "$test_path"
+	swaps=$(cut -F1 /proc/swaps | tail -n +2)
 
 	./memcg_test_4.sh "$cgroup_version" "$mount_point" "$test_path"
 
@@ -236,7 +237,9 @@ test_4()
 	# if test_4.sh gets killed, it won't clean cgroup it created
 	cleanup_testpath "$test_path"
 
-	swapon -a
+	for s in $swaps; do
+		swapon $s
+	done
 }
 
 . cgroup_lib.sh

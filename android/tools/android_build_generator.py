@@ -16,7 +16,7 @@
 #
 
 # Parses the output of parse_ltp_{make,make_install} and generates a
-# corresponding Android.mk.
+# corresponding Android.bp.
 #
 # This process is split into two steps so this second step can later be replaced
 # with an Android.bp generator.
@@ -35,10 +35,39 @@ MAKE_INSTALL_DRY_RUN_FILE_NAME = os.path.join('dump', 'make_install_dry_run.dump
 DISABLED_TESTS_FILE_NAME = 'disabled_tests.txt'
 DISABLED_LIBS_FILE_NAME = 'disabled_libs.txt'
 DISABLED_CFLAGS_FILE_NAME = 'disabled_cflags.txt'
+TARGET_LIST = [
+    {
+        "arch": "arm",
+        "bitness": "64",
+        "extra_test_configs": ["lowmem", "hwasan", "lowmem_hwasan"],
+        "targets": ["arm64"],
+    },
+    {
+        "arch": "arm",
+        "bitness": "32",
+        "extra_test_configs": ["lowmem"],
+        "targets": ["arm", "arm64"],
+    },
+    {
+        "arch": "riscv",
+        "bitness": "64",
+        "targets": ["riscv64"],
+    },
+    {
+        "arch": "x86",
+        "bitness": "64",
+        "targets": ["x86_64"],
+    },
+    {
+        "arch": "x86",
+        "bitness": "32",
+        "targets": ["x86", "x86_64"],
+    },
+]
 
 
 class BuildGenerator(object):
-    '''A class to parse make output and convert the result to Android.ltp.mk modules.
+    '''A class to parse make output and convert the result to Android.bp modules.
 
     Attributes:
         _bp_result: directory of list of strings for blueprint file keyed by target name
@@ -111,8 +140,7 @@ class BuildGenerator(object):
         '''
         base_name = os.path.basename(cc_target)
         if base_name in ltp_names_used:
-            print('ERROR: base name {} of cc_target {} already used. Skipping...'.format(
-                base_name, cc_target))
+            print(f'ERROR: base name {base_name} of cc_target {cc_target} already used. Skipping...')
             return
         ltp_names_used.add(base_name)
 
@@ -122,11 +150,12 @@ class BuildGenerator(object):
 
         # ltp_defaults already adds the include directory
         local_c_includes = [i for i in local_c_includes if i != 'include']
-        target_name = 'ltp_%s' % base_name
+        target_name = f'ltp_{base_name}'
         target_bp = []
 
         self._packages.append(target_name)
 
+        target_bp.append('')
         target_bp.append('cc_test {')
         target_bp.append('    name: "%s",' % target_name)
         target_bp.append('    stem: "%s",' % base_name)
@@ -181,7 +210,6 @@ class BuildGenerator(object):
             target_bp.append('    ],')
 
         target_bp.append('}')
-        target_bp.append('')
         self._bp_result[target_name] = target_bp
 
     def BuildStaticLibrary(self, ar_target, local_src_files, local_cflags,
@@ -196,6 +224,7 @@ class BuildGenerator(object):
         '''
         target_name = 'libltp_%s' % self.ArTargetToLibraryName(ar_target)
         target_bp = []
+        target_bp.append('')
         target_bp.append('cc_library_static {')
         target_bp.append('    name: "%s",' % target_name)
         target_bp.append('    defaults: ["ltp_defaults"],')
@@ -218,7 +247,6 @@ class BuildGenerator(object):
         target_bp.append('    ],')
 
         target_bp.append('}')
-        target_bp.append('')
         self._bp_result[target_name] = target_bp
 
     def BuildShellScript(self, install_target, local_src_file):
@@ -237,14 +265,14 @@ class BuildGenerator(object):
         module_dir = os.path.dirname(install_target)
         module_stem = os.path.basename(install_target)
 
+        bp_result.append('')
         bp_result.append('sh_test {')
         bp_result.append('    name: "%s",' % module)
         bp_result.append('    src: "%s",' % local_src_file)
-        bp_result.append('    sub_dir: "ltp/%s",' % module_dir)
+        bp_result.append('    sub_dir: "vts_ltp_tests/%s",' % module_dir)
         bp_result.append('    filename: "%s",' % module_stem)
         bp_result.append('    compile_multilib: "both",')
         bp_result.append('}')
-        bp_result.append('')
 
         self._bp_result[module] = bp_result
 
@@ -264,15 +292,15 @@ class BuildGenerator(object):
         module_stem = os.path.basename(install_target)
 
         bp_result = []
+        bp_result.append('')
         bp_result.append('sh_test {')
         bp_result.append('    name: "%s",' % module)
         bp_result.append('    src: "%s",' % src)
-        bp_result.append('    sub_dir: "ltp/%s",' % module_dir)
+        bp_result.append('    sub_dir: "vts_ltp_tests/%s",' % module_dir)
         bp_result.append('    filename: "%s",' % module_stem)
         bp_result.append('    compile_multilib: "both",')
         bp_result.append('    auto_gen_config: false,')
         bp_result.append('}')
-        bp_result.append('')
 
         self._prebuilt_bp_result[base_name] = bp_result
         self._packages.append(module)
@@ -296,7 +324,7 @@ class BuildGenerator(object):
         rules.setdefault(rule, {})[rule_key] = rule_value
 
     def ParseInput(self, input_list, ltp_root):
-        '''Parse a interpreted make output and produce Android.ltp.mk module.
+        '''Parse a interpreted make output and produce Android.bp module.
 
         Args:
             input_list: list of string
@@ -339,7 +367,7 @@ class BuildGenerator(object):
                 cc_flags[target].remove('-Wno-error')
 
         print(
-            "Disabled lib tests: Test cases listed here are"
+            "Disabled lib tests: Test cases listed here are "
             "suggested to be disabled since they require a disabled library. "
             "Please copy and paste them into disabled_tests.txt\n")
         for i in cc_libraries:
@@ -347,7 +375,7 @@ class BuildGenerator(object):
                 if not os.path.basename(i) in disabled_tests:
                     print(os.path.basename(i))
 
-        print("Disabled_cflag tests: Test cases listed here are"
+        print("Disabled_cflag tests: Test cases listed here are "
               "suggested to be disabled since they require a disabled cflag. "
               "Please copy and paste them into disabled_tests.txt\n")
         for i in cc_flags:
@@ -397,7 +425,7 @@ class BuildGenerator(object):
             local_c_includes = set()
             local_libraries = cc_libraries[target]
             # Accumulate flags for all .c files needed to build the .o files.
-            # (Android.mk requires a consistent set of flags across a given target.
+            # (Android.bp requires a consistent set of flags across a given target.
             # Thankfully using the superset of all flags in the target works fine
             # with LTP tests.)
             for obj in cc_link[target]:
@@ -486,14 +514,108 @@ class BuildGenerator(object):
         Args:
             output_path: string
         '''
+        bp_result = []
+        bp_result.append('')
+        bp_result.append('package {')
+        bp_result.append('    default_applicable_licenses: ["external_ltp_license"],')
+        bp_result.append('}')
+        for k in sorted(self._prebuilt_bp_result.keys()):
+            bp_result.extend(self._prebuilt_bp_result[k])
+        self._prebuilt_bp_result = {}
         with open(output_path, 'a') as f:
-            f.write('package {\n')
-            f.write('    default_applicable_licenses: ["external_ltp_license"],\n')
-            f.write('}\n\n')
             for k in sorted(self._prebuilt_bp_result.keys()):
                 f.write('\n'.join(self._prebuilt_bp_result[k]))
                 f.write('\n')
             self._prebuilt_bp_result = {}
+            f.write('\n'.join(bp_result))
+            f.write('\n')
+
+    def ArchString(self, arch, bitness, lowmem=False, hwasan=False):
+        if bitness == '32':
+            arch_string = arch
+        else:
+            arch_string = f'{arch}_{bitness}'
+        if lowmem:
+            arch_string += '_lowmem'
+        if hwasan:
+            arch_string += '_hwasan'
+        return arch_string
+
+    def BuildConfigGenrule(self, arch, bitness, targets, extra_test_configs=None):
+        extra_test_configs = extra_test_configs if extra_test_configs else []
+        bp_result = []
+        arch_string = self.ArchString(arch, bitness)
+
+        bp_result.append('')
+        bp_result.append('genrule {')
+        bp_result.append('    name: "ltp_config_%s",' % arch_string)
+        bp_result.append('    out: ["vts_ltp_test_%s.xml"],' % arch_string)
+        bp_result.append('    tools: ["gen_ltp_config"],')
+        bp_result.append('    cmd: "$(location gen_ltp_config) --arch %s --bitness %s --low-mem %r --hwasan %r $(out)",' % (arch, bitness, lowmem, hwasan))
+        bp_result.append('}')
+
+        for config in extra_test_configs:
+            lowmem = 'lowmem' in config
+            hwasan = 'hwasan' in config
+            arch_string = self.ArchString(arch, bitness, lowmem, hwasan)
+
+            bp_result.append('')
+            bp_result.append('genrule {')
+            bp_result.append('    name: "ltp_config_%s",' % arch_string)
+            bp_result.append('    out: ["vts_ltp_test_%s.xml"],' % arch_string)
+            bp_result.append('    tools: ["gen_ltp_config"],')
+            bp_result.append('    cmd: "$(location gen_ltp_config) --arch %s --bitness %s --low-mem %r --hwasan %r $(out)",' % (arch, bitness, lowmem, hwasan))
+            bp_result.append('}')
+        return bp_result
+
+    def BuildPackageList(self):
+        bp_result = []
+        bp_result.append('')
+        bp_result.append('LTP_TESTS = [')
+        bp_result.append('    ":ltp_runtests",')
+        for package in sorted(self._packages):
+            bp_result.append('    ":%s",' % package)
+        bp_result.append(']')
+        return bp_result
+
+    def BuildLTPTestSuite(self, arch, bitness, targets, extra_test_configs=None):
+        extra_test_configs = extra_test_configs if extra_test_configs else []
+        bp_result = []
+        arch_string = self.ArchString(arch, bitness)
+
+        bp_result.append('')
+        bp_result.append('sh_test {')
+        bp_result.append('    name: "vts_ltp_test_%s",' % arch_string)
+        bp_result.append('    src: "empty.sh",')
+        bp_result.append('    test_config: ":ltp_config_%s",' % arch_string)
+        bp_result.append('    test_suites: [')
+        bp_result.append('        "general-tests",')
+        bp_result.append('        "vts",')
+        bp_result.append('    ],')
+        bp_result.append('    enabled: false,')
+
+        if bitness == '32':
+            bp_result.append('    compile_multilib: "32",')
+
+        bp_result.append('    arch: {')
+        for target in targets:
+            bp_result.append('        %s: {' % target)
+            bp_result.append('            enabled: true,')
+            bp_result.append('        },')
+        bp_result.append('    },')
+
+        if extra_test_configs:
+            bp_result.append('    extra_test_configs: [')
+            for config in extra_test_configs:
+                lowmem = 'lowmem' in config
+                hwasan = 'hwasan' in config
+                arch_string = self.ArchString(arch, bitness, lowmem, hwasan)
+                bp_result.append('        ":ltp_config_%s",' % arch_string)
+            bp_result.append('    ],')
+
+        bp_result.append('    data: LTP_TESTS,')
+        bp_result.append('}')
+        return bp_result
 
     def WriteLtpMainAndroidBp(self, output_path):
         '''Write the blueprint file of ltp main module.
@@ -502,23 +624,18 @@ class BuildGenerator(object):
             output_path: string
         '''
         bp_result = []
+        bp_result.append('')
         bp_result.append('package {')
         bp_result.append('    default_applicable_licenses: ["external_ltp_license"],')
         bp_result.append('}')
-        bp_result.append('')
-        bp_result.append('sh_test {')
-        bp_result.append('    name: "ltp",')
-        bp_result.append('    src: "tools/disabled_tests.txt",')
-        bp_result.append('    sub_dir: "ltp",')
-        bp_result.append('    data: [":ltp_runtests"],')
-        bp_result.append('    filename_from_src: true,')
-        bp_result.append('    compile_multilib: "both",')
-        bp_result.append('    auto_gen_config: false,')
-        bp_result.append('    required: [')
-        for package in sorted(self._packages):
-            bp_result.append('        "%s",' % package)
-        bp_result.append('    ],')
-        bp_result.append('}')
+
+        bp_result.extend(self.BuildPackageList())
+
+        for target in TARGET_LIST:
+            bp_result.extend(self.BuildConfigGenrule(**target))
+
+        for target in TARGET_LIST:
+            bp_result.extend(self.BuildLTPTestSuite(**target))
 
         with open(output_path, 'a') as f:
             f.write('\n'.join(bp_result))
@@ -542,7 +659,7 @@ class BuildGenerator(object):
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Generate Android.mk from parsed LTP make output')
+        description='Generate Android.bp from parsed LTP make output')
     parser.add_argument(
         '--ltp_root', dest='ltp_root', required=True, help='LTP root dir')
     parser.add_argument(

@@ -111,6 +111,9 @@ genrule {
 cc_defaults {
     name: "ltp_defaults",
 
+    // Upstream explicitly chooses this in its makefile.
+    c_std: "gnu99",
+
     cflags: [
         // Hacks for bionic compatibility
         "-include bionic-compat.h",
@@ -184,5 +187,5 @@ cc_defaults {
     gtest: false,
     cflags: ["-Wno-gnu-variable-sized-type-not-at-end"],
     no_named_install_directory: true,
-    relative_install_path: "ltp/testcases/bin",
+    relative_install_path: "vts_ltp_tests/testcases/bin",
 }
