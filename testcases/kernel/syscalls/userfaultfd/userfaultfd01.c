@@ -87,6 +87,10 @@ static void run(void)
 			tst_res(TCONF, "Hint: check /proc/sys/vm/unprivileged_userfaultfd");
 			tst_brk(TCONF | TTERRNO,
 				"userfaultfd() requires CAP_SYS_PTRACE on this system");
+		} if (TST_ERR == EOPNOTSUPP) {
+			/* TODO: b/384985178 - userfaultfd is not supported when emulating 16k pages */
+			tst_brk(TCONF | TTERRNO,
+				"userfaultfd not supported when emulating 16k pages");
 		} else
 			tst_brk(TBROK | TTERRNO,
 				"Could not create userfault file descriptor");
