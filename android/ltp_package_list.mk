@@ -53,9 +53,11 @@ ltp_packages := \
   ltp_alarm05 \
   ltp_alarm06 \
   ltp_alarm07 \
+  ltp_arch_prctl01 \
   ltp_asapi_01 \
   ltp_asapi_02 \
   ltp_asapi_03 \
+  ltp_aslr01 \
   ltp_atof01 \
   ltp_autogroup01 \
   ltp_bind01 \
@@ -414,8 +416,6 @@ ltp_packages := \
   ltp_fcntl26_64 \
   ltp_fcntl27 \
   ltp_fcntl27_64 \
-  ltp_fcntl28 \
-  ltp_fcntl28_64 \
   ltp_fcntl29 \
   ltp_fcntl29_64 \
   ltp_fcntl30 \
@@ -597,6 +597,7 @@ ltp_packages := \
   ltp_getgroups03_16 \
   ltp_gethostbyname_r01 \
   ltp_gethostname01 \
+  ltp_gethostname02 \
   ltp_getitimer01 \
   ltp_getitimer02 \
   ltp_getpagesize01 \
@@ -614,6 +615,7 @@ ltp_packages := \
   ltp_getrandom02 \
   ltp_getrandom03 \
   ltp_getrandom04 \
+  ltp_getrandom05 \
   ltp_getresgid01 \
   ltp_getresgid01_16 \
   ltp_getresgid02 \
@@ -766,6 +768,7 @@ ltp_packages := \
   ltp_ioprio_set02 \
   ltp_ioprio_set03 \
   ltp_irqbalance01 \
+  ltp_kallsyms \
   ltp_kcmp01 \
   ltp_kcmp02 \
   ltp_kcmp03 \
@@ -907,6 +910,7 @@ ltp_packages := \
   ltp_mlock02 \
   ltp_mlock03 \
   ltp_mlock04 \
+  ltp_mlock05 \
   ltp_mlock201 \
   ltp_mlock202 \
   ltp_mlock203 \
@@ -1468,6 +1472,7 @@ ltp_packages := \
   ltp_setxattr02 \
   ltp_setxattr03 \
   ltp_sgetmask01 \
+  ltp_shmat04 \
   ltp_sigaction01 \
   ltp_sigaction02 \
   ltp_sigaltstack01 \
@@ -1508,6 +1513,8 @@ ltp_packages := \
   ltp_splice05 \
   ltp_splice06 \
   ltp_splice07 \
+  ltp_splice08 \
+  ltp_splice09 \
   ltp_ssetmask01 \
   ltp_stack_clash \
   ltp_stack_space \
@@ -1604,6 +1611,7 @@ ltp_packages := \
   ltp_test_kconfig \
   ltp_test_kconfig01 \
   ltp_test_kconfig02 \
+  ltp_test_kconfig03 \
   ltp_test_macros01 \
   ltp_test_macros02 \
   ltp_test_macros03 \
@@ -1656,7 +1664,6 @@ ltp_packages := \
   ltp_testcases_bin_check_netem \
   ltp_testcases_bin_check_setkey \
   ltp_testcases_bin_cleanup_lvm.sh \
-  ltp_testcases_bin_clockdiff01.sh \
   ltp_testcases_bin_cmdlib.sh \
   ltp_testcases_bin_cp_tests.sh \
   ltp_testcases_bin_cpio_tests.sh \
@@ -1861,7 +1868,6 @@ ltp_packages := \
   ltp_testcases_bin_get_ifname \
   ltp_testcases_bin_gre01.sh \
   ltp_testcases_bin_gre02.sh \
-  ltp_testcases_bin_host01.sh \
   ltp_testcases_bin_http-stress.sh \
   ltp_testcases_bin_http-stress01-rmt.sh \
   ltp_testcases_bin_http-stress02-rmt.sh \
@@ -1987,6 +1993,7 @@ ltp_packages := \
   ltp_testcases_bin_nfs06.sh \
   ltp_testcases_bin_nfs07.sh \
   ltp_testcases_bin_nfs08.sh \
+  ltp_testcases_bin_nfs09.sh \
   ltp_testcases_bin_nfs_lib.sh \
   ltp_testcases_bin_nfslock01.sh \
   ltp_testcases_bin_nfsstat01.sh \
@@ -2377,7 +2384,6 @@ ltp_packages := \
   ltp_testcases_bin_tcp_ipsec.sh \
   ltp_testcases_bin_tcp_ipsec_vti.sh \
   ltp_testcases_bin_tcpdump01.sh \
-  ltp_testcases_bin_telnet01.sh \
   ltp_testcases_bin_test.sh \
   ltp_testcases_bin_test_controllers.sh \
   ltp_testcases_bin_test_ioctl \
@@ -2463,7 +2469,6 @@ ltp_packages := \
   ltp_testcases_bin_wireguard02.sh \
   ltp_testcases_bin_wireguard_lib.sh \
   ltp_testcases_bin_write_freezing.sh \
-  ltp_testcases_bin_xinetd_tests.sh \
   ltp_testcases_bin_zram01.sh \
   ltp_testcases_bin_zram02.sh \
   ltp_testcases_bin_zram_lib.sh \
@@ -2614,6 +2619,7 @@ ltp_packages := \
   ltp_tst_rod \
   ltp_tst_safe_fileops \
   ltp_tst_safe_macros \
+  ltp_tst_safe_sscanf \
   ltp_tst_secureboot_enabled \
   ltp_tst_sleep \
   ltp_tst_strerrno \
@@ -2639,6 +2645,7 @@ ltp_packages := \
   ltp_unlink05 \
   ltp_unlink07 \
   ltp_unlink08 \
+  ltp_unlink09 \
   ltp_unlinkat01 \
   ltp_unshare01 \
   ltp_unshare02 \
@@ -2651,6 +2658,7 @@ ltp_packages := \
   ltp_utime04 \
   ltp_utime05 \
   ltp_utime06 \
+  ltp_utime07 \
   ltp_utimensat01 \
   ltp_utimes01 \
   ltp_utsname01 \
@@ -2691,10 +2699,8 @@ ltp_packages := \
   ltp_waitid10 \
   ltp_waitid11 \
   ltp_waitpid01 \
-  ltp_waitpid02 \
   ltp_waitpid03 \
   ltp_waitpid04 \
-  ltp_waitpid05 \
   ltp_waitpid06 \
   ltp_waitpid07 \
   ltp_waitpid08 \

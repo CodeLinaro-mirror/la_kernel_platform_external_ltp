@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include "lapi/fcntl.h"
 #include "tst_test.h"
+#include "pgsize_helpers.h"
 
 static int fds[2];
 static int flags;
@@ -61,7 +62,7 @@ static void setup(void)
 	char *write_buffer;
 
 	SAFE_PIPE2(fds, O_NONBLOCK);
-	page_size = SAFE_SYSCONF(_SC_PAGESIZE);
+	page_size = kernel_page_size();
 
 	flags = SAFE_FCNTL(fds[1], F_GETFL);
 	if (!(flags & O_NONBLOCK))

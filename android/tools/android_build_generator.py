@@ -127,6 +127,7 @@ class BuildGenerator(object):
 
         self._packages.append(target_name)
 
+        target_bp.append('')
         target_bp.append('cc_test {')
         target_bp.append('    name: "%s",' % target_name)
         target_bp.append('    stem: "%s",' % base_name)
@@ -181,7 +182,6 @@ class BuildGenerator(object):
             target_bp.append('    ],')
 
         target_bp.append('}')
-        target_bp.append('')
         self._bp_result[target_name] = target_bp
 
     def BuildStaticLibrary(self, ar_target, local_src_files, local_cflags,
@@ -196,6 +196,7 @@ class BuildGenerator(object):
         '''
         target_name = 'libltp_%s' % self.ArTargetToLibraryName(ar_target)
         target_bp = []
+        target_bp.append('')
         target_bp.append('cc_library_static {')
         target_bp.append('    name: "%s",' % target_name)
         target_bp.append('    defaults: ["ltp_defaults"],')
@@ -218,7 +219,6 @@ class BuildGenerator(object):
         target_bp.append('    ],')
 
         target_bp.append('}')
-        target_bp.append('')
         self._bp_result[target_name] = target_bp
 
     def BuildShellScript(self, install_target, local_src_file):
@@ -237,6 +237,7 @@ class BuildGenerator(object):
         module_dir = os.path.dirname(install_target)
         module_stem = os.path.basename(install_target)
 
+        bp_result.append('')
         bp_result.append('sh_test {')
         bp_result.append('    name: "%s",' % module)
         bp_result.append('    src: "%s",' % local_src_file)
@@ -244,7 +245,6 @@ class BuildGenerator(object):
         bp_result.append('    filename: "%s",' % module_stem)
         bp_result.append('    compile_multilib: "both",')
         bp_result.append('}')
-        bp_result.append('')
 
         self._bp_result[module] = bp_result
 
@@ -264,6 +264,7 @@ class BuildGenerator(object):
         module_stem = os.path.basename(install_target)
 
         bp_result = []
+        bp_result.append('')
         bp_result.append('sh_test {')
         bp_result.append('    name: "%s",' % module)
         bp_result.append('    src: "%s",' % src)
@@ -272,7 +273,6 @@ class BuildGenerator(object):
         bp_result.append('    compile_multilib: "both",')
         bp_result.append('    auto_gen_config: false,')
         bp_result.append('}')
-        bp_result.append('')
 
         self._prebuilt_bp_result[base_name] = bp_result
         self._packages.append(module)
@@ -480,6 +480,18 @@ class BuildGenerator(object):
                 f.write('\n')
             self._bp_result = {}
 
+    def WritePackageList(self, output_path):
+        '''Write parse result to package list file.
+
+        Args:
+            output_path: string
+        '''
+        with open(output_path, 'a') as f:
+            f.write('\n')
+            f.write('ltp_packages := \\\n  ')
+            f.write(' \\\n  '.join(sorted(self._packages)))
+            self._packages = []
+
     def WritePrebuiltAndroidBp(self, output_path):
         '''Write parse result to blueprint file.
 
@@ -487,9 +499,10 @@ class BuildGenerator(object):
             output_path: string
         '''
         with open(output_path, 'a') as f:
+            f.write('\n')
             f.write('package {\n')
             f.write('    default_applicable_licenses: ["external_ltp_license"],\n')
-            f.write('}\n\n')
+            f.write('}\n')
             for k in sorted(self._prebuilt_bp_result.keys()):
                 f.write('\n'.join(self._prebuilt_bp_result[k]))
                 f.write('\n')
@@ -502,6 +515,7 @@ class BuildGenerator(object):
             output_path: string
         '''
         bp_result = []
+        bp_result.append('')
         bp_result.append('package {')
         bp_result.append('    default_applicable_licenses: ["external_ltp_license"],')
         bp_result.append('}')
@@ -561,6 +575,11 @@ def main():
         required=True,
         help='output blueprint path')
     parser.add_argument(
+        '--output_plist_path',
+        dest='output_plist_path',
+        required=True,
+        help='output package list path')
+    parser.add_argument(
         '--custom_cflags_file',
         dest='custom_cflags_file',
         required=True,
@@ -579,6 +598,7 @@ def main():
     generator.WritePrebuiltAndroidBp(args.output_prebuilt_ltp_testcase_bp_path)
     generator.WriteLtpMainAndroidBp(args.output_ltp_main_bp_path)
     generator.WriteAndroidBp(args.output_bp_path)
+    generator.WritePackageList(args.output_plist_path)
 
     unused_cflags_targs = generator.GetUnusedCustomCFlagsTargets()
     if unused_cflags_targs:

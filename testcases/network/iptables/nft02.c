@@ -42,27 +42,27 @@ static struct tst_netlink_context *ctx;
 
 /* Table creation config */
 static const struct tst_netlink_attr_list table_config[] = {
-	{NFTA_TABLE_NAME, TABNAME, sizeof(TABNAME), NULL},
+	{NFTA_TABLE_NAME, TABNAME, strlen(TABNAME) + 1, NULL},
 	{0, NULL, -1, NULL}
 };
 
 /* Chain creation and deletion config */
 static const struct tst_netlink_attr_list destchain_config[] = {
-	{NFTA_TABLE_NAME, TABNAME, sizeof(TABNAME), NULL},
-	{NFTA_CHAIN_NAME, DESTCHAIN, sizeof(DESTCHAIN), NULL},
+	{NFTA_TABLE_NAME, TABNAME, strlen(TABNAME) + 1, NULL},
+	{NFTA_CHAIN_NAME, DESTCHAIN, strlen(DESTCHAIN) + 1, NULL},
 	{NFTA_CHAIN_ID, &chain_id, sizeof(chain_id), NULL},
 	{0, NULL, -1, NULL}
 };
 
 static const struct tst_netlink_attr_list delchain_config[] = {
-	{NFTA_TABLE_NAME, TABNAME, sizeof(TABNAME), NULL},
-	{NFTA_CHAIN_NAME, DESTCHAIN, sizeof(DESTCHAIN), NULL},
+	{NFTA_TABLE_NAME, TABNAME, strlen(TABNAME) + 1, NULL},
+	{NFTA_CHAIN_NAME, DESTCHAIN, strlen(DESTCHAIN) + 1, NULL},
 	{0, NULL, -1, NULL}
 };
 
 static const struct tst_netlink_attr_list srcchain_config[] = {
-	{NFTA_TABLE_NAME, TABNAME, sizeof(TABNAME), NULL},
-	{NFTA_CHAIN_NAME, SRCCHAIN, sizeof(SRCCHAIN), NULL},
+	{NFTA_TABLE_NAME, TABNAME, strlen(TABNAME) + 1, NULL},
+	{NFTA_CHAIN_NAME, SRCCHAIN, strlen(SRCCHAIN) + 1, NULL},
 	{0, NULL, -1, NULL}
 };
 
@@ -93,8 +93,8 @@ static const struct tst_netlink_attr_list rule_expr_config[] = {
 
 static const struct tst_netlink_attr_list rule_config[] = {
 	{NFTA_RULE_EXPRESSIONS, NULL, 0, rule_expr_config},
-	{NFTA_RULE_TABLE, TABNAME, sizeof(TABNAME), NULL},
-	{NFTA_RULE_CHAIN, SRCCHAIN, sizeof(SRCCHAIN), NULL},
+	{NFTA_RULE_TABLE, TABNAME, strlen(TABNAME) + 1, NULL},
+	{NFTA_RULE_CHAIN, SRCCHAIN, strlen(SRCCHAIN) + 1, NULL},
 	{0, NULL, -1, NULL}
 };
 

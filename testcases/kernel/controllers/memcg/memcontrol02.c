@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0
+// SPDX-License-Identifier: GPL-2.0-only
 /*\
  *
  * [Description]
@@ -24,6 +24,7 @@
 #define _GNU_SOURCE
 
 #include "memcontrol_common.h"
+#include "pgsize_helpers.h"
 
 static size_t page_size;
 static struct tst_cg_group *cg_child;
@@ -39,7 +40,7 @@ static void alloc_anon_50M_check(void)
 		TST_CG_VER_IS_V1(tst_cg, "memory") ? "rss %zd" : "anon %zd";
 
 	buf = SAFE_MALLOC(size);
-	for (ptr = buf; ptr < buf + size; ptr += page_size)
+	for (ptr = buf; ptr < buf + size; ptr += kernel_page_size())
 		*ptr = 0;
 
 	SAFE_CG_SCANF(cg_child, "memory.current", "%zd", &current);

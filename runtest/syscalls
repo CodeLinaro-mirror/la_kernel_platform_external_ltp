@@ -31,6 +31,8 @@ alarm05 alarm05
 alarm06 alarm06
 alarm07 alarm07
 
+arch_prctl01 arch_prctl01
+
 bind01 bind01
 bind02 bind02
 bind03 bind03
@@ -329,8 +331,6 @@ fcntl26 fcntl26
 fcntl26_64 fcntl26_64
 fcntl27 fcntl27
 fcntl27_64 fcntl27_64
-fcntl28 fcntl28
-fcntl28_64 fcntl28_64
 fcntl29 fcntl29
 fcntl29_64 fcntl29_64
 fcntl30 fcntl30
@@ -475,6 +475,7 @@ gethostbyname_r01 gethostbyname_r01
 gethostid01 gethostid01
 
 gethostname01 gethostname01
+gethostname02 gethostname02
 
 getitimer01 getitimer01
 getitimer02 getitimer02
@@ -501,6 +502,7 @@ getrandom01 getrandom01
 getrandom02 getrandom02
 getrandom03 getrandom03
 getrandom04 getrandom04
+getrandom05 getrandom05
 
 getresgid01 getresgid01
 getresgid01_16 getresgid01_16
@@ -757,7 +759,6 @@ mkdir02 mkdir02
 mkdir03 mkdir03
 mkdir04 mkdir04
 mkdir05 mkdir05
-mkdir05A symlink01 -T mkdir05
 mkdir09 mkdir09
 
 #mkdirat test cases
@@ -782,6 +783,7 @@ mlock01 mlock01
 mlock02 mlock02
 mlock03 mlock03 -i 20
 mlock04 mlock04
+mlock05 mlock05
 
 mlock201 mlock201
 mlock202 mlock202
@@ -866,11 +868,9 @@ msgctl03 msgctl03
 msgctl04 msgctl04
 msgctl05 msgctl05
 msgctl06 msgctl06
-msgstress01 msgstress01
-msgstress02 msgstress02
-msgstress03 msgstress03
-msgstress04 msgstress04
 msgctl12 msgctl12
+
+msgstress01 msgstress01
 
 msgget01 msgget01
 msgget02 msgget02
@@ -1458,6 +1458,7 @@ setxattr03 setxattr03
 shmat01 shmat01
 shmat02 shmat02
 shmat03 shmat03
+shmat04 shmat04
 
 shmctl01 shmctl01
 shmctl02 shmctl02
@@ -1530,6 +1531,8 @@ splice04 splice04
 splice05 splice05
 splice06 splice06
 splice07 splice07
+splice08 splice08
+splice09 splice09
 
 tee01 tee01
 tee02 tee02
@@ -1666,6 +1669,7 @@ unlink01 symlink01 -T unlink01
 unlink05 unlink05
 unlink07 unlink07
 unlink08 unlink08
+unlink09 unlink09
 
 #unlinkat test cases
 unlinkat01 unlinkat01
@@ -1691,12 +1695,12 @@ ustat01 ustat01
 ustat02 ustat02
 
 utime01 utime01
-utime01A symlink01 -T utime01
 utime02 utime02
 utime03 utime03
 utime04 utime04
 utime05 utime05
 utime06 utime06
+utime07 utime07
 
 utimes01 utimes01
 
@@ -1723,10 +1727,8 @@ wait402 wait402
 wait403 wait403
 
 waitpid01 waitpid01
-waitpid02 waitpid02
 waitpid03 waitpid03
 waitpid04 waitpid04
-waitpid05 waitpid05
 waitpid06 waitpid06
 waitpid07 waitpid07
 waitpid08 waitpid08
