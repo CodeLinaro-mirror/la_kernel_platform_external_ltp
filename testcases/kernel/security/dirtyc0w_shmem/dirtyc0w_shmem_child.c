@@ -139,6 +139,11 @@ retry:
 				goto retry;
 			}
 		}
+		if (TST_ERR == EOPNOTSUPP) {
+			/* TODO: b/384985178 - userfaultfd is not supported when emulating 16k pages */
+			tst_brk(TCONF | TTERRNO,
+				"userfaultfd not supported when emulating 16k pages");
+		}
 		tst_brk(TBROK | TTERRNO,
 			"Could not create userfault file descriptor");
 	}
