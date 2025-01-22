@@ -16,7 +16,6 @@
 #include <unistd.h>
 #include <sys/mman.h>
 #include "tst_test.h"
-#include "pgsize_helpers.h"
 
 #define NUM_PAGES 3
 
@@ -47,7 +46,7 @@ static void setup(void)
 static void test_mincore(unsigned int test_nr)
 {
 	const struct tcase *tc = &tcases[test_nr];
-	DECLARE_MINCORE_VECTOR(vec, NUM_PAGES);
+	unsigned char vec[NUM_PAGES];
 	int locked_pages;
 	int count, mincore_ret;
 
@@ -59,10 +58,9 @@ static void test_mincore(unsigned int test_nr)
 	if (mincore_ret == -1)
 		tst_brk(TBROK | TERRNO, "mincore failed");
 	locked_pages = 0;
-	for (count = 0; count < nr_pgs_to_nr_kernel_pgs(NUM_PAGES); count++)
+	for (count = 0; count < NUM_PAGES; count++)
 		if (vec[count] & 1)
 			locked_pages++;
-	locked_pages = nr_kernel_pgs_to_nr_pgs(locked_pages);
 
 	if (locked_pages == tc->expected_pages)
 		tst_res(TPASS, "mincore() reports %s", tc->desc);
