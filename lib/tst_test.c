@@ -4,6 +4,8 @@
  * Copyright (c) Linux Test Project, 2016-2024
  */
 
+#define _GNU_SOURCE
+
 #include <limits.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -13,6 +15,7 @@
 #include <errno.h>
 #include <sys/mount.h>
 #include <sys/types.h>
+#include <sys/utsname.h>
 #include <sys/wait.h>
 #include <math.h>
 
@@ -171,6 +174,50 @@ void tst_reinit(void)
 	tst_max_futexes = (size - sizeof(struct results))/sizeof(futex_t);
 
 	SAFE_CLOSE(fd);
+}
+
+extern char **environ;
+
+static unsigned int params_array_len(char *const array[])
+{
+	unsigned int ret = 0;
+
+	if (!array)
+		return 0;
+
+	while (*(array++))
+		ret++;
+
+	return ret;
+}
+
+int tst_run_script(const char *script_name, char *const params[])
+{
+	int pid;
+	unsigned int i, params_len = params_array_len(params);
+	char *argv[params_len + 2];
+
+	if (!tst_test->runs_script)
+		tst_brk(TBROK, "runs_script flag must be set!");
+
+	argv[0] = (char*)script_name;
+
+	if (params) {
+		for (i = 0; i < params_len; i++)
+			argv[i+1] = params[i];
+	}
+
+	argv[params_len+1] = NULL;
+
+	pid = SAFE_FORK();
+	if (pid)
+		return pid;
+
+	execvpe(script_name, argv, environ);
+
+	tst_brk(TBROK | TERRNO, "execvpe(%s, ...) failed!", script_name);
+
+	return -1;
 }
 
 static void update_results(int ttype)
@@ -1097,15 +1144,18 @@ static const char *get_device_name(const char *fs_type)
 		return tdev.dev;
 }
 
-static void prepare_device(void)
+static void prepare_device(struct tst_fs *fs)
 {
 	const char *mnt_data;
 	char buf[1024];
+	struct tst_fs dummy = {};
 
-	if (tst_test->format_device) {
-		SAFE_MKFS(tdev.dev, tdev.fs_type, tst_test->dev_fs_opts,
-			  tst_test->dev_extra_opts);
-	}
+	fs = fs ?: &dummy;
+
+	const char *const extra[] = {fs->mkfs_size_opt, NULL};
+
+	if (tst_test->format_device)
+		SAFE_MKFS(tdev.dev, tdev.fs_type, fs->mkfs_opts, extra);
 
 	if (tst_test->needs_rofs) {
 		prepare_and_mount_ro_fs(tdev.dev, tst_test->mntpoint,
@@ -1114,11 +1164,11 @@ static void prepare_device(void)
 	}
 
 	if (tst_test->mount_device) {
-		mnt_data = limit_tmpfs_mount_size(tst_test->mnt_data,
+		mnt_data = limit_tmpfs_mount_size(fs->mnt_data,
 				buf, sizeof(buf), tdev.fs_type);
 
 		SAFE_MOUNT(get_device_name(tdev.fs_type), tst_test->mntpoint,
-				tdev.fs_type, tst_test->mnt_flags, mnt_data);
+				tdev.fs_type, fs->mnt_flags, mnt_data);
 		mntpoint_mounted = 1;
 	}
 }
@@ -1154,10 +1204,43 @@ static void set_ulimit_(const char *file, const int lineno, const struct tst_uli
 	if (conf->rlim_cur > rlim.rlim_max)
 		rlim.rlim_max = conf->rlim_cur;
 
-	tst_res_(file, lineno, TINFO, "Set ulimit resource: %d rlim_cur: %lu rlim_max: %lu",
-		conf->resource, rlim.rlim_cur, rlim.rlim_max);
+	tst_res_(file, lineno, TINFO, "Set ulimit resource: %d rlim_cur: %llu rlim_max: %llu",
+		conf->resource, (long long unsigned int)rlim.rlim_cur,
+		(long long unsigned int)rlim.rlim_max);
 
 	safe_setrlimit(file, lineno, conf->resource, &rlim);
+}
+
+static unsigned int count_fs_descs(void)
+{
+	unsigned int ret = 0;
+
+	if (!tst_test->filesystems)
+		return 0;
+
+	/*
+	 * First entry is special, if it has zero type it's the default entry
+	 * and is either followed by a terminating entry or by filesystem
+	 * description(s) plus terminating entry.
+	 */
+	if (!tst_test->filesystems[0].type)
+		ret = 1;
+
+	while (tst_test->filesystems[ret].type)
+		ret++;
+
+	return ret;
+}
+
+static const char *default_fs_type(void)
+{
+	if (!tst_test->filesystems)
+		return tst_dev_fs_type();
+
+	if (tst_test->filesystems[0].type)
+		return tst_test->filesystems[0].type;
+
+	return tst_dev_fs_type();
 }
 
 static void do_setup(int argc, char *argv[])
@@ -1187,6 +1270,11 @@ static void do_setup(int argc, char *argv[])
 	if (tdebug_env && (!strcmp(tdebug_env, "1") || !strcmp(tdebug_env, "y"))) {
 		tst_res(TINFO, "Enabling debug info");
 		tdebug = 1;
+	}
+
+	if (tst_test->runs_script) {
+		tst_test->child_needs_reinit = 1;
+		tst_test->forks_child = 1;
 	}
 
 	if (tst_test->needs_kconfigs && tst_kconfig_check(tst_test->needs_kconfigs))
@@ -1321,13 +1409,10 @@ static void do_setup(int argc, char *argv[])
 
 		tst_device = &tdev;
 
-		if (tst_test->dev_fs_type)
-			tdev.fs_type = tst_test->dev_fs_type;
-		else
-			tdev.fs_type = tst_dev_fs_type();
+		tdev.fs_type = default_fs_type();
 
-		if (!tst_test->all_filesystems)
-			prepare_device();
+		if (!tst_test->all_filesystems && count_fs_descs() <= 1)
+			prepare_device(tst_test->filesystems);
 	}
 
 	if (tst_test->needs_overlay && !tst_test->mount_device)
@@ -1680,6 +1765,52 @@ static int fork_testrun(void)
 	return 0;
 }
 
+static struct tst_fs *lookup_fs_desc(const char *fs_type, int all_filesystems)
+{
+	struct tst_fs *fs = tst_test->filesystems;
+	static struct tst_fs empty;
+
+	if (!fs)
+		goto ret;
+
+	for (; fs->type; fs++) {
+
+		if (!fs->type)
+			continue;
+
+		if (!strcmp(fs_type, fs->type))
+			return fs;
+	}
+
+ret:
+	if (!all_filesystems)
+		return NULL;
+
+	if (!tst_test->filesystems || tst_test->filesystems[0].type)
+		return &empty;
+
+	return &tst_test->filesystems[0];
+}
+
+static int run_tcase_on_fs(struct tst_fs *fs, const char *fs_type)
+{
+	int ret;
+
+	tst_res(TINFO, "=== Testing on %s ===", fs_type);
+	tdev.fs_type = fs_type;
+
+	prepare_device(fs);
+
+	ret = fork_testrun();
+
+	if (mntpoint_mounted) {
+		tst_umount(tst_test->mntpoint);
+		mntpoint_mounted = 0;
+	}
+
+	return ret;
+}
+
 static int run_tcases_per_fs(void)
 {
 	int ret = 0;
@@ -1690,18 +1821,12 @@ static int run_tcases_per_fs(void)
 		tst_brk(TCONF, "There are no supported filesystems");
 
 	for (i = 0; filesystems[i]; i++) {
+		struct tst_fs *fs = lookup_fs_desc(filesystems[i], tst_test->all_filesystems);
 
-		tst_res(TINFO, "=== Testing on %s ===", filesystems[i]);
-		tdev.fs_type = filesystems[i];
+		if (!fs)
+			continue;
 
-		prepare_device();
-
-		ret = fork_testrun();
-
-		if (mntpoint_mounted) {
-			tst_umount(tst_test->mntpoint);
-			mntpoint_mounted = 0;
-		}
+		run_tcase_on_fs(fs, filesystems[i]);
 
 		if (ret == TCONF)
 			continue;
@@ -1721,6 +1846,7 @@ void tst_run_tcases(int argc, char *argv[], struct tst_test *self)
 {
 	int ret = 0;
 	unsigned int test_variants = 1;
+	struct utsname uval;
 
 	lib_pid = getpid();
 	tst_test = self;
@@ -1733,6 +1859,10 @@ void tst_run_tcases(int argc, char *argv[], struct tst_test *self)
 
 	tst_res(TINFO, "LTP version: "LTP_VERSION);
 
+
+	uname(&uval);
+	tst_res(TINFO, "Tested kernel: %s %s %s", uval.release, uval.version, uval.machine);
+
 	if (tst_test->max_runtime)
 		results->max_runtime = multiply_runtime(tst_test->max_runtime);
 
@@ -1742,7 +1872,7 @@ void tst_run_tcases(int argc, char *argv[], struct tst_test *self)
 		test_variants = tst_test->test_variants;
 
 	for (tst_variant = 0; tst_variant < test_variants; tst_variant++) {
-		if (tst_test->all_filesystems)
+		if (tst_test->all_filesystems || count_fs_descs() > 1)
 			ret |= run_tcases_per_fs();
 		else
 			ret |= fork_testrun();

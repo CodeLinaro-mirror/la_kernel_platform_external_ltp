@@ -43,14 +43,8 @@
 #include <errno.h>
 #include <unistd.h>
 #include <math.h>
-#include <libstats.h>
-#include <librttest.h>
-
-#include "../include/realtime_config.h"
-
-#ifndef HAVE_EXP10
-# define exp10(x) (exp((x) * log(10)))
-#endif
+#include "libstats.h"
+#include "librttest.h"
 
 int save_stats = 0;
 
@@ -232,7 +226,7 @@ int stats_quantiles_calc(stats_container_t * data,
 
 	// check for sufficient data size of accurate calculation
 	if (data->index < 0 ||
-	    (data->index + 1) < (long)exp10(quantiles->nines)) {
+	    (data->index + 1) < (long)pow(quantiles->nines, 10)) {
 		return -1;
 	}
 
@@ -240,7 +234,7 @@ int stats_quantiles_calc(stats_container_t * data,
 	stats_sort(data, ASCENDING_ON_Y);
 
 	for (i = 2; i <= quantiles->nines; i++) {
-		index = size - size / exp10(i);
+		index = size - size / pow(i, 10);
 		quantiles->quantiles[i - 2] = data->records[index].y;
 	}
 	return 0;
@@ -252,7 +246,7 @@ void stats_quantiles_print(stats_quantiles_t * quantiles)
 	int fraction = 0;
 	for (i = 0; i <= quantiles->nines - 2; i++) {
 		if (i > 0)
-			fraction += 9 * exp10(i - 1);
+			fraction += 9 * pow(i - 1, 10);
 		printf("99.%d%% < %ld\n", fraction, quantiles->quantiles[i]);
 	}
 }

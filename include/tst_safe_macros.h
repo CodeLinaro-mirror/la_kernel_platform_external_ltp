@@ -281,8 +281,8 @@ static inline void *safe_mmap(const char *file, const int lineno,
 	tst_prot_to_str(prot, prot_buf);
 
 	tst_res_(file, lineno, TDEBUG,
-		"mmap(%p, %zu, %s(%x), %d, %d, %ld)",
-		addr, length, prot_buf, prot, flags, fd, offset);
+		"mmap(%p, %zu, %s(%x), %d, %d, %lld)",
+		addr, length, prot_buf, prot, flags, fd, (long long int)offset);
 
 	rval = mmap(addr, length, prot, flags, fd, offset);
 	if (rval == MAP_FAILED) {
@@ -502,5 +502,17 @@ int safe_sscanf(const char *file, const int lineno, const char *restrict buffer,
 	const char *restrict format, ...);
 #define SAFE_SSCANF(buffer, format, ...) \
 	safe_sscanf(__FILE__, __LINE__, (buffer), (format),	##__VA_ARGS__)
+
+int safe_prctl(const char *file, const int lineno,
+	int option, unsigned long arg2, unsigned long arg3,
+	unsigned long arg4, unsigned long arg5);
+#define SAFE_PRCTL(option, arg2, arg3, arg4, arg5) \
+	safe_prctl(__FILE__, __LINE__, (option), (arg2), (arg3), (arg4), (arg5))
+
+int safe_symlinkat(const char *file, const int lineno,
+	const char *oldpath, const int newdirfd, const char *newpath);
+
+#define SAFE_SYMLINKAT(oldpath, newdirfd, newpath) \
+	safe_symlinkat(__FILE__, __LINE__, (oldpath), (newdirfd), (newpath))
 
 #endif /* TST_SAFE_MACROS_H__ */

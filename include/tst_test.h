@@ -46,6 +46,7 @@
 #include "tst_memutils.h"
 #include "tst_arch.h"
 #include "tst_fd.h"
+#include "tst_tmpdir.h"
 
 void tst_res_(const char *file, const int lineno, int ttype,
               const char *fmt, ...)
@@ -248,6 +249,36 @@ struct tst_ulimit_val {
 };
 
 /**
+ * struct tst_fs - A file system type, mkfs and mount options
+ *
+ * @type: A filesystem type to use.
+ *
+ * @mkfs_opts: A NULL terminated array of options passed to mkfs in the case
+ *             of 'tst_test.format_device'. These options are passed to mkfs
+ *             before the device path.
+ *
+ * @mkfs_size_opt: An option passed to mkfs in the case of
+ *                 'tst_test.format_device'. The device size in blocks is
+ *                 passed to mkfs after the device path and can be used to
+ *                 limit the file system not to use the whole block device.
+ *
+ * @mnt_flags: MS_* flags passed to mount(2) when the test library mounts a
+ *             device in the case of 'tst_test.mount_device'.
+ *
+ * @mnt_data: The data passed to mount(2) when the test library mounts a device
+ *            in the case of 'tst_test.mount_device'.
+ */
+struct tst_fs {
+	const char *type;
+
+	const char *const *mkfs_opts;
+	const char *mkfs_size_opt;
+
+	unsigned int mnt_flags;
+	const void *mnt_data;
+};
+
+/**
  * struct tst_test - A test description.
  *
  * @tcnt: A number of tests. If set the test() callback is called tcnt times
@@ -290,7 +321,7 @@ struct tst_ulimit_val {
  *                 file system at tst_test.mntpoint.
  *
  * @format_device: Does all tst_test.needs_device would do and also formats
- *                 the device with tst_test.dev_fs_type file system as well.
+ *                 the device with a file system as well.
  *
  * @mount_device: Does all tst_test.format_device would do and also mounts the
  *                device at tst_test.mntpoint.
@@ -299,6 +330,8 @@ struct tst_ulimit_val {
  *
  * @child_needs_reinit: Has to be set if the test needs to call tst_reinit()
  *                      from a process started by exec().
+ *
+ * @runs_script: Implies child_needs_reinit and forks_child at the moment.
  *
  * @needs_devfs: If set the devfs is mounted at tst_test.mntpoint. This is
  *               needed for tests that need to create device files since tmpfs
@@ -377,28 +410,21 @@ struct tst_ulimit_val {
  *
  * @dev_min_size: A minimal device size in megabytes.
  *
- * @dev_fs_type: If set overrides the default file system type for the device and
- *               sets the tst_device.fs_type.
- *
- * @dev_fs_opts: A NULL terminated array of options passed to mkfs in the case
- *               of 'tst_test.format_device'. These options are passed to mkfs
- *               before the device path.
- *
- * @dev_extra_opts: A NULL terminated array of extra options passed to mkfs in
- *                  the case of 'tst_test.format_device'. Extra options are
- *                  passed to mkfs after the device path. Commonly the option
- *                  after mkfs is the number of blocks and can be used to limit
- *                  the file system not to use the whole block device.
+ * @filesystems: A NULL type terminated array of per file system type
+ *               parameters for mkfs and mount. If the first entry type is NULL
+ *               it describes a default parameters for all file system tests.
+ *               The rest of the entries the describes per file system type
+ *               parameters. If tst_test.all_filesystems is set, the test runs
+ *               for all filesystems and uses the array to lookup the mkfs
+ *               and mount options. If tst_test.all_filesystems is not set
+ *               the test iterates over file system types defined in the array.
+ *               If there is only a single entry in the array with a NULL type,
+ *               the test runs just once for the default file sytem i.e.
+ *               $TST_FS_TYPE.
  *
  * @mntpoint: A mount point where the test library mounts requested file system.
  *            The directory is created by the library, the test must not create
  *            it itself.
- *
- * @mnt_flags: MS_* flags passed to mount(2) when the test library mounts a
- *             device in the case of 'tst_test.mount_device'.
- *
- * @mnt_data: The data passed to mount(2) when the test library mounts a device
- *            in the case of 'tst_test.mount_device'.
  *
  * @max_runtime: Maximal test runtime in seconds. Any test that runs for more
  *               than a second or two should set this and also use
@@ -427,6 +453,10 @@ struct tst_ulimit_val {
  * @test_all: A main test function, only one of the tst_test.test and test_all
  *            can be set. May be executed several times if test was passed '-i'
  *            or '-d' command line parameters.
+ *
+ * @scall: Internal only (timer measurement library).
+ *
+ * @sample: Internal only (timer measurement library).
  *
  * @resource_files: A NULL terminated array of filenames that will be copied
  *                  to the test temporary directory from the LTP datafiles
@@ -493,6 +523,7 @@ struct tst_ulimit_val {
 	unsigned int mount_device:1;
 	unsigned int needs_rofs:1;
 	unsigned int child_needs_reinit:1;
+	unsigned int runs_script:1;
 	unsigned int needs_devfs:1;
 	unsigned int restore_wallclock:1;
 
@@ -501,6 +532,8 @@ struct tst_ulimit_val {
 	unsigned int skip_in_lockdown:1;
 	unsigned int skip_in_secureboot:1;
 	unsigned int skip_in_compat:1;
+
+
 	int needs_abi_bits;
 
 	unsigned int needs_hugetlbfs:1;
@@ -519,14 +552,9 @@ struct tst_ulimit_val {
 
 	unsigned int dev_min_size;
 
-	const char *dev_fs_type;
-
-	const char *const *dev_fs_opts;
-	const char *const *dev_extra_opts;
+	struct tst_fs *filesystems;
 
 	const char *mntpoint;
-	unsigned int mnt_flags;
-	void *mnt_data;
 
 	int max_runtime;
 
@@ -593,6 +621,38 @@ void tst_run_tcases(int argc, char *argv[], struct tst_test *self)
  */
 void tst_reinit(void);
 
+/**
+ * tst_run_script() - Prepare the environment and execute a (shell) script.
+ *
+ * @script_name: A filename of the script.
+ * @params: A NULL terminated array of (shell) script parameters, pass NULL if
+ *          none are needed. This what is passed starting from argv[1].
+ *
+ * The (shell) script is executed with LTP_IPC_PATH in environment so that the
+ * binary helpers such as tst_res_ or tst_checkpoint work properly when executed
+ * from the script. This also means that the tst_test.runs_script flag needs to
+ * be set.
+ *
+ * A shell script has to source the tst_env.sh shell script at the start and
+ * after that it's free to use tst_res in the same way C code would use.
+ *
+ * Example shell script that reports success::
+ *
+ *   #!/bin/sh
+ *   . tst_env.sh
+ *
+ *   tst_res TPASS "Example test works"
+ *
+ * The call returns a pid in a case that you want to examine the return value
+ * of the script yourself. If you do not need to check the return value
+ * yourself you can use tst_reap_children() to wait for the completion. Or let
+ * the test library collect the child automatically, just be wary that the
+ * script and the test both runs concurently at the same time in this case.
+ *
+ * Return: A pid of the (shell) script process.
+ */
+int tst_run_script(const char *script_name, char *const params[]);
+
 unsigned int tst_multiply_timeout(unsigned int timeout);
 
 /*
@@ -614,11 +674,6 @@ void tst_set_max_runtime(int max_runtime);
  * It unlinks the file after opening and return file descriptor.
  */
 int tst_creat_unlinked(const char *path, int flags);
-
-/*
- * Returns path to the test temporary directory in a newly allocated buffer.
- */
-char *tst_get_tmpdir(void);
 
 /*
  * Returns path to the test temporary directory root (TMPDIR).
@@ -646,6 +701,8 @@ int main(int argc, char *argv[])
 
 /**
  * TST_TEST_TCONF() - Exit tests with a TCONF message.
+ *
+ * @message: Error message (the reason to skip test).
  *
  * This macro is used in test that couldn't be compiled either because current
  * CPU architecture is unsupported or because of missing development libraries.

@@ -20,7 +20,6 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include "tst_test.h"
-#include "pgsize_helpers.h"
 
 #define NUM_PAGES 3
 
@@ -65,18 +64,17 @@ static int count_pages_in_cache(void)
 {
 	int locked_pages = 0;
 	int count, ret;
-	DECLARE_MINCORE_VECTOR(vec, NUM_PAGES);
+	unsigned char vec[NUM_PAGES];
 
 	TST_CHECKPOINT_WAIT(0);
 
 	ret = mincore(ptr, size, vec);
 	if (ret == -1)
 		tst_brk(TBROK | TERRNO, "mincore failed");
-	for (count = 0; count < nr_pgs_to_nr_kernel_pgs(NUM_PAGES); count++) {
+	for (count = 0; count < NUM_PAGES; count++) {
 		if (vec[count] & 1)
 			locked_pages++;
 	}
-	locked_pages = nr_kernel_pgs_to_nr_pgs(locked_pages);
 
 	TST_CHECKPOINT_WAKE(1);
 	return locked_pages;

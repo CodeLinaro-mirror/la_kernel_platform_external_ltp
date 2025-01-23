@@ -19,6 +19,7 @@ shmctl07
 # Test SysV IPC, which is not allowed in Android kernels.
 
 cve-2017-5669
+cachestat02
 hugeshmat01
 hugeshmat02
 hugeshmat03
@@ -630,3 +631,13 @@ kvm_svm04-payload.elf
 # Redefines cacheflush
 # b/277960476
 hugemmap15
+
+# Uses PTHREAD_MUTEX_ROBUST
+testpi-0
+testpi-6
+sbrk_mutex
+
+# TSC unsupported
+async_handler_tsc
+preempt_timing
+rdtsc-latency
