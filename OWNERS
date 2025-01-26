@@ -2,3 +2,4 @@ adelva@google.com
 balsini@google.com
 edliaw@google.com
 bettyzhou@google.com
+include platform/system/core:/janitors/OWNERS #{LAST_RESORT_SUGGESTION}
