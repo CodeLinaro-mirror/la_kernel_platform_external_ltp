@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
- * Copyright (c) 2019 Red Hat, Inc.
+ * Copyright (c) 2019-2024 Red Hat, Inc.
+ */
+
+/*\
+ * [Description]
  *
  * Memory Protection Keys for Userspace (PKU aka PKEYs) is a Skylake-SP
  * server feature that provides a mechanism for enforcing page-based
@@ -10,14 +14,15 @@
  * giving 16 possible keys.
  *
  * Basic method for PKEYs testing:
- *    1. test allocates a pkey(e.g. PKEY_DISABLE_ACCESS) via pkey_alloc()
- *    2. pkey_mprotect() apply this pkey to a piece of memory(buffer)
- *    3. check if access right of the buffer has been changed and take effect
- *    4. remove the access right(pkey) from this buffer via pkey_mprotect()
- *    5. check if buffer area can be read or write after removing pkey
- *    6. pkey_free() releases the pkey after using it
  *
- * Looping around this basic test on diffenrent types of memory.
+ * 1. test allocates a pkey(e.g. PKEY_DISABLE_ACCESS) via pkey_alloc()
+ * 2. pkey_mprotect() apply this pkey to a piece of memory(buffer)
+ * 3. check if access right of the buffer has been changed and take effect
+ * 4. remove the access right(pkey) from this buffer via pkey_mprotect()
+ * 5. check if buffer area can be read or write after removing pkey
+ * 6. pkey_free() releases the pkey after using it
+ *
+ * Looping around this basic test on different types of memory.
  */
 
 #define _GNU_SOURCE
@@ -29,28 +34,42 @@
 #include <sys/mman.h>
 #include <sys/wait.h>
 
-#include "pkey.h"
+#include "lapi/pkey.h"
 
 #define TEST_FILE "pkey_testfile"
 #define STR "abcdefghijklmnopqrstuvwxyz12345\n"
 #define PATH_VM_NRHPS "/proc/sys/vm/nr_hugepages"
 
 static int size;
+static int execute_supported = 1;
 
+#define PERM_NAME(x) .access_rights = x, .name = #x
 static struct tcase {
 	unsigned long flags;
 	unsigned long access_rights;
 	char *name;
 } tcases[] = {
-	{0, PKEY_DISABLE_ACCESS, "PKEY_DISABLE_ACCESS"},
-	{0, PKEY_DISABLE_WRITE, "PKEY_DISABLE_WRITE"},
+	{PERM_NAME(PKEY_DISABLE_ACCESS)},
+	{PERM_NAME(PKEY_DISABLE_WRITE)},
+	{PERM_NAME(PKEY_DISABLE_EXECUTE)} /* keep it the last */
 };
 
 static void setup(void)
 {
-	int i, fd;
+	int i, fd, pkey;
 
 	check_pkey_support();
+
+	pkey = pkey_alloc(0, PKEY_DISABLE_EXECUTE);
+	if (pkey == -1) {
+		if (errno == EINVAL) {
+			tst_res(TINFO, "PKEY_DISABLE_EXECUTE not implemented");
+			execute_supported = 0;
+		} else {
+			tst_brk(TBROK | TERRNO, "pkey_alloc failed");
+		}
+	}
+	pkey_free(pkey);
 
 	if (tst_hugepages == test.hugepages.number)
 		size = SAFE_READ_MEMINFO("Hugepagesize:") * 1024;
@@ -125,16 +144,38 @@ static char *flag_to_str(int flags)
 	}
 }
 
-static void pkey_test(struct tcase *tc, struct mmap_param *mpa)
+static size_t function_size(void (*func)(void))
+{
+	unsigned char *start = (unsigned char *)func;
+	unsigned char *end = start;
+
+	while (*end != 0xC3 && *end != 0xC2)
+		end++;
+
+	return (size_t)(end - start + 1);
+}
+
+/*
+ * return: 1 if it's safe to quit testing on failure (all following would be
+ * TCONF, O otherwise.
+ */
+static int pkey_test(struct tcase *tc, struct mmap_param *mpa)
 {
 	pid_t pid;
 	char *buffer;
 	int pkey, status;
 	int fd = mpa->fd;
+	size_t (*func)();
+	size_t func_size = 0;
+
+	if (!execute_supported && (tc->access_rights == PKEY_DISABLE_EXECUTE)) {
+		tst_res(TCONF, "skip PKEY_DISABLE_EXECUTE test");
+		return 1;
+	}
 
 	if (!tst_hugepages && (mpa->flags & MAP_HUGETLB)) {
-		tst_res(TINFO, "Skip test on (%s) buffer", flag_to_str(mpa->flags));
-		return;
+		tst_res(TCONF, "Skip test on (%s) buffer", flag_to_str(mpa->flags));
+		return 0;
 	}
 
 	if (fd == 0)
@@ -142,12 +183,17 @@ static void pkey_test(struct tcase *tc, struct mmap_param *mpa)
 
 	buffer = SAFE_MMAP(NULL, size, mpa->prot, mpa->flags, fd, 0);
 
-	pkey = ltp_pkey_alloc(tc->flags, tc->access_rights);
+	if (mpa->prot == (PROT_READ | PROT_WRITE | PROT_EXEC)) {
+		func_size = function_size((void (*)(void))function_size);
+		memcpy(buffer, (void *)function_size, func_size);
+	}
+
+	pkey = pkey_alloc(tc->flags, tc->access_rights);
 	if (pkey == -1)
 		tst_brk(TBROK | TERRNO, "pkey_alloc failed");
 
 	tst_res(TINFO, "Set %s on (%s) buffer", tc->name, flag_to_str(mpa->flags));
-	if (ltp_pkey_mprotect(buffer, size, mpa->prot, pkey) == -1)
+	if (pkey_mprotect(buffer, size, mpa->prot, pkey) == -1)
 		tst_brk(TBROK | TERRNO, "pkey_mprotect failed");
 
 	pid = SAFE_FORK();
@@ -164,6 +210,10 @@ static void pkey_test(struct tcase *tc, struct mmap_param *mpa)
 			tst_res(TFAIL | TERRNO,
 				"Write buffer success, buffer[0] = %d", *buffer);
 		break;
+		case PKEY_DISABLE_EXECUTE:
+			func = (size_t (*)())buffer;
+			tst_res(TFAIL | TERRNO, "Execute buffer result = %zi", func(func));
+		break;
 		}
 		exit(0);
 	}
@@ -176,7 +226,7 @@ static void pkey_test(struct tcase *tc, struct mmap_param *mpa)
                 tst_res(TFAIL, "Child: %s", tst_strstatus(status));
 
 	tst_res(TINFO, "Remove %s from the buffer", tc->name);
-	if (ltp_pkey_mprotect(buffer, size, mpa->prot, 0x0) == -1)
+	if (pkey_mprotect(buffer, size, mpa->prot, 0x0) == -1)
 		tst_brk(TBROK | TERRNO, "pkey_mprotect failed");
 
 	switch (mpa->prot) {
@@ -188,9 +238,15 @@ static void pkey_test(struct tcase *tc, struct mmap_param *mpa)
 		tst_res(TPASS, "Write buffer success, buffer[0] = %d", *buffer);
 	break;
 	case PROT_READ | PROT_WRITE:
-	case PROT_READ | PROT_WRITE | PROT_EXEC:
 		*buffer = 'a';
 		tst_res(TPASS, "Read & Write buffer success, buffer[0] = %d", *buffer);
+	break;
+	case PROT_READ | PROT_WRITE | PROT_EXEC:
+		func = (size_t (*)())buffer;;
+		if (func_size == func(func))
+			tst_res(TPASS, "Execute buffer success, result = %zi", func_size);
+		else
+			tst_res(TFAIL, "Execute buffer with unexpected result: %zi", func(func));
 	break;
 	}
 
@@ -199,8 +255,10 @@ static void pkey_test(struct tcase *tc, struct mmap_param *mpa)
 
 	SAFE_MUNMAP(buffer, size);
 
-	if (ltp_pkey_free(pkey) == -1)
+	if (pkey_free(pkey) == -1)
 		tst_brk(TBROK | TERRNO, "pkey_free failed");
+
+	return 0;
 }
 
 static void verify_pkey(unsigned int i)
@@ -213,7 +271,8 @@ static void verify_pkey(unsigned int i)
 	for (j = 0; j < ARRAY_SIZE(mmap_params); j++) {
 		mpa = &mmap_params[j];
 
-		pkey_test(tc, mpa);
+		if (pkey_test(tc, mpa))
+			break;
 	}
 }
 
