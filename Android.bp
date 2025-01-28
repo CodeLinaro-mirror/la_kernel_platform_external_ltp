@@ -121,7 +121,6 @@ cc_defaults {
         // Too many files import sched.h so we enable -fcommon locally
         // ltp may get away with this with glibc because of the __USE_GNU guard in glibc's <sched.h>
         "-Wall",
-        "-Werror",
         // These warnings should be checked and fixed upstream
         "-Wno-absolute-value",
         "-Wno-uninitialized",

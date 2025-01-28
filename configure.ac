@@ -51,7 +51,6 @@ AC_CHECK_HEADERS_ONCE([ \
     linux/cryptouser.h \
     linux/close_range.h \
     linux/dccp.h \
-    linux/fs.h \
     linux/futex.h \
     linux/genetlink.h \
     linux/if_alg.h \
@@ -60,6 +59,7 @@ AC_CHECK_HEADERS_ONCE([ \
     linux/io_uring.h \
     linux/ioprio.h \
     linux/keyctl.h \
+    linux/landlock.h \
     linux/mempolicy.h \
     linux/module.h \
     linux/mount.h \
@@ -91,6 +91,7 @@ AC_SUBST(HAVE_FTS_H, $have_fts)
 AC_CHECK_HEADERS(linux/vm_sockets.h, [], [], [#include <sys/socket.h>])
 
 AC_CHECK_FUNCS_ONCE([ \
+    cachestat \
     clone3 \
     close_range \
     copy_file_range \
@@ -158,6 +159,7 @@ AC_CHECK_FUNCS_ONCE([ \
 AC_CHECK_FUNCS(mkdtemp,[],AC_MSG_ERROR(mkdtemp() not found!))
 
 AC_CHECK_MEMBERS([struct fanotify_event_info_fid.fsid.__val],,,[#include <sys/fanotify.h>])
+AC_CHECK_MEMBERS([struct landlock_ruleset_attr.handled_access_net],,,[#include <linux/landlock.h>])
 AC_CHECK_MEMBERS([struct perf_event_mmap_page.aux_head],,,[#include <linux/perf_event.h>])
 AC_CHECK_MEMBERS([struct sigaction.sa_sigaction],[],[],[#include <signal.h>])
 AC_CHECK_MEMBERS([struct statx.stx_mnt_id, struct statx.stx_dio_mem_align],,,[
@@ -171,11 +173,13 @@ AC_CHECK_MEMBERS([struct utsname.domainname],,,[
 ])
 
 AC_CHECK_TYPES([enum kcmp_type],,,[#include <linux/kcmp.h>])
+AC_CHECK_TYPES([enum landlock_rule_type],,,[#include <linux/landlock.h>])
 AC_CHECK_TYPES([struct acct_v3],,,[#include <sys/acct.h>])
 AC_CHECK_TYPES([struct af_alg_iv, struct sockaddr_alg],,,[# include <linux/if_alg.h>])
 AC_CHECK_TYPES([struct clone_args],,,[#include <sched.h>])
 AC_CHECK_TYPES([struct fanotify_event_info_fid, struct fanotify_event_info_error,
 		struct fanotify_event_info_header, struct fanotify_event_info_pidfd],,,[#include <sys/fanotify.h>])
+AC_CHECK_TYPES([struct file_clone_range],,,[#include <linux/fs.h>])
 AC_CHECK_TYPES([struct file_dedupe_range],,,[#include <linux/fs.h>])
 
 AC_CHECK_TYPES([struct file_handle],,,[
@@ -183,11 +187,18 @@ AC_CHECK_TYPES([struct file_handle],,,[
 #include <fcntl.h>
 ])
 
-AC_CHECK_TYPES([struct fs_quota_statv],,,[#include <xfs/xqm.h>])
+AC_CHECK_TYPES([struct fs_quota_statv],,,[
+#define _GNU_SOURCE
+#include <xfs/xqm.h>
+])
+
 AC_CHECK_TYPES([struct if_nextdqblk],,,[#include <linux/quota.h>])
 AC_CHECK_TYPES([struct iovec],,,[#include <sys/uio.h>])
 AC_CHECK_TYPES([struct ipc64_perm],,,[#include <sys/ipcbuf.h>])
 AC_CHECK_TYPES([struct loop_config],,,[#include <linux/loop.h>])
+AC_CHECK_TYPES([struct landlock_ruleset_attr],,,[#include <linux/landlock.h>])
+AC_CHECK_TYPES([struct landlock_path_beneath_attr],,,[#include <linux/landlock.h>])
+AC_CHECK_TYPES([struct landlock_net_port_attr],,,[#include <linux/landlock.h>])
 
 AC_CHECK_TYPES([struct mmsghdr],,,[
 #define _GNU_SOURCE
@@ -245,6 +256,9 @@ AC_CHECK_TYPES([struct mount_attr],,,[
 # include <linux/mount.h>
 #endif
 ])
+
+AC_CHECK_TYPES([struct cachestat_range],,,[#include <sys/mman.h>])
+AC_CHECK_TYPES([struct cachestat],,,[#include <sys/mman.h>])
 
 # Tools knobs
 
@@ -372,15 +386,13 @@ fi
 # TODO: testcases/realtime requires bash and python.
 AC_ARG_WITH([realtime-testsuite],
   [AS_HELP_STRING([--with-realtime-testsuite],
-    [compile and install the realtime testsuite])],
+    [unused, kept for compatibility reason])],
   [with_realtime_testsuite=$withval],
   [with_realtime_testsuite=no]
 )
 
 if test "x$with_realtime_testsuite" = xyes; then
     AC_SUBST([WITH_REALTIME_TESTSUITE],["yes"])
-    # Run configure on testcases/realtime as well.
-    AC_CONFIG_SUBDIRS([testcases/realtime])
 else
     AC_SUBST([WITH_REALTIME_TESTSUITE],["no"])
 fi
@@ -435,10 +447,12 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM()],
   [
     AC_MSG_RESULT([yes])
     AC_SUBST([WITH_KVM_TESTSUITE],["yes"])
+    have_kvm=yes
   ],
   [
     AC_MSG_RESULT([no])
     AC_SUBST([WITH_KVM_TESTSUITE],["no"])
+    have_kvm=no
   ])
 _AC_LANG_PREFIX[]FLAGS="$ltp_backup_flags"
 LDFLAGS="$ltp_backup_ldflags"
@@ -448,8 +462,9 @@ AC_OUTPUT
 cat << EOF
 
 TESTSUITES
+KVM testsuite: $have_kvm
 open posix testsuite: ${with_open_posix_testsuite:-no}
-realtime testsuite: ${with_realtime_testsuite:-no}
+TI-RPC testsuite: ${with_tirpc:-yes}
 
 LIBRARIES
 keyutils: ${have_keyutils:-yes}
@@ -467,3 +482,7 @@ metadata generator: $with_metadata_generator
 HTML metadata: $with_metadata_html
 PDF metadata: $with_metadata_pdf
 EOF
+
+if test "x$with_realtime_testsuite" = xyes; then
+    AC_MSG_WARN([--with-realtime-testsuite has no effect and is kept for compatibilty reason. It will be removed in the future.])
+fi

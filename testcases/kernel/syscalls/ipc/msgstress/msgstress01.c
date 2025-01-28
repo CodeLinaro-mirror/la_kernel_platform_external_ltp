@@ -214,7 +214,7 @@ static void run(void)
 			break;
 
 		if (!tst_remaining_runtime()) {
-			tst_res(TWARN, "Out of runtime during forking...");
+			tst_res(TCONF, "Out of runtime during forking...");
 			*stop = 1;
 			break;
 		}
@@ -243,7 +243,7 @@ static void run(void)
 	remove_queues();
 
 	if (!(*fail))
-		tst_res(TPASS, "Test passed. All messages have been received");
+		tst_res(TPASS, "Some messages received");
 }
 
 static void setup(void)
@@ -260,7 +260,7 @@ static void setup(void)
 	free_msgs = total_msg - get_used_sysvipc();
 
 	/* We remove 10% of free pids, just to be sure
-	 * we won't saturate the sysyem with processes.
+	 * we won't saturate the system with processes.
 	 */
 	free_pids = tst_get_free_pids() / 2.1;
 

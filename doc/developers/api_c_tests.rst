@@ -4,8 +4,8 @@
 .. Include headers in this file with:
 .. .. kernel-doc:: ../../include/tst_test.h
 
-Developing using C API
-======================
+LTP C API
+=========
 
 Core LTP API
 ------------
@@ -37,3 +37,7 @@ Capabilities
 libltpswap
 ----------
 .. kernel-doc:: ../../include/libswap.h
+
+Temporary directory
+-------------------
+.. kernel-doc:: ../../include/tst_tmpdir.h

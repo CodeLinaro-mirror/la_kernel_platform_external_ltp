@@ -360,6 +360,12 @@
 /* Define to 1 if the system has the type `struct af_alg_iv'. */
 #define HAVE_STRUCT_AF_ALG_IV 1
 
+/* Define to 1 if the system has the type `struct cachestat'. */
+#define HAVE_STRUCT_CACHESTAT 1
+
+/* Define to 1 if the system has the type `struct cachestat_range'. */
+#define HAVE_STRUCT_CACHESTAT_RANGE 1
+
 /* Define to 1 if the system has the type `struct clone_args'. */
 #define HAVE_STRUCT_CLONE_ARGS 1
 
@@ -376,6 +382,9 @@
 /* Define to 1 if the system has the type `struct fanotify_event_info_header'.
    */
 #define HAVE_STRUCT_FANOTIFY_EVENT_INFO_HEADER 1
+
+/* Define to 1 if the system has the type `struct file_clone_range'. */
+#define HAVE_STRUCT_FILE_CLONE_RANGE 1
 
 /* Define to 1 if the system has the type `struct file_dedupe_range'. */
 #define HAVE_STRUCT_FILE_DEDUPE_RANGE 1
