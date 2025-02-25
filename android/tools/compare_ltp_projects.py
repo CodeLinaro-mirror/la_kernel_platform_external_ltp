@@ -167,12 +167,19 @@ def print_columns(added_test_suites, deleted_test_suites, added_tests, deleted_t
     if not deleted_test_suites:
         width_suites = DEFAULT_WIDTH
     else:
-        width_suites = max([len(x) for x in deleted_test_suites])
+        width_suites = max(len(x) for x in deleted_test_suites)
+
+    if added_test_suites:
+        width_suites = max(width_suites, max(len(x) for x in added_test_suites))
 
     if not deleted_tests:
         width_tests = DEFAULT_WIDTH
     else:
-        width_tests = max([len(x) for x in deleted_tests])
+        width_tests = max(len(x) for x in deleted_tests)
+
+    if added_tests:
+        width_tests = max(width_tests, max(len(x) for x in added_tests))
+
     width = max(width_suites, width_tests);
 
     # total rows we have to print
