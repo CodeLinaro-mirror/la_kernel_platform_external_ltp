@@ -5,9 +5,9 @@
 
 import os
 import re
-import sphinx
 import socket
 import urllib.request
+import sphinx
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
@@ -16,6 +16,7 @@ project = 'Linux Test Project'
 copyright = '2024, Linux Test Project'
 author = 'Linux Test Project'
 release = '1.0'
+ltp_repo = 'https://github.com/linux-test-project/ltp'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -29,8 +30,8 @@ extensions = [
 
 exclude_patterns = ["html*", '_static*']
 extlinks = {
-    'repo': ('https://github.com/linux-test-project/ltp/%s', '%s'),
-    'master': ('https://github.com/linux-test-project/ltp/blob/master/%s', '%s'),
+    'repo': (f'{ltp_repo}/%s', '%s'),
+    'master': (f'{ltp_repo}/blob/master/%s', '%s'),
     'git_man': ('https://git-scm.com/docs/git-%s', 'git %s'),
     # TODO: allow 2nd parameter to show page description instead of plain URL
     'kernel_doc': ('https://docs.kernel.org/%s.html', 'https://docs.kernel.org/%s.html'),
@@ -61,39 +62,38 @@ def generate_syscalls_stats(_):
     # because in some cases (i.e. io_ring) syscalls are tested, but they are
     # part of a more complex scenario. In the following list, we define syscalls
     # which we know they are 100% tested already.
-    white_list = [
-        'epoll_pwait2',
-        'fadvise64',
-        'fanotify_init',
-        'fanotify_mark',
-        'getdents64',
-        'getmsg',
-        'getpmsg',
-        'inotify_add_watch',
-        'inotify_rm_watch',
-        'io_uring_enter',
-        'io_uring_register',
-        'io_uring_setup',
-        'landlock_add_rule',
-        'landlock_create_ruleset',
-        'landlock_restrict_self',
-        'lsetxattr',
-        'newfstatat',
-        'putmsg',
-        'putpmsg',
-        'pkey_alloc',
-        'pkey_free',
-        'pkey_mprotect',
-        'prlimit64',
-        'pread64',
-        'pselect6',
-        'pwrite64',
-        'quotactl_fd',
-        'rt_sigpending',
-        'seccomp',
-        'semtimedop',
-        'sethostname',
-    ]
+    ltp_syscalls_path = "testcases/kernel/syscalls"
+    white_list = {
+        'bpf': f'{ltp_syscalls_path}/bpf',
+        'epoll_pwait2': f'{ltp_syscalls_path}/epoll_pwait',
+        'fadvise64': f'{ltp_syscalls_path}/fadvise',
+        'fanotify_init': f'{ltp_syscalls_path}/fanotify',
+        'fanotify_mark': f'{ltp_syscalls_path}/fanotify',
+        'futex': f'{ltp_syscalls_path}/futex',
+        'getdents64': f'{ltp_syscalls_path}/gettdents',
+        'inotify_add_watch': f'{ltp_syscalls_path}/inotify',
+        'inotify_init': f'{ltp_syscalls_path}/inotify',
+        'inotify_rm_watch': f'{ltp_syscalls_path}/inotify',
+        'io_uring_enter': f'{ltp_syscalls_path}/io_uring',
+        'io_uring_register': f'{ltp_syscalls_path}/io_uring',
+        'io_uring_setup': f'{ltp_syscalls_path}/io_uring',
+        'landlock_add_rule': f'{ltp_syscalls_path}/landlock',
+        'landlock_create_ruleset': f'{ltp_syscalls_path}/landlock',
+        'landlock_restrict_self': f'{ltp_syscalls_path}/landlock',
+        'lsetxattr': f'{ltp_syscalls_path}/lgetxattr',
+        'newfstatat': f'{ltp_syscalls_path}/fstatat',
+        'pkey_alloc': f'{ltp_syscalls_path}/pkeys',
+        'pkey_free': f'{ltp_syscalls_path}/pkeys',
+        'pkey_mprotect': f'{ltp_syscalls_path}/pkeys',
+        'prlimit64': f'{ltp_syscalls_path}/getrlimit',
+        'pread64': f'{ltp_syscalls_path}/pread',
+        'pselect6': f'{ltp_syscalls_path}/pselect',
+        'pwrite64': f'{ltp_syscalls_path}/pwrite',
+        'quotactl_fd': f'{ltp_syscalls_path}/quotactl',
+        'rt_sigpending': f'{ltp_syscalls_path}/sigpending',
+        'semtimedop': f'{ltp_syscalls_path}/ipc/semop',
+        'sethostname': f'{ltp_syscalls_path}/sethostname'
+    }
 
     # populate with not implemented, reserved, unmaintained syscalls defined
     # inside the syscalls file
@@ -104,8 +104,12 @@ def generate_syscalls_stats(_):
         'cachectl',
         'create_module',
         'get_kernel_syms',
+        'getmsg',
+        'getpmsg',
         'mq_getsetattr',
         'nfsservctl',
+        'putmsg',
+        'putpmsg',
         'query_module',
         'reserved177',
         'reserved193',
@@ -116,24 +120,25 @@ def generate_syscalls_stats(_):
     ]
 
     # fetch syscalls file
+    syscalls_url = "https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/arch/mips/kernel/syscalls"
     error = False
     try:
         socket.setdefaulttimeout(3)
         urllib.request.urlretrieve(
-            "https://raw.githubusercontent.com/torvalds/linux/master/arch/mips/kernel/syscalls/syscall_n64.tbl",
-            "syscalls.tbl")
-    except Exception as err:
+            f"{syscalls_url}/syscall_n64.tbl", "syscalls.tbl")
+    except urllib.error.URLError as err:
         error = True
         logger = sphinx.util.logging.getLogger(__name__)
-        msg = "Can't download syscall_n64.tbl from kernel sources"
+        msg = f"Can't download syscall_n64.tbl from kernel sources ({err})"
         logger.warning(msg)
 
-        with open(output, 'w+') as stats:
+        with open(output, 'w+', encoding='utf-8') as stats:
             stats.write(f".. warning::\n\n    {msg}")
 
     if error:
         return
 
+    syscalls_base_url = f"{ltp_repo}/tree/master"
     text = [
         'Syscalls\n',
         '--------\n\n',
@@ -142,18 +147,36 @@ def generate_syscalls_stats(_):
     # collect all available kernel syscalls
     regexp = re.compile(r'\d+\s+n64\s+(?P<syscall>\w+)\s+\w+')
     ker_syscalls = []
-    with open("syscalls.tbl", 'r') as data:
+    with open("syscalls.tbl", 'r', encoding='utf-8') as data:
         for line in data:
             match = regexp.search(line)
-            if match:
-                ker_syscalls.append(match.group('syscall'))
+            if not match:
+                continue
+
+            ker_syscalls.append(match.group('syscall'))
 
     # collect all LTP tested syscalls
-    ltp_syscalls = []
-    for root, _, files in os.walk('../testcases/kernel/syscalls'):
+    name_patterns = [
+        re.compile(r'(?P<name>[a-zA-Z_]+[^_])\d{2}\.c'),
+        re.compile(r'(?P<name>[a-zA-Z_]+[1-9])_\d{2}\.c'),
+    ]
+    ltp_syscalls = {}
+    for dirpath, _, files in os.walk(f'../{ltp_syscalls_path}'):
         for myfile in files:
-            if myfile.endswith('.c'):
-                ltp_syscalls.append(myfile)
+            match = None
+            for pattern in name_patterns:
+                match = pattern.search(myfile)
+                if match:
+                    break
+
+            if not match:
+                continue
+
+            # we need to use relative path from the project root
+            path = dirpath.replace('../', '')
+            name = match.group('name')
+
+            ltp_syscalls[name] = f'{syscalls_base_url}/{path}'
 
     # compare kernel syscalls with LTP tested syscalls
     syscalls = {}
@@ -163,19 +186,19 @@ def generate_syscalls_stats(_):
 
         if kersc not in syscalls:
             if kersc in white_list:
-                syscalls[kersc] = True
+                syscalls[kersc] = f'{syscalls_base_url}/{white_list[kersc]}'
                 continue
 
-            syscalls[kersc] = False
+            syscalls[kersc] = None
 
-        for ltpsc in ltp_syscalls:
-            if ltpsc.startswith(kersc):
-                syscalls[kersc] = True
+        for ltpsc, ltpsp in ltp_syscalls.items():
+            if ltpsc == kersc:
+                syscalls[kersc] = ltpsp
 
     # generate the statistics file
-    tested_syscalls = [key for key, val in syscalls.items() if val]
-    text.append(
-        'syscalls which are tested under :master:`testcases/kernel/syscalls`:\n\n')
+    tested_syscalls = [key for key, val in syscalls.items() if val is not None]
+    text.append('syscalls which are tested under '
+                ':master:`testcases/kernel/syscalls`:\n\n')
     text.append(f'* kernel syscalls: {len(ker_syscalls)}\n')
     text.append(f'* tested syscalls: {len(tested_syscalls)}\n\n')
 
@@ -196,41 +219,47 @@ def generate_syscalls_stats(_):
         '    :header-rows: 0\n\n',
     ]
 
-    for sysname, tested in syscalls.items():
-        if tested:
-            if (index_tested % 3) == 0:
-                table_tested.append(f'    * - {sysname}\n')
+    max_columns = 3
+
+    for sysname, path in syscalls.items():
+        if path is not None:
+            if (index_tested % max_columns) == 0:
+                table_tested.append(f'    * - `{sysname} <{path}>`_\n')
             else:
-                table_tested.append(f'      - {sysname}\n')
+                table_tested.append(f'      - `{sysname} <{path}>`_\n')
 
             index_tested += 1
         else:
-            if (index_untest % 3) == 0:
+            if (index_untest % max_columns) == 0:
                 table_untest.append(f'    * - {sysname}\n')
             else:
                 table_untest.append(f'      - {sysname}\n')
 
             index_untest += 1
 
-    left = index_tested % 3
+    left = index_tested % max_columns
     if left > 0:
-        for index in range(0, 3 - left):
-            table_tested.append(f'      -\n')
+        for _ in range(0, max_columns - left):
+            table_tested.append('      -\n')
 
-    left = index_untest % 3
+    left = index_untest % max_columns
     if left > 0:
-        for index in range(0, 3 - left):
-            table_untest.append(f'      -\n')
+        for _ in range(0, max_columns - left):
+            table_untest.append('      -\n')
 
     text.extend(table_tested)
     text.append('\n')
     text.extend(table_untest)
 
     # write the file
-    with open(output, 'w+') as stats:
+    with open(output, 'w+', encoding='utf-8') as stats:
         stats.writelines(text)
 
 
 def setup(app):
+    """
+    Setup the current documentation, using self generated data and graphics
+    customizations.
+    """
     app.add_css_file('custom.css')
     app.connect('builder-inited', generate_syscalls_stats)

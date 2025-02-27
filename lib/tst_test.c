@@ -71,8 +71,8 @@ struct results {
 	int failed;
 	int warnings;
 	int broken;
-	unsigned int timeout;
-	int max_runtime;
+	unsigned int runtime;
+	unsigned int overall_time;
 };
 
 static struct results *results;
@@ -546,16 +546,13 @@ static void parse_mul(float *mul, const char *env_name, float min, float max)
 	}
 }
 
-static int multiply_runtime(int max_runtime)
+static int multiply_runtime(unsigned int runtime)
 {
 	static float runtime_mul = -1;
 
-	if (max_runtime <= 0)
-		return max_runtime;
-
 	parse_mul(&runtime_mul, "LTP_RUNTIME_MUL", 0.0099, 100);
 
-	return max_runtime * runtime_mul;
+	return runtime * runtime_mul;
 }
 
 static struct option {
@@ -593,21 +590,21 @@ static void print_help(void)
 	fprintf(stderr, "Timeout and runtime\n");
 	fprintf(stderr, "-------------------\n");
 
-	if (tst_test->max_runtime) {
-		runtime = multiply_runtime(tst_test->max_runtime);
+	if (tst_test->timeout == TST_UNLIMITED_TIMEOUT) {
+		fprintf(stderr, "Test timeout is not limited\n");
+	} else {
+		timeout = tst_multiply_timeout(DEFAULT_TIMEOUT + tst_test->timeout);
 
-		if (runtime == TST_UNLIMITED_RUNTIME) {
-			fprintf(stderr, "Test iteration runtime is not limited\n");
-		} else {
-			fprintf(stderr, "Test iteration runtime cap %ih %im %is\n",
-				runtime/3600, (runtime%3600)/60, runtime % 60);
-		}
+		fprintf(stderr, "Test timeout (not including runtime) %ih %im %is\n",
+				timeout/3600, (timeout%3600)/60, timeout % 60);
 	}
 
-	timeout = tst_multiply_timeout(DEFAULT_TIMEOUT);
+	if (tst_test->runtime) {
+		runtime = multiply_runtime(tst_test->runtime);
 
-	fprintf(stderr, "Test timeout (not including runtime) %ih %im %is\n",
-		timeout/3600, (timeout%3600)/60, timeout % 60);
+		fprintf(stderr, "Test iteration runtime cap %ih %im %is\n",
+				runtime/3600, (runtime%3600)/60, runtime % 60);
+	}
 
 	fprintf(stderr, "\n");
 
@@ -740,8 +737,8 @@ static void parse_opts(int argc, char *argv[])
 			iterations = SAFE_STRTOL(optarg, 0, INT_MAX);
 		break;
 		case 'I':
-			if (tst_test->max_runtime > 0)
-				tst_test->max_runtime = SAFE_STRTOL(optarg, 1, INT_MAX);
+			if (tst_test->runtime > 0)
+				tst_test->runtime = SAFE_STRTOL(optarg, 1, INT_MAX);
 			else
 				duration = SAFE_STRTOF(optarg, 0.1, HUGE_VALF);
 		break;
@@ -899,6 +896,8 @@ static void print_failure_hint(const char *tag, const char *hint,
 	}
 }
 
+static int show_failure_hints;
+
 /* update also docparse/testinfo.pl */
 static void print_failure_hints(void)
 {
@@ -909,6 +908,8 @@ static void print_failure_hints(void)
 	print_failure_hint("musl-git", "missing musl fixes", MUSL_GIT_URL);
 	print_failure_hint("CVE", "vulnerable to CVE(s)", CVE_DB_URL);
 	print_failure_hint("known-fail", "hit by known kernel failures", NULL);
+
+	show_failure_hints = 0;
 }
 
 static void do_exit(int ret)
@@ -919,7 +920,8 @@ static void do_exit(int ret)
 
 		if (results->failed) {
 			ret |= TFAIL;
-			print_failure_hints();
+			if (show_failure_hints)
+				print_failure_hints();
 		}
 
 		if (results->skipped && !results->passed)
@@ -930,7 +932,8 @@ static void do_exit(int ret)
 
 		if (results->broken) {
 			ret |= TBROK;
-			print_failure_hints();
+			if (show_failure_hints)
+				print_failure_hints();
 		}
 
 		fprintf(stderr, "\nSummary:\n");
@@ -946,20 +949,29 @@ static void do_exit(int ret)
 	exit(ret);
 }
 
-void check_kver(void)
+int check_kver(const char *min_kver, const int brk_nosupp)
 {
+	char *msg;
 	int v1, v2, v3;
 
-	if (tst_parse_kver(tst_test->min_kver, &v1, &v2, &v3)) {
+	if (tst_parse_kver(min_kver, &v1, &v2, &v3)) {
 		tst_res(TWARN,
 			"Invalid kernel version %s, expected %%d.%%d.%%d",
-			tst_test->min_kver);
+			min_kver);
 	}
 
 	if (tst_kvercmp(v1, v2, v3) < 0) {
-		tst_brk(TCONF, "The test requires kernel %s or newer",
-			tst_test->min_kver);
+		msg = "The test requires kernel %s or newer";
+
+		if (brk_nosupp)
+			tst_brk(TCONF, msg, min_kver);
+		else
+			tst_res(TCONF, msg, min_kver);
+
+		return 1;
 	}
+
+	return 0;
 }
 
 static int results_equal(struct results *a, struct results *b)
@@ -1086,7 +1098,7 @@ static void prepare_and_mount_hugetlb_fs(void)
 	mntpoint_mounted = 1;
 }
 
-int tst_creat_unlinked(const char *path, int flags)
+int tst_creat_unlinked(const char *path, int flags, mode_t mode)
 {
 	char template[PATH_MAX];
 	int len, c, range;
@@ -1105,7 +1117,7 @@ int tst_creat_unlinked(const char *path, int flags)
 	}
 
 	flags |= O_CREAT|O_EXCL|O_RDWR;
-	fd = SAFE_OPEN(template, flags);
+	fd = SAFE_OPEN(template, flags, mode);
 	SAFE_UNLINK(template);
 	return fd;
 }
@@ -1250,9 +1262,14 @@ static void do_setup(int argc, char *argv[])
 	if (!tst_test)
 		tst_brk(TBROK, "No tests to run");
 
-	if (tst_test->max_runtime < -1) {
+	if (tst_test->timeout < -1) {
+		tst_brk(TBROK, "Invalid timeout value %i",
+			tst_test->timeout);
+	}
+
+	if (tst_test->runtime < 0) {
 		tst_brk(TBROK, "Invalid runtime value %i",
-			results->max_runtime);
+			results->runtime);
 	}
 
 	if (tst_test->tconf_msg)
@@ -1284,7 +1301,7 @@ static void do_setup(int argc, char *argv[])
 		tst_brk(TCONF, "Test needs to be run as root");
 
 	if (tst_test->min_kver)
-		check_kver();
+		check_kver(tst_test->min_kver, 1);
 
 	if (tst_test->supported_archs && !tst_is_on_arch(tst_test->supported_archs))
 		tst_brk(TCONF, "This arch '%s' is not supported for test!", tst_arch.name);
@@ -1306,7 +1323,7 @@ static void do_setup(int argc, char *argv[])
 		int i;
 
 		for (i = 0; (cmd = tst_test->needs_cmds[i]); ++i)
-			tst_check_cmd(cmd);
+			tst_check_cmd(cmd, 1);
 	}
 
 	if (tst_test->needs_drivers) {
@@ -1411,8 +1428,15 @@ static void do_setup(int argc, char *argv[])
 
 		tdev.fs_type = default_fs_type();
 
-		if (!tst_test->all_filesystems && count_fs_descs() <= 1)
+		if (!tst_test->all_filesystems && count_fs_descs() <= 1) {
+			if (tst_test->filesystems && tst_test->filesystems->mkfs_ver)
+				tst_check_cmd(tst_test->filesystems->mkfs_ver, 1);
+
+			if (tst_test->filesystems && tst_test->filesystems->min_kver)
+				check_kver(tst_test->filesystems->min_kver, 1);
+
 			prepare_device(tst_test->filesystems);
+		}
 	}
 
 	if (tst_test->needs_overlay && !tst_test->mount_device)
@@ -1640,7 +1664,7 @@ static void alarm_handler(int sig LTP_ATTRIBUTE_UNUSED)
 
 static void heartbeat_handler(int sig LTP_ATTRIBUTE_UNUSED)
 {
-	alarm(results->timeout);
+	alarm(results->overall_time);
 	sigkill_retries = 0;
 }
 
@@ -1657,18 +1681,15 @@ unsigned int tst_remaining_runtime(void)
 	static struct timespec now;
 	int elapsed;
 
-	if (results->max_runtime == TST_UNLIMITED_RUNTIME)
-		return UINT_MAX;
-
-	if (results->max_runtime == 0)
+	if (results->runtime == 0)
 		tst_brk(TBROK, "Runtime not set!");
 
 	if (tst_clock_gettime(CLOCK_MONOTONIC, &now))
 		tst_res(TWARN | TERRNO, "tst_clock_gettime() failed");
 
 	elapsed = tst_timespec_diff_ms(now, tst_start_time) / 1000;
-	if (results->max_runtime > elapsed)
-		return results->max_runtime - elapsed;
+	if (results->runtime > (unsigned int) elapsed)
+		return results->runtime - elapsed;
 
 	return 0;
 }
@@ -1681,36 +1702,47 @@ unsigned int tst_multiply_timeout(unsigned int timeout)
 	if (timeout < 1)
 		tst_brk(TBROK, "timeout must to be >= 1! (%d)", timeout);
 
+	if (tst_has_slow_kconfig())
+		timeout *= 4;
+
 	return timeout * timeout_mul;
 }
 
-static void set_timeout(void)
+static void set_overall_timeout(void)
 {
-	unsigned int timeout = DEFAULT_TIMEOUT;
+	unsigned int timeout = DEFAULT_TIMEOUT + tst_test->timeout;
 
-	if (results->max_runtime == TST_UNLIMITED_RUNTIME) {
-		tst_res(TINFO, "Timeout per run is disabled");
+	if (tst_test->timeout == TST_UNLIMITED_TIMEOUT) {
+		tst_res(TINFO, "Test timeout is not limited");
 		return;
 	}
 
-	if (results->max_runtime < 0) {
-		tst_brk(TBROK, "max_runtime must to be >= -1! (%d)",
-			results->max_runtime);
-	}
+	results->overall_time = tst_multiply_timeout(timeout) + results->runtime;
 
-	results->timeout = tst_multiply_timeout(timeout) + results->max_runtime;
-
-	tst_res(TINFO, "Timeout per run is %uh %02um %02us",
-		results->timeout/3600, (results->timeout%3600)/60,
-		results->timeout % 60);
+	tst_res(TINFO, "Overall timeout per run is %uh %02um %02us",
+		results->overall_time/3600, (results->overall_time%3600)/60,
+		results->overall_time % 60);
 }
 
-void tst_set_max_runtime(int max_runtime)
+void tst_set_timeout(int timeout)
 {
-	results->max_runtime = multiply_runtime(max_runtime);
-	tst_res(TINFO, "Updating max runtime to %uh %02um %02us",
-		max_runtime/3600, (max_runtime%3600)/60, max_runtime % 60);
-	set_timeout();
+	int timeout_adj = DEFAULT_TIMEOUT + timeout;
+
+	results->overall_time = tst_multiply_timeout(timeout_adj) + results->runtime;
+
+	tst_res(TINFO, "Overall timeout per run is %uh %02um %02us",
+		results->overall_time/3600, (results->overall_time%3600)/60,
+		results->overall_time % 60);
+
+	heartbeat();
+}
+
+void tst_set_runtime(int runtime)
+{
+	results->runtime = multiply_runtime(runtime);
+	tst_res(TINFO, "Updating runtime to %uh %02um %02us",
+		runtime/3600, (runtime%3600)/60, runtime % 60);
+	set_overall_timeout();
 	heartbeat();
 }
 
@@ -1721,7 +1753,9 @@ static int fork_testrun(void)
 	SAFE_SIGNAL(SIGINT, sigint_handler);
 	SAFE_SIGNAL(SIGTERM, sigint_handler);
 
-	alarm(results->timeout);
+	alarm(results->overall_time);
+
+	show_failure_hints = 1;
 
 	test_pid = fork();
 	if (test_pid < 0)
@@ -1799,6 +1833,12 @@ static int run_tcase_on_fs(struct tst_fs *fs, const char *fs_type)
 	tst_res(TINFO, "=== Testing on %s ===", fs_type);
 	tdev.fs_type = fs_type;
 
+	if (fs->mkfs_ver && tst_check_cmd(fs->mkfs_ver, 0))
+		return TCONF;
+
+	if (fs->min_kver && check_kver(fs->min_kver, 0))
+		return TCONF;
+
 	prepare_device(fs);
 
 	ret = fork_testrun();
@@ -1826,7 +1866,7 @@ static int run_tcases_per_fs(void)
 		if (!fs)
 			continue;
 
-		run_tcase_on_fs(fs, filesystems[i]);
+		ret = run_tcase_on_fs(fs, filesystems[i]);
 
 		if (ret == TCONF)
 			continue;
@@ -1863,10 +1903,10 @@ void tst_run_tcases(int argc, char *argv[], struct tst_test *self)
 	uname(&uval);
 	tst_res(TINFO, "Tested kernel: %s %s %s", uval.release, uval.version, uval.machine);
 
-	if (tst_test->max_runtime)
-		results->max_runtime = multiply_runtime(tst_test->max_runtime);
+	if (tst_test->runtime)
+		results->runtime = multiply_runtime(tst_test->runtime);
 
-	set_timeout();
+	set_overall_timeout();
 
 	if (tst_test->test_variants)
 		test_variants = tst_test->test_variants;

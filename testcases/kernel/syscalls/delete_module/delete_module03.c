@@ -16,7 +16,6 @@
 #include <errno.h>
 #include "tst_test.h"
 #include "tst_module.h"
-#include "tst_kconfig.h"
 #include "lapi/syscalls.h"
 
 #define DUMMY_MOD		"dummy_del_mod"
@@ -52,11 +51,7 @@ static void do_delete_module(void)
 
 static void setup(void)
 {
-	struct tst_kcmdline_var params = TST_KCMDLINE_INIT("module.sig_enforce");
-
-	tst_kcmdline_parse(&params, 1);
-	if (atoi(params.value) == 1)
-		tst_brk(TCONF, "module signature is enforced, skip test");
+	tst_requires_module_signature_disabled();
 
 	/* Load first kernel module */
 	tst_module_load(DUMMY_MOD_KO, NULL);
