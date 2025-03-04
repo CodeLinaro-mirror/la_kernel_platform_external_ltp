@@ -161,7 +161,6 @@ static void test_bind(unsigned int n)
 }
 
 static struct tst_test test = {
-	.timeout = 1,
 	.test = test_bind,
 	.tcnt = ARRAY_SIZE(testcase_list),
 	.needs_tmpdir = 1,

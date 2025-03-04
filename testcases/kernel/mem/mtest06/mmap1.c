@@ -249,6 +249,6 @@ static void run(void)
 static struct tst_test test = {
 	.test_all = run,
 	.setup = setup,
-	.runtime = 180,
+	.max_runtime = 180,
 	.needs_tmpdir = 1,
 };

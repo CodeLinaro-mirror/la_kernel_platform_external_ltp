@@ -115,5 +115,5 @@ static struct tst_test test = {
 	.setup = setup,
 	.cleanup = cleanup,
 	.needs_tmpdir = 1,
-	.timeout = 300,
+	.max_runtime = 300,
 };

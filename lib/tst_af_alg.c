@@ -103,7 +103,6 @@ bool tst_have_alg(const char *algtype, const char *algname)
 	case 0:
 		return true;
 	case ENOENT:
-	case EINVAL:
 		tst_res(TCONF, "kernel doesn't have %s algorithm '%s'",
 			algtype, algname);
 		return false;

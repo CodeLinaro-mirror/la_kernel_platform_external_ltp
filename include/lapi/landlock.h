@@ -7,7 +7,6 @@
 #define LAPI_LANDLOCK_H__
 
 #include "config.h"
-#include <stdint.h>
 
 #ifdef HAVE_LINUX_LANDLOCK_H
 # include <linux/landlock.h>
@@ -15,16 +14,13 @@
 
 #include "lapi/syscalls.h"
 
-struct tst_landlock_ruleset_attr_abi1
-{
-	uint64_t handled_access_fs;
-};
-
-struct tst_landlock_ruleset_attr_abi4
+#ifndef HAVE_STRUCT_LANDLOCK_RULESET_ATTR
+struct landlock_ruleset_attr
 {
 	uint64_t handled_access_fs;
 	uint64_t handled_access_net;
 };
+#endif
 
 #ifndef HAVE_STRUCT_LANDLOCK_PATH_BENEATH_ATTR
 struct landlock_path_beneath_attr
@@ -34,12 +30,12 @@ struct landlock_path_beneath_attr
 } __attribute__((packed));
 #endif
 
-#if !HAVE_DECL_LANDLOCK_RULE_PATH_BENEATH
-# define LANDLOCK_RULE_PATH_BENEATH 1
-#endif
-
-#if !HAVE_DECL_LANDLOCK_RULE_NET_PORT
-# define LANDLOCK_RULE_NET_PORT 2
+#ifndef HAVE_ENUM_LANDLOCK_RULE_TYPE
+enum landlock_rule_type
+{
+	LANDLOCK_RULE_PATH_BENEATH = 1,
+	LANDLOCK_RULE_NET_PORT,
+};
 #endif
 
 #ifndef HAVE_STRUCT_LANDLOCK_NET_PORT_ATTR
@@ -127,7 +123,8 @@ struct landlock_net_port_attr
 #endif
 
 static inline int safe_landlock_create_ruleset(const char *file, const int lineno,
-	const void *attr, size_t size , uint32_t flags)
+	const struct landlock_ruleset_attr *attr,
+	size_t size , uint32_t flags)
 {
 	int rval;
 
@@ -146,7 +143,8 @@ static inline int safe_landlock_create_ruleset(const char *file, const int linen
 }
 
 static inline int safe_landlock_add_rule(const char *file, const int lineno,
-	int ruleset_fd, int rule_type, const void *rule_attr, uint32_t flags)
+	int ruleset_fd, enum landlock_rule_type rule_type,
+	const void *rule_attr, uint32_t flags)
 {
 	int rval;
 

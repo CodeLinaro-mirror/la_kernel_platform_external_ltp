@@ -44,7 +44,6 @@ static void cleanup(void)
 }
 
 static struct tst_test test = {
-	.timeout = 10,
 	.cleanup = cleanup,
 	.setup = setup,
 	.test_all = verify_fsync,

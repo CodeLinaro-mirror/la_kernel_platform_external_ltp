@@ -62,7 +62,6 @@ static void setup(void)
 }
 
 static struct tst_test test = {
-	.timeout = 3,
 	.test_all = verify_execve,
 	.options = (struct tst_option[]) {
 		{"n:", &opt_nchild, "Numbers of children"},

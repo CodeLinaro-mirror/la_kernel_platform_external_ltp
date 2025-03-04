@@ -33,7 +33,7 @@ static void run_test(void)
 	int err;
 	unsigned long free_initial, free_after, free_after_delete;
 
-	fd = tst_creat_unlinked(MNTPOINT, 0, 0600);
+	fd = tst_creat_unlinked(MNTPOINT, 0);
 
 	free_initial = SAFE_READ_MEMINFO(MEMINFO_HPAGE_FREE);
 

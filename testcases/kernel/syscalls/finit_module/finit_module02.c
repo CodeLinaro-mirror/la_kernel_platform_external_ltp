@@ -18,6 +18,7 @@
 #include <errno.h>
 #include "lapi/init_module.h"
 #include "tst_module.h"
+#include "tst_kconfig.h"
 #include "tst_capability.h"
 
 #define MODULE_NAME	"finit_module.ko"
@@ -76,9 +77,11 @@ static struct tcase tcases[] = {
 static void setup(void)
 {
 	unsigned long int i;
+	struct tst_kcmdline_var params = TST_KCMDLINE_INIT("module.sig_enforce");
 
-	if (tst_module_signature_enforced())
-		sig_enforce = 1;
+	tst_kcmdline_parse(&params, 1);
+	if (params.found)
+		sig_enforce = atoi(params.value);
 
 	tst_module_exists(MODULE_NAME, &mod_path);
 

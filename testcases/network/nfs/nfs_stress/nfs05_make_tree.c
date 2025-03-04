@@ -214,5 +214,5 @@ static struct tst_test test = {
 	.options = opts,
 	.test_all = do_test,
 	.setup = setup,
-	.timeout = 300,
+	.max_runtime = 300,
 };

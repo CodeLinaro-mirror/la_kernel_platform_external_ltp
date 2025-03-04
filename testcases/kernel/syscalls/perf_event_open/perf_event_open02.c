@@ -334,5 +334,5 @@ static struct tst_test test = {
 	},
 	.test_all = verify,
 	.needs_root = 1,
-	.timeout = 72
+	.max_runtime = 72
 };

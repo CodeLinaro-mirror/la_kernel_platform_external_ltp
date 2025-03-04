@@ -69,7 +69,6 @@ out:
 }
 
 static struct tst_test test = {
-	.timeout = 9,
 	.tcnt = ARRAY_SIZE(tcases),
 	.test = run,
 	.setup = fsopen_supported_by_kernel,

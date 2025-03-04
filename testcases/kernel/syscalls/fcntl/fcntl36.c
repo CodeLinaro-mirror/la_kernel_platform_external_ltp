@@ -387,7 +387,6 @@ static void tests(unsigned int i)
 }
 
 static struct tst_test test = {
-	.timeout = 9,
 	.needs_tmpdir = 1,
 	.test = tests,
 	.tcnt = ARRAY_SIZE(tcases),

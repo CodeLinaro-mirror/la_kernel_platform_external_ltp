@@ -191,7 +191,6 @@ static void run(unsigned int n)
 }
 
 static struct tst_test test = {
-	.timeout = 9,
 	.tcnt = 4,
 	.forks_child = 1,
 	.mount_device = 1,

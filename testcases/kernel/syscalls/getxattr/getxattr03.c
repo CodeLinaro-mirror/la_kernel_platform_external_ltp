@@ -37,7 +37,6 @@ static void setup(void)
 }
 
 static struct tst_test test = {
-	.timeout = 14,
 	.all_filesystems = 1,
 	.needs_root = 1,
 	.mntpoint = MNTPOINT,

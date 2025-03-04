@@ -1,18 +1,17 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * Copyright (c) 2016 Xiao Yang <yangx.jy@cn.fujitsu.com>
- * Copyright (c) Linux Test Project, 2016-2024
  */
 
-/*\
- * [Description]
+ /*
+ * Testname: kcmp03.c
  *
- * Verify that, kcmp() returns 0 if the processes
- *
- * 1. share the same file system information
- * 2. share I/O context
- * 3. share the same list of System V semaphore undo operations
- * 4. share the same address space
+ * Description:
+ * 1) kcmp() returns 0 if the processes share the same file system information.
+ * 2) kcmp() returns 0 if the processes share I/O context.
+ * 3) kcmp() returns 0 if the processes share the same list of System V
+ *    semaphore undo operations.
+ * 4) kcmp() returns 0 if the processes share the same address space.
  */
 
 #define _GNU_SOURCE
@@ -30,16 +29,14 @@ static int pid1;
 static int pid2;
 static void *stack;
 
-#define ARGS(x, y) .clone_type = x, .kcmp_type = y, .desc = #x ", " #y
 static struct tcase {
 	int clone_type;
 	int kcmp_type;
-	char *desc;
 } tcases[] = {
-	{ARGS(CLONE_VM, KCMP_VM)},
-	{ARGS(CLONE_FS, KCMP_FS)},
-	{ARGS(CLONE_IO, KCMP_IO)},
-	{ARGS(CLONE_SYSVSEM, KCMP_SYSVSEM)}
+	{CLONE_VM, KCMP_VM},
+	{CLONE_FS, KCMP_FS},
+	{CLONE_IO, KCMP_IO},
+	{CLONE_SYSVSEM, KCMP_SYSVSEM}
 };
 
 static void setup(void)
@@ -55,17 +52,28 @@ static void cleanup(void)
 static int do_child(void *arg)
 {
 	pid2 = getpid();
-	TST_EXP_PASS(kcmp(pid1, pid2, *(int *)arg, 0, 0));
+
+	TEST(kcmp(pid1, pid2, *(int *)arg, 0, 0));
+	if (TST_RET == -1) {
+		tst_res(TFAIL | TTERRNO, "kcmp() failed unexpectedly");
+		return 0;
+	}
+
+	if (TST_RET == 0)
+		tst_res(TPASS, "kcmp() returned the expected value");
+	else
+		tst_res(TFAIL, "kcmp() returned the unexpected value");
+
 	return 0;
 }
 
 static void verify_kcmp(unsigned int n)
 {
 	int res;
+
 	struct tcase *tc = &tcases[n];
 
 	pid1 = getpid();
-	tst_res(TINFO, "Testing %s", tc->desc);
 
 	res = ltp_clone(tc->clone_type | SIGCHLD, do_child, &tc->kcmp_type,
 			STACK_SIZE, stack);

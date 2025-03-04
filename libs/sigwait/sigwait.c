@@ -286,7 +286,9 @@ void test_bad_address(swi_func sigwaitinfo, int signo,
 	/* let's not get interrupted by our dying child */
 	SAFE_SIGADDSET(&sigs, SIGCHLD);
 
-	SAFE_SIGPROCMASK(SIG_SETMASK, &sigs, &oldmask);
+	TEST(sigprocmask(SIG_SETMASK, &sigs, &oldmask));
+	if (TST_RET == -1)
+		tst_brk(TBROK | TTERRNO, "sigprocmask() failed");
 
 	/* don't wait on a SIGCHLD */
 	SAFE_SIGDELSET(&sigs, SIGCHLD);
@@ -294,8 +296,19 @@ void test_bad_address(swi_func sigwaitinfo, int signo,
 	/* Run a child that will wake us up */
 	child = create_sig_proc(signo, 1, 0);
 
-	TST_EXP_FAIL(sigwaitinfo(&sigs, (void *)1, NULL), EFAULT);
-	SAFE_SIGPROCMASK(SIG_SETMASK, &oldmask, NULL);
+	TEST(sigwaitinfo(&sigs, (void *)1, NULL));
+	if (TST_RET == -1) {
+		if (TST_ERR == EFAULT)
+			tst_res(TPASS, "Fault occurred while accessing the buffers");
+		else
+			tst_res(TFAIL | TTERRNO, "Expected error number EFAULT, got");
+	} else {
+		tst_res(TFAIL, "Expected return value -1, got: %ld", TST_RET);
+	}
+
+	TEST(sigprocmask(SIG_SETMASK, &oldmask, NULL));
+	if (TST_RET == -1)
+		tst_brk(TBROK | TTERRNO, "restoring original signal mask failed");
 
 	SAFE_KILL(child, SIGTERM);
 	SAFE_WAIT(NULL);
@@ -346,27 +359,17 @@ void test_bad_address3(swi_func sigwaitinfo, int signo LTP_ATTRIBUTE_UNUSED,
 		       enum tst_ts_type type LTP_ATTRIBUTE_UNUSED)
 {
 	sigset_t sigs;
-	pid_t pid;
-	int status;
 
-	pid = SAFE_FORK();
-	if (pid == 0) {
-		SAFE_SIGEMPTYSET(&sigs);
-		TST_EXP_FAIL(sigwaitinfo(&sigs, NULL, (void *)1), EFAULT);
-		_exit(0);
+	SAFE_SIGEMPTYSET(&sigs);
+	TEST(sigwaitinfo(&sigs, NULL, (void *)1));
+	if (TST_RET == -1) {
+		if (TST_ERR == EFAULT)
+			tst_res(TPASS, "Fault occurred while accessing the buffers");
+		else
+			tst_res(TFAIL | TTERRNO, "Expected error number EFAULT, got");
+	} else {
+		tst_res(TFAIL, "Expected return value -1, got: %ld", TST_RET);
 	}
-
-	SAFE_WAITPID(pid, &status, 0);
-
-	if (WIFEXITED(status) && !WEXITSTATUS(status))
-		return;
-
-	if (WIFSIGNALED(status) && WTERMSIG(status) == SIGSEGV) {
-		tst_res(TPASS, "Child killed by expected signal");
-		return;
-	}
-
-	tst_res(TFAIL, "Child %s", tst_strstatus(status));
 }
 
 static void empty_handler(int sig LTP_ATTRIBUTE_UNUSED)

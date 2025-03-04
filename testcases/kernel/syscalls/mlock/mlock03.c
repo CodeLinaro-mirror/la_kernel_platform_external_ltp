@@ -31,16 +31,18 @@
 #include "tst_test.h"
 #include "tst_safe_stdio.h"
 
+#define KB 1024
+
 static void verify_mlock(void)
 {
 	long from, to;
 	long first = -1, last = -1;
-	char b[TST_KB];
+	char b[KB];
 	FILE *fp;
 
 	fp = SAFE_FOPEN("/proc/self/maps", "r");
 	while (!feof(fp)) {
-		if (!fgets(b, TST_KB - 1, fp))
+		if (!fgets(b, KB - 1, fp))
 			break;
 		b[strlen(b) - 1] = '\0';
 		if (sscanf(b, "%lx-%lx", &from, &to) != 2) {
@@ -51,7 +53,7 @@ static void verify_mlock(void)
 
 		/* Record the initial stack size. */
 		if (strstr(b, "[stack]") != NULL)
-			first = (to - from) / TST_KB;
+			first = (to - from) / KB;
 
 		tst_res(TINFO, "mlock [%lx,%lx]", from, to);
 		if (mlock((const void *)from, to - from) == -1)
@@ -63,7 +65,7 @@ static void verify_mlock(void)
 
 		/* Record the final stack size. */
 		if (strstr(b, "[stack]") != NULL)
-			last = (to - from) / TST_KB;
+			last = (to - from) / KB;
 	}
 	SAFE_FCLOSE(fp);
 

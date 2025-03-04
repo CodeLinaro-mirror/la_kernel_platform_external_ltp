@@ -2,7 +2,7 @@
 /*
  * Copyright (c) 2021 Richard Palethorpe <rpalethorpe@suse.com>
  */
-/*
+/*\
  * [Description]
  *
  * This verifies Fuzzy Sync's basic ability to reproduce a particular
@@ -10,7 +10,7 @@
  *
  * We make the simplifying assumptions that:
  * - Each thread contains a single contiguous critical section.
- * - The threads only interact through a single variable(H: Hit).
+ * - The threads only interact through a single variable.
  * - The various timings are constant except for variations introduced
  *   by the environment.
  *
@@ -50,9 +50,9 @@
  * range is required.
  *
  * When entering their critical sections, both threads increment the
- * 'H' counter variable atomically. They both also increment it when
- * leaving their critical sections. We record the value of 'H' when A
- * increments it. From the recorded values of 'H' we can deduce if the
+ * 'c' counter variable atomically. They both also increment it when
+ * leaving their critical sections. We record the value of 'c' when A
+ * increments it. From the recorded values of 'c' we can deduce if the
  * critical sections overlap and their ordering.
  *
  * 	Start (cs)	| End (ct)	| Ordering
@@ -62,7 +62,7 @@
  *
  * Any other combination of 'cs' and 'ct' means the critical sections
  * overlapped.
- */
+\*/
 
 #include "tst_test.h"
 #include "tst_fuzzy_sync.h"
@@ -90,7 +90,7 @@ struct race {
 	const struct window b;
 };
 
-static int H;
+static int c;
 static struct tst_fzsync_pair pair;
 
 static const struct race races[] = {
@@ -162,15 +162,15 @@ static void *worker(void *v)
 	const struct window b = races[i].b;
 
 	while (tst_fzsync_run_b(&pair)) {
-		if (tst_atomic_load(&H))
+		if (tst_atomic_load(&c))
 			tst_brk(TBROK, "Counter should now be zero");
 
 		tst_fzsync_start_race_b(&pair);
 		delay(b.critical_s);
 
-		tst_atomic_add_return(1, &H);
+		tst_atomic_add_return(1, &c);
 		delay(b.critical_t);
-		tst_atomic_add_return(1, &H);
+		tst_atomic_add_return(1, &c);
 
 		delay(b.return_t);
 		tst_fzsync_end_race_b(&pair);
@@ -192,9 +192,9 @@ static void run(unsigned int i)
 		tst_fzsync_start_race_a(&pair);
 		delay(a.critical_s);
 
-		cs = tst_atomic_add_return(1, &H);
+		cs = tst_atomic_add_return(1, &c);
 		delay(a.critical_t);
-		ct = tst_atomic_add_return(1, &H);
+		ct = tst_atomic_add_return(1, &c);
 
 		delay(a.return_t);
 		tst_fzsync_end_race_a(&pair);
@@ -206,35 +206,14 @@ static void run(unsigned int i)
 		else
 			critical++;
 
-		r = tst_atomic_add_return(-4, &H);
+		r = tst_atomic_add_return(-4, &c);
 		if (r)
 			tst_brk(TBROK, "cs = %d, ct = %d, r = %d", cs, ct, r);
 
 		if (critical > 100) {
 			tst_fzsync_pair_cleanup(&pair);
-			tst_atomic_store(0, &pair.exit);
 			break;
 		}
-	}
-
-	/*
-	 * If `pair->exit` is true, the test may fail to meet expected
-	 * results due to resource constraints in shared CI environments
-	 * (e.g., GitHub Actions). Limited control over CPU allocation
-	 * can cause delays or interruptions in CPU time slices due to
-	 * contention with other jobs.
-	 *
-	 * Binding the test to a single CPU core (e.g., via `taskset -c 0`)
-	 * can worsen this by increasing contention, leading to performance
-	 * degradation and premature loop termination.
-	 *
-	 * To ensure valid and reliable results in scenarios (e.g., HW, VM, CI),
-	 * it is best to ignore test result when loop termination occurs,
-	 * avoiding unnecessary false positive.
-	 */
-	if (pair.exit) {
-		tst_res(TCONF, "Test may not be able to generate a valid result");
-		return;
 	}
 
 	tst_res(critical > 50 ? TPASS : TFAIL,
@@ -248,5 +227,5 @@ static struct tst_test test = {
 	.test = run,
 	.setup = setup,
 	.cleanup = cleanup,
-	.runtime = 150,
+	.max_runtime = 150,
 };

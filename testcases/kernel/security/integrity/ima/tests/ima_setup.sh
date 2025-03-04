@@ -121,7 +121,7 @@ require_ima_policy_cmdline()
 	local policy="$1"
 
 	check_ima_policy_cmdline $policy || \
-		tst_brk TCONF "test requires builtin IMA $policy policy (e.g. ima_policy=$policy kernel command line parameter)"
+		tst_brk TCONF "IMA measurement tests require builtin IMA $policy policy (e.g. ima_policy=$policy kernel parameter)"
 }
 
 mount_helper()
@@ -218,10 +218,8 @@ set_digest_index()
 		done
 	esac
 
-	if [ -z "$DIGEST_INDEX" ]; then
-		tst_res TWARN "Cannot find digest index (template: '$template')"
-		return 1
-	fi
+	[ -z "$DIGEST_INDEX" ] && tst_brk TCONF \
+		"Cannot find digest index (template: '$template')"
 }
 
 get_algorithm_digest()
@@ -235,13 +233,7 @@ get_algorithm_digest()
 		return 1
 	fi
 
-	if [ -z "$DIGEST_INDEX" ]; then
-		set_digest_index
-	fi
-	if [ -z "$DIGEST_INDEX" ]; then
-		return 1
-	fi
-
+	[ -z "$DIGEST_INDEX" ] && set_digest_index
 	digest=$(echo "$line" | cut -d' ' -f $DIGEST_INDEX)
 	if [ -z "$digest" ]; then
 		echo "digest not found (index: $DIGEST_INDEX, line: '$line')"
@@ -275,18 +267,18 @@ get_algorithm_digest()
 ima_check()
 {
 	local test_file="$1"
-	local algorithm digest expected_digest line
+	local algorithm digest expected_digest line tmp
 
 	# need to read file to get updated $ASCII_MEASUREMENTS
 	cat $test_file > /dev/null
 
 	line="$(grep $test_file $ASCII_MEASUREMENTS | tail -1)"
 
-	if get_algorithm_digest "$line" > tmp; then
-		algorithm=$(cat tmp | cut -d'|' -f1)
-		digest=$(cat tmp | cut -d'|' -f2)
+	if tmp=$(get_algorithm_digest "$line"); then
+		algorithm=$(echo "$tmp" | cut -d'|' -f1)
+		digest=$(echo "$tmp" | cut -d'|' -f2)
 	else
-		tst_brk TBROK "failed to get algorithm/digest for '$test_file'"
+		tst_res TBROK "failed to get algorithm/digest for '$test_file': $tmp"
 	fi
 
 	tst_res TINFO "computing digest for $algorithm algorithm"

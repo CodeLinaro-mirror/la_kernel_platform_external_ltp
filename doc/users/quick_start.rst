@@ -53,7 +53,6 @@ generated first:
 
 .. code-block:: console
 
-   $ ./configure --with-open-posix-testsuite
    $ cd testcases/open_posix_testsuite/
    $ make generate-makefiles
    $ cd conformance/interfaces/foo

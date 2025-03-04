@@ -72,6 +72,6 @@ static void setup(void)
 
 static struct tst_test test = {
 	.setup = setup,
-	.runtime = 10,
+	.max_runtime = 10,
 	.test_all = verify_gettimeofday,
 };

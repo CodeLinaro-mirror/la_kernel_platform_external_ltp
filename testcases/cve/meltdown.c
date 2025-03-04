@@ -3,14 +3,6 @@
  * Copyright (c) 2018 Pavel Boldin <pboldin@cloudlinux.com>
  */
 
-/*\
- * [Description]
- *
- * Test for CVE-2017-5754 (Meltdown).
- *
- * https://meltdownattack.com/
- */
-
 #include "config.h"
 #include "tst_test.h"
 

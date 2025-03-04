@@ -56,7 +56,6 @@ static void cleanup(void)
 }
 
 static struct tst_test test = {
-	.timeout = 9,
 	.setup = setup,
 	.cleanup = cleanup,
 	.tcnt = ARRAY_SIZE(tcases),

@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2013 Oracle and/or its affiliates. All Rights Reserved.
- * Copyright (c) Linux Test Project, 2016-2024
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -35,8 +34,6 @@
 #ifndef TST_MODULE
 #define TST_MODULE
 
-#include <stdbool.h>
-
 void tst_module_exists_(void (cleanup_fn)(void), const char *mod_name,
 					 char **mod_path);
 
@@ -44,9 +41,6 @@ void tst_module_load_(void (cleanup_fn)(void), const char *mod_name,
 					char *const argv[]);
 
 void tst_module_unload_(void (cleanup_fn)(void), const char *mod_name);
-
-bool tst_module_signature_enforced_(void);
-void tst_requires_module_signature_disabled_(void);
 
 /*
  * Check module existence.
@@ -90,33 +84,6 @@ static inline void tst_module_load(void (cleanup_fn)(void),
 static inline void tst_module_unload(void (cleanup_fn)(void), const char *mod_name)
 {
 	tst_module_unload_(cleanup_fn, mod_name);
-}
-
-/**
- * tst_requires_module_signature_disabled() - Check if enforced module signature.
- *
- * Module signature is enforced if module.sig_enforce=1 kernel parameter or
- * CONFIG_MODULE_SIG_FORCE=y.
- *
- * return: Returns true if module signature is enforced false otherwise.
- *
- */
-static inline bool tst_module_signature_enforced(void)
-{
-	return tst_module_signature_enforced_();
-}
-
-/**
- * tst_requires_module_signature_disabled() - Check if test needs to be skipped due
- * enforced module signature.
- *
- * Skip test with tst_brk(TCONF) due module signature enforcement if
- * module.sig_enforce=1 kernel parameter or CONFIG_MODULE_SIG_FORCE=y.
- */
-
-static inline void tst_requires_module_signature_disabled(void)
-{
-	tst_requires_module_signature_disabled_();
 }
 
 #endif /* TST_MODULE */

@@ -214,7 +214,6 @@ static void setup(void)
 }
 
 static struct tst_test test = {
-	.timeout = 10,
 	.setup = setup,
 	.test = verify_fsetxattr,
 	.cleanup = cleanup,

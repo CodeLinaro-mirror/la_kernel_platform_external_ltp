@@ -43,7 +43,6 @@ static void verify_getpid(void)
 }
 
 static struct tst_test test = {
-	.timeout = 1,
 	.setup = setup,
 	.forks_child = 1,
 	.test_all = verify_getpid,

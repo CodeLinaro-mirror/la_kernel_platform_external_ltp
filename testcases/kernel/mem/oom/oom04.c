@@ -67,7 +67,7 @@ static void setup(void)
 static struct tst_test test = {
 	.needs_root = 1,
 	.forks_child = 1,
-	.timeout = TST_UNLIMITED_TIMEOUT,
+	.max_runtime = TST_UNLIMITED_RUNTIME,
 	.setup = setup,
 	.test_all = verify_oom,
 	.needs_cgroup_ctrls = (const char *const []){ "cpuset", NULL },

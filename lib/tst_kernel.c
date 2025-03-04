@@ -214,13 +214,3 @@ int tst_check_driver(const char *driver)
 
 	return -1;
 }
-
-int tst_check_preempt_rt(void)
-{
-	struct utsname uval;
-
-	uname(&uval);
-	if (strstr(uval.version, "PREEMPT_RT"))
-		return 1;
-	return 0;
-}

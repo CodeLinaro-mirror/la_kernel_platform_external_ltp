@@ -244,7 +244,7 @@ static struct tst_test test = {
 		"tmpfs",
 		NULL
 	},
-	.runtime = 1800,
+	.max_runtime = 1800,
 };
 #else
 TST_TEST_TCONF("test requires libaio and its development packages");

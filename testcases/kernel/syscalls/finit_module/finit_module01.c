@@ -17,6 +17,7 @@
 #include <errno.h>
 #include "lapi/init_module.h"
 #include "tst_module.h"
+#include "tst_kconfig.h"
 
 #define MODULE_NAME	"finit_module.ko"
 
@@ -26,8 +27,11 @@ static char *mod_path;
 
 static void setup(void)
 {
-	if (tst_module_signature_enforced())
-		sig_enforce = 1;
+	struct tst_kcmdline_var params = TST_KCMDLINE_INIT("module.sig_enforce");
+
+	tst_kcmdline_parse(&params, 1);
+	if (params.found)
+		sig_enforce = atoi(params.value);
 
 	tst_module_exists(MODULE_NAME, &mod_path);
 
@@ -37,6 +41,7 @@ static void setup(void)
 static void run(void)
 {
 	if (sig_enforce == 1) {
+		tst_res(TINFO, "module signature is enforced");
 		TST_EXP_FAIL(finit_module(fd, "status=valid", 0), EKEYREJECTED);
 		return;
 	}

@@ -2,7 +2,11 @@
 /init_module02
 /*.ko
 /*.mod.c
-/*.cmd
+/*.ko.cmd
+/*.mod.cmd
+/*.mod.o.cmd
+/*.o.cmd
+/.built-in.a.cmd
 /Module.symvers
 /modules.order
 modules.livepatch

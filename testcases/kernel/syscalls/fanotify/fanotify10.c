@@ -515,11 +515,7 @@ static void drop_caches(void)
 	if (syncfs(fd_syncfs) < 0)
 		tst_brk(TBROK | TERRNO, "Unexpected error when syncing filesystem");
 
-	/*
-	 * In order to ensure that the inode can be released in the two-tier
-	 * directory structure, drop_cache is required three times.
-	 */
-	SAFE_FILE_PRINTF(DROP_CACHES_FILE, "3");
+	/* Need to drop twice to ensure the inode is evicted. */
 	SAFE_FILE_PRINTF(DROP_CACHES_FILE, "3");
 	SAFE_FILE_PRINTF(DROP_CACHES_FILE, "3");
 }
@@ -959,7 +955,6 @@ static void cleanup(void)
 }
 
 static struct tst_test test = {
-	.timeout = 10,
 	.test = test_fanotify,
 	.tcnt = ARRAY_SIZE(tcases),
 	.test_variants = 2,

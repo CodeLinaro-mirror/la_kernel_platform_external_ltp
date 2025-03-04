@@ -7,11 +7,13 @@
  * 07/2019    Yang Xu <xuyang2018.jy@cn.fujitsu.com>
  */
 
-/*\
- * [Description]
+/*
+ * Test Description:
+ *  Verify that nanosleep() will fail to suspend the execution
+ *  of a process if the specified pause time is invalid.
  *
- * Verify that nanosleep() returns -1 and sets errno to EINVAL when failing to suspend the
- * execution of a process if the specified pause time is invalid.
+ * Expected Result:
+ *  nanosleep() should return with -1 value and sets errno to EINVAL.
  */
 
 #include <errno.h>

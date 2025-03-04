@@ -22,7 +22,7 @@
 #include <sys/ioctl.h>
 #include <sys/mount.h>
 #include "tst_test.h"
-#include "lapi/uio.h"
+#include "preadv.h"
 
 #define MNTPOINT	"mntpoint"
 #define FNAME	MNTPOINT"/file"

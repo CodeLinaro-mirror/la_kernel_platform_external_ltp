@@ -21,7 +21,6 @@ static void test_with_hash_alg(const char *hash_algname)
 {
 	char hmac_algname[64];
 	char key[4096] = { 0 };
-	int ret;
 
 	if (!tst_have_alg("hash", hash_algname))
 		return;
@@ -31,9 +30,7 @@ static void test_with_hash_alg(const char *hash_algname)
 		return;
 
 	sprintf(hmac_algname, "hmac(hmac(%s))", hash_algname);
-
-	ret = tst_try_alg("hash", hmac_algname);
-	if (ret != ENOENT && ret != EINVAL) {
+	if (tst_try_alg("hash", hmac_algname) != ENOENT) {
 		int algfd;
 
 		tst_res(TFAIL, "instantiated nested hmac algorithm ('%s')!",

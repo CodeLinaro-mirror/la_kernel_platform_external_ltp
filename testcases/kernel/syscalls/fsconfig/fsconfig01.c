@@ -82,7 +82,6 @@ static void run(void)
 }
 
 static struct tst_test test = {
-	.timeout = 10,
 	.test_all = run,
 	.setup = fsopen_supported_by_kernel,
 	.cleanup = cleanup,

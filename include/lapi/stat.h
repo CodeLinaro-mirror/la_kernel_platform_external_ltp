@@ -30,7 +30,6 @@ struct statx_timestamp {
 	int32_t __reserved;
 };
 #endif
-
 /*
  * Structures for the extended file attribute retrieval system call
  * (statx()).
@@ -68,52 +67,38 @@ struct statx_timestamp {
  * will have values installed for compatibility purposes so that stat() and
  * co. can be emulated in userspace.
  */
- #define LTP_DEFINE_STATX_STRUCT(x) \
- 	struct x { \
-	uint32_t	stx_mask; \
-	uint32_t	stx_blksize; \
-	uint64_t	stx_attributes; \
-	uint32_t	stx_nlink; \
-	uint32_t	stx_uid; \
-	uint32_t	stx_gid; \
-	uint16_t	stx_mode; \
-	uint16_t	__spare0[1]; \
-	uint64_t	stx_ino; \
-	uint64_t	stx_size; \
-	uint64_t	stx_blocks; \
-	uint64_t	stx_attributes_mask; \
-	const struct statx_timestamp	stx_atime; \
-	const struct statx_timestamp	stx_btime; \
-	const struct statx_timestamp	stx_ctime; \
-	const struct statx_timestamp	stx_mtime; \
-	uint32_t	stx_rdev_major; \
-	uint32_t	stx_rdev_minor; \
-	uint32_t	stx_dev_major; \
-	uint32_t	stx_dev_minor; \
-	uint64_t	stx_mnt_id; \
-	uint32_t	stx_dio_mem_align; \
-	uint32_t	stx_dio_offset_align; \
-	uint64_t	__spare3[12]; \
-};
-
-LTP_DEFINE_STATX_STRUCT(statx_fallback);
-
 #ifndef HAVE_STRUCT_STATX
-LTP_DEFINE_STATX_STRUCT(statx);
-#endif
-
-/*
- * This is the fallback statx that we pass to the safe_statx() syscall.
- * The reason why we need it, is that statx struct is constantly changing
- * inside the kernel and we need to extend its definition when structure
- * changes in order to compile the tests.
- */
-struct ltp_statx {
-	union {
-		struct statx buff;
-		struct statx_fallback data;
-	};
+struct statx {
+	/* 0x00 */
+	uint32_t	stx_mask;
+	uint32_t	stx_blksize;
+	uint64_t	stx_attributes;
+	/* 0x10 */
+	uint32_t	stx_nlink;
+	uint32_t	stx_uid;
+	uint32_t	stx_gid;
+	uint16_t	stx_mode;
+	uint16_t	__spare0[1];
+	/* 0x20 */
+	uint64_t	stx_ino;
+	uint64_t	stx_size;
+	uint64_t	stx_blocks;
+	uint64_t	stx_attributes_mask;
+	/* 0x40 */
+	const struct statx_timestamp	stx_atime;
+	const struct statx_timestamp	stx_btime;
+	const struct statx_timestamp	stx_ctime;
+	const struct statx_timestamp	stx_mtime;
+	/* 0x80 */
+	uint32_t	stx_rdev_major;
+	uint32_t	stx_rdev_minor;
+	uint32_t	stx_dev_major;
+	uint32_t	stx_dev_minor;
+	/* 0x90 */
+	uint64_t	__spare2[14];
+	/* 0x100 */
 };
+#endif
 
 #ifndef HAVE_STATX
 
@@ -123,9 +108,9 @@ struct ltp_statx {
  * Returns: It returns status of statx syscall
  */
 static inline int statx(int dirfd, const char *pathname, unsigned int flags,
-			unsigned int mask, struct statx *st)
+			unsigned int mask, struct statx *statxbuf)
 {
-	return tst_syscall(__NR_statx, dirfd, pathname, flags, mask, st);
+	return tst_syscall(__NR_statx, dirfd, pathname, flags, mask, statxbuf);
 }
 #endif
 
@@ -244,10 +229,6 @@ static inline int statx(int dirfd, const char *pathname, unsigned int flags,
 # define STATX_ATTR_VERITY	0x00100000
 #endif
 
-#ifndef STATX_MNT_ID_UNIQUE
-# define STATX_MNT_ID_UNIQUE  0x00004000U
-#endif
-
 #define SAFE_FCHMODAT2(dfd, filename, mode, flags) \
 	safe_fchmodat2(__FILE__, __LINE__, (dfd), (filename), (mode), (flags))
 
@@ -268,30 +249,6 @@ static inline int safe_fchmodat2(const char *file, const int lineno,
 	}
 
 	return ret;
-}
-
-#define SAFE_STATX(dirfd, pathname, flags, mask, buf) \
-	safe_statx(__FILE__, __LINE__, (dirfd), (pathname), (flags), (mask), (buf))
-
-static inline int safe_statx(const char *file, const int lineno,
-	int dirfd, const char *pathname, int flags, unsigned int mask,
-	struct ltp_statx *buf)
-{
-	int rval;
-
-	rval = statx(dirfd, pathname, flags, mask, &buf->buff);
-
-	if (rval == -1) {
-		tst_brk_(file, lineno, TBROK | TERRNO,
-			"statx(%d,%s,%d,%u,%p) failed", dirfd, pathname, flags, mask, buf);
-	} else if (rval) {
-		tst_brk_(file, lineno, TBROK | TERRNO,
-			"Invalid statx(%d,%s,%d,%u,%p) return value %d",
-			dirfd, pathname, flags, mask, buf,
-			rval);
-	}
-
-	return rval;
 }
 
 #endif /* LAPI_STAT_H__ */

@@ -3,10 +3,10 @@
 
 top_srcdir			?= ../../..
 
-LTPLIBS = uinput
-
 include $(top_srcdir)/include/mk/testcases.mk
 
-LDLIBS += -lltpuinput
+FILTER_OUT_MAKE_TARGETS		:= input_helper
 
 include $(top_srcdir)/include/mk/generic_leaf_target.mk
+
+$(MAKE_TARGETS): %: input_helper.o

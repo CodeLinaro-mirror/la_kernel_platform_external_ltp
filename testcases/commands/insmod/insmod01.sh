@@ -30,11 +30,6 @@ cleanup()
 
 do_test()
 {
-	tst_check_kconfigs "CONFIG_MODULE_SIG_FORCE=y"
-	if [ $? -eq 0 ] || grep module.sig_enforce -qw /proc/cmdline; then
-		tst_brk TCONF "module signature is enforced, skipping test"
-	fi
-
 	insmod "$TST_MODPATH"
 	if [ $? -ne 0 ]; then
 		tst_res TFAIL "insmod failed"
