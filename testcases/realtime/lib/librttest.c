@@ -763,3 +763,18 @@ int atrace_marker_write(char *tag, char *msg)
 	return trace_marker_write(trace_buf,
 				  strnlen(trace_buf, TRACE_BUF_LEN));
 }
+
+int get_numcpus(void)
+{
+	long numcpus_conf = sysconf(_SC_NPROCESSORS_CONF);
+	size_t size = CPU_ALLOC_SIZE(numcpus_conf);
+	int cpu_count;
+	cpu_set_t *cpuset = CPU_ALLOC(numcpus_conf);
+
+	CPU_ZERO_S(size, cpuset);
+	/* Get the number of cpus accessible to the current process */
+	sched_getaffinity(0, size, cpuset);
+	cpu_count = CPU_COUNT_S(size, cpuset);
+	CPU_FREE(cpuset);
+	return cpu_count;
+}

@@ -416,6 +416,9 @@
 /* Define to 1 if the system has the type `struct mount_attr'. */
 #define HAVE_STRUCT_MOUNT_ATTR 1
 
+/* Define to 1 if the system has the type `struct mnt_id_req'. */
+#define HAVE_STRUCT_MNT_ID_REQ 1
+
 /* Define to 1 if `aux_head' is a member of `struct perf_event_mmap_page'. */
 #define HAVE_STRUCT_PERF_EVENT_MMAP_PAGE_AUX_HEAD 1
 
@@ -445,6 +448,9 @@
 
 /* Define to 1 if the system has the type `struct sockaddr_alg'. */
 #define HAVE_STRUCT_SOCKADDR_ALG 1
+
+/* Define to 1 if the system has the type `struct statmount'. */
+#define HAVE_STRUCT_STATMOUNT 1
 
 /* Define to 1 if the system has the type `struct statx'. */
 #define HAVE_STRUCT_STATX 1
