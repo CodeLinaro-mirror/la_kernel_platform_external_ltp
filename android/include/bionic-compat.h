@@ -53,4 +53,8 @@ static inline int getdtablesize(void)
 static inline void pthread_testcancel(void) { }
 static inline int pthread_cancel(pthread_t thread) { return 0; }
 
+static inline double exp10(double x) {
+    return pow(x, 10);
+}
+
 #endif /* __BIONIC_COMPAT_H */

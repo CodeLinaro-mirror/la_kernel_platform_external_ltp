@@ -12,6 +12,8 @@
  * usage on symlinks will raise EOPNOTSUPP.
  */
 
+#define _GNU_SOURCE
+
 #include "tst_test.h"
 #include "tst_safe_file_at.h"
 #include "lapi/fcntl.h"
@@ -102,6 +104,7 @@ static void cleanup(void)
 }
 
 static struct tst_test test = {
+	.timeout = 9,
 	.test_all = run,
 	.setup = setup,
 	.cleanup = cleanup,

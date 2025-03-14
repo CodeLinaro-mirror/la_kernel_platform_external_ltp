@@ -13,7 +13,6 @@
 #include <inttypes.h>
 #include "config.h"
 #include "lapi/syscalls.h"
-#include "lapi/sched.h"
 
 /* sched_attr is not defined in glibc < 2.41 */
 #ifndef SCHED_ATTR_SIZE_VER0
@@ -50,6 +49,7 @@ static inline int sched_getattr(pid_t pid, struct sched_attr *attr,
 # define SCHED_ATTR_SIZE_VER0 48	/* sizeof first published struct */
 #endif
 
+#ifndef HAVE_CLONE3
 #ifndef HAVE_STRUCT_CLONE_ARGS
 struct clone_args {
 	uint64_t __attribute__((aligned(8))) flags;
@@ -77,7 +77,6 @@ struct clone_args_minimal {
 	uint64_t __attribute__((aligned(8))) tls;
 };
 
-#ifndef HAVE_CLONE3
 static inline int clone3(struct clone_args *args, size_t size)
 {
 	return tst_syscall(__NR_clone3, args, size);

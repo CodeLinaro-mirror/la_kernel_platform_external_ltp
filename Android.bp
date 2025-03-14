@@ -91,11 +91,11 @@ filegroup {
 genrule {
     name: "ltp_syscalls_h",
     tool_files: [
-        "include/lapi/syscalls/order",
-        "include/lapi/syscalls/regen.sh",
+        "include/lapi/syscalls/supported-arch.txt",
+        "include/lapi/syscalls/generate_syscalls.sh",
         "include/lapi/syscalls/*.in",
     ],
-    cmd: "$(location include/lapi/syscalls/regen.sh) $(genDir)/lapi/syscalls.h",
+    cmd: "$(location include/lapi/syscalls/generate_syscalls.sh) $(genDir)/lapi/syscalls.h",
     out: ["lapi/syscalls.h"],
 }
 
