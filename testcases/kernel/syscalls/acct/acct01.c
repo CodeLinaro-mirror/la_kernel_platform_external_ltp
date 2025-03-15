@@ -25,8 +25,7 @@
 
 #include "tst_test.h"
 
-#define DIR_MODE	(S_IRUSR|S_IWUSR|S_IXUSR|S_IRGRP| \
-			 S_IXGRP|S_IROTH|S_IXOTH)
+#define DIR_MODE	0755
 #define FILE_EISDIR		"."
 #define FILE_EACCESS		"/dev/null"
 #define FILE_ENOENT		"/tmp/does/not/exist"
@@ -73,8 +72,8 @@ static struct test_case {
 	char **filename;
 	char *desc;
 	int exp_errno;
-	void (*setupfunc) ();
-	void (*cleanfunc) ();
+	void (*setupfunc)();
+	void (*cleanfunc)();
 } tcases[] = {
 	{&file_eisdir,  FILE_EISDIR,  EISDIR,  NULL,   NULL},
 	{&file_eaccess, FILE_EACCESS, EACCES,  NULL,   NULL},
@@ -93,8 +92,6 @@ static void setup(void)
 	int fd;
 
 	TEST(acct(NULL));
-	if (TST_RET == -1 && TST_ERR == ENOSYS)
-		tst_brk(TCONF, "acct() system call isn't configured in kernel");
 
 	ltpuser = SAFE_GETPWNAM("nobody");
 
@@ -126,7 +123,7 @@ static void verify_acct(unsigned int nr)
 		tcase->setupfunc();
 
 	TST_EXP_FAIL(acct(*tcase->filename), tcase->exp_errno,
-	             "acct(%s)", tcase->desc);
+		"acct(%s)", tcase->desc);
 
 	if (tcase->cleanfunc)
 		tcase->cleanfunc();
@@ -149,5 +146,9 @@ static struct tst_test test = {
 		{&file_enametoolong, .size = PATH_MAX+2},
 		{&file_erofs, .str = FILE_EROFS},
 		{}
+	},
+	.needs_kconfigs = (const char *[]) {
+		"CONFIG_BSD_PROCESS_ACCT=y",
+		NULL,
 	}
 };

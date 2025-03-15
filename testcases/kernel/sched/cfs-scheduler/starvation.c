@@ -21,6 +21,7 @@
 #include <sched.h>
 
 #include "tst_test.h"
+#include "tst_kconfig.h"
 #include "tst_safe_clocks.h"
 #include "tst_timer.h"
 
@@ -79,6 +80,9 @@ static void setup(void)
 	int cpu = 0;
 	long ncpus = tst_ncpus_conf();
 
+	if (tst_check_preempt_rt())
+		tst_brk(TCONF, "This test is not designed for the RT kernel");
+
 	CPU_ZERO(&mask);
 
 	/* Restrict test to a single cpu */
@@ -108,7 +112,10 @@ static void setup(void)
 	else
 		timeout = callibrate() / 1000;
 
-	tst_set_max_runtime(timeout);
+	if (tst_has_slow_kconfig())
+		tst_brk(TCONF, "Skip test due to slow kernel configuration");
+
+	tst_set_runtime(timeout);
 }
 
 static void handler(int sig LTP_ATTRIBUTE_UNUSED)
@@ -145,9 +152,9 @@ static void do_test(void)
 	SAFE_KILL(child_pid, SIGTERM);
 
 	if (!tst_remaining_runtime())
-		tst_res(TFAIL, "Scheduller starvation reproduced.");
+		tst_res(TFAIL, "Scheduler starvation reproduced");
 	else
-		tst_res(TPASS, "Haven't reproduced scheduller starvation.");
+		tst_res(TPASS, "Haven't reproduced scheduler starvation");
 
 	TST_EXP_PASS_SILENT(wait_for_pid(child_pid));
 }
