@@ -15,6 +15,8 @@
 
 package {
     default_applicable_licenses: ["external_ltp_license"],
+    default_team: "trendy_team_android_kernel",
+
 }
 
 LTP_TESTS = [
