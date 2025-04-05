@@ -602,6 +602,12 @@ ioctl_ns07 ioctl_ns07
 
 ioctl_sg01 ioctl_sg01
 
+ioctl_ficlone01 ioctl_ficlone01
+ioctl_ficlone02 ioctl_ficlone02
+ioctl_ficlone03 ioctl_ficlone03
+ioctl_ficlonerange01 ioctl_ficlonerange01
+ioctl_ficlonerange02 ioctl_ficlonerange02
+
 inotify_init1_01 inotify_init1_01
 inotify_init1_02 inotify_init1_02
 
@@ -702,6 +708,7 @@ landlock04 landlock04
 landlock05 landlock05
 landlock06 landlock06
 landlock07 landlock07
+landlock08 landlock08
 
 lchown01 lchown01
 lchown01_16 lchown01_16
@@ -724,6 +731,11 @@ linkat01 linkat01
 linkat02 linkat02
 
 listen01 listen01
+
+listmount01 listmount01
+listmount02 listmount02
+listmount03 listmount03
+listmount04 listmount04
 
 listxattr01 listxattr01
 listxattr02 listxattr02
@@ -988,6 +1000,7 @@ madvise08 madvise08
 madvise09 madvise09
 madvise10 madvise10
 madvise11 madvise11
+madvise12 madvise12
 
 newuname01 newuname01
 
@@ -1219,6 +1232,7 @@ rt_sigpending02 rt_sigpending02
 rt_sigprocmask01 rt_sigprocmask01
 rt_sigprocmask02 rt_sigprocmask02
 rt_sigqueueinfo01 rt_sigqueueinfo01
+rt_sigqueueinfo02 rt_sigqueueinfo02
 rt_sigsuspend01 rt_sigsuspend01
 rt_sigtimedwait01 rt_sigtimedwait01
 rt_tgsigqueueinfo01 rt_tgsigqueueinfo01
@@ -1577,6 +1591,15 @@ stat03 stat03
 stat03_64 stat03_64
 stat04 stat04
 stat04_64 stat04_64
+
+statmount01 statmount01
+statmount02 statmount02
+statmount03 statmount03
+statmount04 statmount04
+statmount05 statmount05
+statmount06 statmount06
+statmount07 statmount07
+statmount08 statmount08
 
 statfs01 statfs01
 statfs01_64 statfs01_64

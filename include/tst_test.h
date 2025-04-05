@@ -234,7 +234,7 @@ struct tst_tag {
 
 extern unsigned int tst_variant;
 
-#define TST_UNLIMITED_RUNTIME (-1)
+#define TST_UNLIMITED_TIMEOUT (-1)
 
 /**
  * struct tst_ulimit_val - An ulimit resource and value.
@@ -262,20 +262,29 @@ struct tst_ulimit_val {
  *                 passed to mkfs after the device path and can be used to
  *                 limit the file system not to use the whole block device.
  *
+ * @mkfs_ver: mkfs tool version. The string format supports relational
+ *            operators such as < > <= >= ==.
+ *
  * @mnt_flags: MS_* flags passed to mount(2) when the test library mounts a
  *             device in the case of 'tst_test.mount_device'.
  *
  * @mnt_data: The data passed to mount(2) when the test library mounts a device
  *            in the case of 'tst_test.mount_device'.
+ *
+ * @min_kver: A minimum kernel version supporting the filesystem which has been
+ *            created with mkfs.
  */
 struct tst_fs {
 	const char *type;
 
 	const char *const *mkfs_opts;
 	const char *mkfs_size_opt;
+	const char *mkfs_ver;
 
 	unsigned int mnt_flags;
 	const void *mnt_data;
+
+	const char *min_kver;
 };
 
 /**
@@ -426,13 +435,26 @@ struct tst_fs {
  *            The directory is created by the library, the test must not create
  *            it itself.
  *
- * @max_runtime: Maximal test runtime in seconds. Any test that runs for more
- *               than a second or two should set this and also use
- *               tst_remaining_runtime() to exit when runtime was used up.
- *               Tests may finish sooner, for example if requested number of
- *               iterations was reached before the runtime runs out. If test
- *               runtime cannot be know in advance it should be set to
- *               TST_UNLIMITED_RUNTIME.
+ * @timeout: Maximum allowable time in seconds for the entire duration of a test.
+ *           By default, the timeout limits the total time for setup, single test
+ *           function invocation, and cleanup phases. However, if .runtime is
+ *           explicitly set and tst_remaining_runtime() is used in the test's
+ *           main loop, the timeout then applies only to the setup and cleanup
+ *           phases, as the runtime separately limits the main test execution.
+ *           This ensures the test does not hang indefinitely, in the rare case
+ *           that the test timeout cannot be accurately determined, it can be
+ *           set to a sufficiently large value or TST_UNLIMITED_TIMEOUT to remove
+ *           the limit.
+ *
+ * @runtime: Maximum runtime in seconds for the test's main execution loop.
+ *           This should be set for tests that are expected to run longer
+ *           than a few seconds and call tst_remaining_runtime() in their
+ *           main loop to exit gracefully when the runtime is exceeded.
+ *           Tests may finish sooner if their task completes (e.g., reaching
+ *           a requested number of iterations) before the runtime runs out.
+ *           The runtime is fixed and does not scale with timeout multipliers
+ *           (e.g., TIMEOUT_MUL), ensuring consistent test duration across
+ *           different environments (e.g., debug vs. stock kernels).
  *
  * @setup: Setup callback is called once at the start of the test in order to
  *         prepare the test environment.
@@ -556,7 +578,8 @@ struct tst_fs {
 
 	const char *mntpoint;
 
-	int max_runtime;
+	int timeout;
+	int runtime;
 
 	void (*setup)(void);
 	void (*cleanup)(void);
@@ -587,7 +610,7 @@ struct tst_fs {
 
 	const char *const *needs_cgroup_ctrls;
 
-	int needs_cgroup_nsdelegate:1;
+	unsigned int needs_cgroup_nsdelegate:1;
 };
 
 /**
@@ -653,6 +676,11 @@ void tst_reinit(void);
  */
 int tst_run_script(const char *script_name, char *const params[]);
 
+/*
+ * Sets entire timeout in seconds.
+ */
+void tst_set_timeout(int timeout);
+
 unsigned int tst_multiply_timeout(unsigned int timeout);
 
 /*
@@ -667,13 +695,13 @@ unsigned int tst_remaining_runtime(void);
 /*
  * Sets maximal test runtime in seconds.
  */
-void tst_set_max_runtime(int max_runtime);
+void tst_set_runtime(int runtime);
 
 /*
  * Create and open a random file inside the given dir path.
  * It unlinks the file after opening and return file descriptor.
  */
-int tst_creat_unlinked(const char *path, int flags);
+int tst_creat_unlinked(const char *path, int flags, mode_t mode);
 
 /*
  * Returns path to the test temporary directory root (TMPDIR).
