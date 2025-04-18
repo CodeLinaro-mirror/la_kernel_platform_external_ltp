@@ -324,6 +324,7 @@ static struct tst_test test = {
 	},
 	.tags = (const struct tst_tag[]) {
 		{"linux-git", "124e7c61deb2"},
+		{"linux-git", "76486b104168"},
 		{}
 	},
 	.needs_cmds = (const char *[]) {
