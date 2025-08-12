@@ -76,6 +76,7 @@ struct cgroup_root {
 	unsigned int we_mounted_it:1;
 	/* cpuset is in compatability mode */
 	unsigned int no_cpuset_prefix:1;
+	unsigned int memory_recursiveprot:1;
 };
 
 /* Controller sub-systems */
@@ -83,6 +84,7 @@ enum cgroup_ctrl_indx {
 	CTRL_MEMORY = 1,
 	CTRL_CPU,
 	CTRL_CPUSET,
+	CTRL_DMEM,
 	CTRL_IO,
 	CTRL_PIDS,
 	CTRL_HUGETLB,
@@ -206,6 +208,15 @@ static const struct cgroup_file cpuset_ctrl_files[] = {
 	{ }
 };
 
+static const struct cgroup_file dmem_ctrl_files[] = {
+	{ "dmem.capacity", NULL, CTRL_DMEM },
+	{ "dmem.current", NULL, CTRL_DMEM },
+	{ "dmem.min", NULL, CTRL_DMEM },
+	{ "dmem.low", NULL, CTRL_DMEM },
+	{ "dmem.max", NULL, CTRL_DMEM },
+	{ }
+};
+
 static const struct cgroup_file io_ctrl_files[] = {
 	{ "io.stat", NULL, CTRL_IO },
 	{ }
@@ -275,6 +286,7 @@ static struct cgroup_ctrl controllers[] = {
 	CGROUP_CTRL_MEMBER(memory, CTRL_MEMORY),
 	CGROUP_CTRL_MEMBER(cpu, CTRL_CPU),
 	CGROUP_CTRL_MEMBER(cpuset, CTRL_CPUSET),
+	CGROUP_CTRL_MEMBER(dmem, CTRL_DMEM),
 	CGROUP_CTRL_MEMBER(io, CTRL_IO),
 	CGROUP_CTRL_MEMBER(pids, CTRL_PIDS),
 	CGROUP_CTRL_MEMBER(hugetlb, CTRL_HUGETLB),
@@ -575,7 +587,8 @@ static void cgroup_root_scan(const char *const mnt_type,
 	struct cgroup_ctrl *ctrl;
 	uint32_t ctrl_field = 0;
 	int no_prefix = 0;
-	int nsdelegate = 0;
+	unsigned int nsdelegate = 0;
+	unsigned int memory_recursiveprot = 0;
 	char buf[BUFSIZ];
 	char *tok;
 	const int mnt_dfd = SAFE_OPEN(mnt_dir, O_PATH | O_DIRECTORY);
@@ -592,6 +605,7 @@ static void cgroup_root_scan(const char *const mnt_type,
 	}
 	for (tok = strtok(mnt_opts, ","); tok; tok = strtok(NULL, ",")) {
 		nsdelegate |= !strcmp("nsdelegate", tok);
+		memory_recursiveprot |= !strcmp("memory_recursiveprot", tok);
 	}
 
 	if (root->ver && ctrl_field == root->ctrl_field)
@@ -644,6 +658,7 @@ backref:
 	root->ctrl_field = ctrl_field;
 	root->no_cpuset_prefix = no_prefix;
 	root->nsdelegate = nsdelegate;
+	root->memory_recursiveprot = memory_recursiveprot;
 
 	for_each_ctrl(ctrl) {
 		if (has_ctrl(root->ctrl_field, ctrl))
@@ -1508,4 +1523,11 @@ int safe_cg_occursin(const char *const file, const int lineno,
 	safe_cg_read(file, lineno, cg, file_name, buf, sizeof(buf));
 
 	return !!strstr(buf, needle);
+}
+
+int tst_cg_memory_recursiveprot(struct tst_cg_group *cg)
+{
+	if (cg && cg->dirs_by_ctrl[0]->dir_root)
+		return cg->dirs_by_ctrl[0]->dir_root->memory_recursiveprot;
+	return 0;
 }

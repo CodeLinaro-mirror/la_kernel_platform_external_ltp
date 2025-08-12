@@ -127,8 +127,7 @@ tst_get_selinux_dir()
 {
 	local dir="/sys/fs/selinux"
 
-	[ -d "$dir" ] || dir="/selinux"
-	[ -d "$dir" ] && echo "$dir"
+	[ -f "$dir/enforce" ] && echo "$dir"
 }
 
 # Get SELinux enforce file path
@@ -145,7 +144,7 @@ tst_update_selinux_state()
 {
 	local cur_val new_val
 	local dir=$(tst_get_selinux_dir)
-	[ -z "$dir" ] || return 1
+	[ -n "$dir" ] || return 1
 
 	cur_val=$(cat $dir/checkreqprot)
 	[ $cur_val = 1 ] && new_val=0 || new_val=1

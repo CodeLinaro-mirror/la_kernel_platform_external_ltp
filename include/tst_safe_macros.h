@@ -12,6 +12,7 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <sys/stat.h>
+#include <sys/statvfs.h>
 #include <sys/vfs.h>
 #include <sys/sysinfo.h>
 #include <sys/uio.h>
@@ -271,35 +272,6 @@ int safe_getgroups(const char *file, const int lineno, int size, gid_t list[]);
 	            "fcntl(%i,%s,...) failed", fd, #cmd), 0 \
 	 : tst_ret_;})
 
-void tst_prot_to_str(const int prot, char *buf);
-
-static inline void *safe_mmap(const char *file, const int lineno,
-	void *addr, size_t length, int prot, int flags, int fd, off_t offset)
-{
-	void *rval;
-	char prot_buf[512];
-
-	tst_prot_to_str(prot, prot_buf);
-
-	tst_res_(file, lineno, TDEBUG,
-		"mmap(%p, %zu, %s(%x), %d, %d, %lld)",
-		addr, length, prot_buf, prot, flags, fd, (long long int)offset);
-
-	rval = mmap(addr, length, prot, flags, fd, offset);
-	if (rval == MAP_FAILED) {
-		tst_brk_(file, lineno, TBROK | TERRNO,
-			"mmap(%p,%zu,%s(%x),%d,%d,%ld) failed",
-			addr, length, prot_buf, prot, flags, fd, (long) offset);
-	}
-
-	return rval;
-}
-
-
-#define SAFE_MMAP(addr, length, prot, flags, fd, offset) \
-	safe_mmap(__FILE__, __LINE__, (addr), (length), (prot), \
-	(flags), (fd), (offset))
-
 int safe_mprotect(const char *file, const int lineno,
 	char *addr, size_t len, int prot);
 
@@ -531,5 +503,10 @@ ssize_t safe_writev(const char *file, const int lineno, char len_strict,
 char *safe_ptsname(const char *const file, const int lineno, int masterfd);
 #define SAFE_PTSNAME(masterfd) \
 	safe_ptsname(__FILE__, __LINE__, (masterfd))
+
+int safe_statvfs(const char *file, const int lineno,
+                              const char *path, struct statvfs *buf);
+#define SAFE_STATVFS(path, buf) \
+	safe_statvfs(__FILE__, __LINE__, (path), (buf))
 
 #endif /* TST_SAFE_MACROS_H__ */

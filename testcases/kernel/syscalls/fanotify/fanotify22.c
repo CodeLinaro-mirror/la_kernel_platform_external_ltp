@@ -7,7 +7,6 @@
  */
 
 /*\
- * [Description]
  * Check fanotify FAN_ERROR_FS events triggered by intentionally
  * corrupted filesystems:
  *
@@ -295,7 +294,7 @@ static void setup(void)
 {
 	REQUIRE_FANOTIFY_EVENTS_SUPPORTED_ON_FS(FAN_CLASS_NOTIF|FAN_REPORT_FID,
 						FAN_MARK_FILESYSTEM,
-						FAN_FS_ERROR, ".");
+						FAN_FS_ERROR, MOUNT_PATH);
 	pre_corrupt_fs();
 
 	fd_notify = SAFE_FANOTIFY_INIT(FAN_CLASS_NOTIF|FAN_REPORT_FID,
