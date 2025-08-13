@@ -626,6 +626,7 @@ class BuildGenerator(object):
         bp_result.append('')
         bp_result.append('package {')
         bp_result.append('    default_applicable_licenses: ["external_ltp_license"],')
+        bp_result.append('    default_team: "trendy_team_android_kernel",')
         bp_result.append('}')
 
         bp_result.extend(self.BuildPackageList())

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
- * Copyright (c) 2015-2016 Cyril Hrubis <chrubis@suse.cz>
+ * Copyright (c) 2015-2025 Cyril Hrubis <chrubis@suse.cz>
  * Copyright (c) Linux Test Project, 2016-2024
  */
 
@@ -44,7 +44,7 @@
  */
 const char *TCID __attribute__((weak));
 
-/* update also docparse/testinfo.pl */
+/* update also doc/conf.py */
 #define LINUX_GIT_URL "https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id="
 #define LINUX_STABLE_GIT_URL "https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/commit/?id="
 #define GLIBC_GIT_URL "https://sourceware.org/git/?p=glibc.git;a=commit;h="
@@ -59,11 +59,11 @@ static const char *tid;
 static int iterations = 1;
 static float duration = -1;
 static float timeout_mul = -1;
-static pid_t main_pid, lib_pid;
 static int mntpoint_mounted;
 static int ovl_mounted;
 static struct timespec tst_start_time; /* valid only for test pid */
 static int tdebug;
+static int reproducible_output;
 
 struct results {
 	int passed;
@@ -71,8 +71,15 @@ struct results {
 	int failed;
 	int warnings;
 	int broken;
+	/*
+	 * This is set by a call to tst_brk() with TBROK parameter and means
+	 * that the test should exit immediately.
+	 */
+	int abort_flag;
 	unsigned int runtime;
 	unsigned int overall_time;
+	pid_t lib_pid;
+	pid_t main_pid;
 };
 
 static struct results *results;
@@ -136,6 +143,9 @@ static void setup_ipc(void)
 		tst_futexes = (char *)results + sizeof(struct results);
 		tst_max_futexes = (size - sizeof(struct results))/sizeof(futex_t);
 	}
+
+	memset(results, 0 , size);
+	results->lib_pid = getpid();
 }
 
 static void cleanup_ipc(void)
@@ -200,7 +210,7 @@ int tst_run_script(const char *script_name, char *const params[])
 	if (!tst_test->runs_script)
 		tst_brk(TBROK, "runs_script flag must be set!");
 
-	argv[0] = (char*)script_name;
+	argv[0] = (char *)script_name;
 
 	if (params) {
 		for (i = 0; i < params_len; i++)
@@ -307,6 +317,9 @@ static void print_result(const char *file, const int lineno, int ttype,
 	str += ret;
 	size -= ret;
 
+	if (reproducible_output)
+		goto print;
+
 	ssize = size - 2;
 	ret = vsnprintf(str, size, fmt, va);
 	str += MIN(ret, ssize);
@@ -324,6 +337,7 @@ static void print_result(const char *file, const int lineno, int ttype,
 				"Next message is too long and truncated:");
 	}
 
+print:
 	snprintf(str, size, "\n");
 
 	/* we might be called from signal handler, so use write() */
@@ -381,6 +395,14 @@ void tst_vbrk_(const char *file, const int lineno, int ttype, const char *fmt,
 	       va_list va)
 {
 	print_result(file, lineno, ttype, fmt, va);
+
+	/*
+	 * If tst_brk() is called from some of the C helpers even before the
+	 * library was initialized, just exit.
+	 */
+	if (!results || !results->lib_pid)
+		exit(TTYPE_RESULT(ttype));
+
 	update_results(TTYPE_RESULT(ttype));
 
 	/*
@@ -389,13 +411,37 @@ void tst_vbrk_(const char *file, const int lineno, int ttype, const char *fmt,
 	 * specified but CLONE_THREAD is not. Use direct syscall to avoid
 	 * cleanup running in the child.
 	 */
-	if (tst_getpid() == main_pid)
+	if (tst_getpid() == results->main_pid)
 		do_test_cleanup();
 
-	if (getpid() == lib_pid)
+	/*
+	 * The test library process reports result statistics and exits.
+	 */
+	if (getpid() == results->lib_pid)
 		do_exit(TTYPE_RESULT(ttype));
 
-	exit(TTYPE_RESULT(ttype));
+	/*
+	 * If we get here we are in a child process, either the main child
+	 * running the test or its children. If any of them called tst_brk()
+	 * with TBROK we need to exit the test. Otherwise we just exit the
+	 * current process.
+	 */
+	if (TTYPE_RESULT(ttype) == TBROK) {
+		if (results)
+			tst_atomic_inc(&results->abort_flag);
+
+		/*
+		 * If TBROK was called from one of the child processes we kill
+		 * the main test process. That in turn triggers the code that
+		 * kills leftover children once the main test process did exit.
+		 */
+		if (results->main_pid && tst_getpid() != results->main_pid) {
+			tst_res(TINFO, "Child process reported TBROK killing the test");
+			kill(results->main_pid, SIGKILL);
+		}
+	}
+
+	exit(0);
 }
 
 void tst_res_(const char *file, const int lineno, int ttype,
@@ -432,8 +478,6 @@ void tst_printf(const char *const fmt, ...)
 
 static void check_child_status(pid_t pid, int status)
 {
-	int ret;
-
 	if (WIFSIGNALED(status)) {
 		tst_brk(TBROK, "Child (%i) killed by signal %s", pid,
 			tst_strsig(WTERMSIG(status)));
@@ -442,15 +486,8 @@ static void check_child_status(pid_t pid, int status)
 	if (!(WIFEXITED(status)))
 		tst_brk(TBROK, "Child (%i) exited abnormally", pid);
 
-	ret = WEXITSTATUS(status);
-	switch (ret) {
-	case TPASS:
-	case TBROK:
-	case TCONF:
-	break;
-	default:
-		tst_brk(TBROK, "Invalid child (%i) exit value %i", pid, ret);
-	}
+	if (WEXITSTATUS(status))
+		tst_brk(TBROK, "Invalid child (%i) exit value %i", pid, WEXITSTATUS(status));
 }
 
 void tst_reap_children(void)
@@ -571,20 +608,22 @@ static void print_help(void)
 	unsigned int i;
 	int timeout, runtime;
 
-	/* see doc/User-Guidelines.asciidoc, which lists also shell API variables */
+	/* see doc/users/setup_tests.rst, which lists also shell API variables */
 	fprintf(stderr, "Environment Variables\n");
 	fprintf(stderr, "---------------------\n");
-	fprintf(stderr, "KCONFIG_PATH         Specify kernel config file\n");
-	fprintf(stderr, "KCONFIG_SKIP_CHECK   Skip kernel config check if variable set (not set by default)\n");
-	fprintf(stderr, "LTPROOT              Prefix for installed LTP (default: /opt/ltp)\n");
-	fprintf(stderr, "LTP_COLORIZE_OUTPUT  Force colorized output behaviour (y/1 always, n/0: never)\n");
-	fprintf(stderr, "LTP_DEV              Path to the block device to be used (for .needs_device)\n");
-	fprintf(stderr, "LTP_DEV_FS_TYPE      Filesystem used for testing (default: %s)\n", DEFAULT_FS_TYPE);
-	fprintf(stderr, "LTP_SINGLE_FS_TYPE   Testing only - specifies filesystem instead all supported (for .all_filesystems)\n");
-	fprintf(stderr, "LTP_TIMEOUT_MUL      Timeout multiplier (must be a number >=1)\n");
-	fprintf(stderr, "LTP_RUNTIME_MUL      Runtime multiplier (must be a number >=1)\n");
-	fprintf(stderr, "LTP_VIRT_OVERRIDE    Overrides virtual machine detection (values: \"\"|kvm|microsoft|xen|zvm)\n");
-	fprintf(stderr, "TMPDIR               Base directory for template directory (for .needs_tmpdir, default: %s)\n", TEMPDIR);
+	fprintf(stderr, "KCONFIG_PATH             Specify kernel config file\n");
+	fprintf(stderr, "KCONFIG_SKIP_CHECK       Skip kernel config check if variable set (not set by default)\n");
+	fprintf(stderr, "LTPROOT                  Prefix for installed LTP (default: /opt/ltp)\n");
+	fprintf(stderr, "LTP_COLORIZE_OUTPUT      Force colorized output behaviour (y/1 always, n/0: never)\n");
+	fprintf(stderr, "LTP_DEV                  Path to the block device to be used (for .needs_device)\n");
+	fprintf(stderr, "LTP_DEV_FS_TYPE          Filesystem used for testing (default: %s)\n", DEFAULT_FS_TYPE);
+	fprintf(stderr, "LTP_REPRODUCIBLE_OUTPUT  Values 1 or y discard the actual content of the messages printed by the test\n");
+	fprintf(stderr, "LTP_SINGLE_FS_TYPE       Specifies filesystem instead all supported (for .all_filesystems)\n");
+	fprintf(stderr, "LTP_FORCE_SINGLE_FS_TYPE Testing only. The same as LTP_SINGLE_FS_TYPE but ignores test skiplist.\n");
+	fprintf(stderr, "LTP_TIMEOUT_MUL          Timeout multiplier (must be a number >=1)\n");
+	fprintf(stderr, "LTP_RUNTIME_MUL          Runtime multiplier (must be a number >=1)\n");
+	fprintf(stderr, "LTP_VIRT_OVERRIDE        Overrides virtual machine detection (values: \"\"|kvm|microsoft|xen|zvm)\n");
+	fprintf(stderr, "TMPDIR                   Base directory for template directory (for .needs_tmpdir, default: %s)\n", TEMPDIR);
 	fprintf(stderr, "\n");
 
 	fprintf(stderr, "Timeout and runtime\n");
@@ -898,7 +937,7 @@ static void print_failure_hint(const char *tag, const char *hint,
 
 static int show_failure_hints;
 
-/* update also docparse/testinfo.pl */
+/* update also doc/conf.py */
 static void print_failure_hints(void)
 {
 	print_failure_hint("linux-git", "missing kernel fixes", LINUX_GIT_URL);
@@ -912,6 +951,14 @@ static void print_failure_hints(void)
 	show_failure_hints = 0;
 }
 
+/*
+ * Prints results, cleans up after the test library and exits the test library
+ * process. The ret parameter is used to pass the result flags in a case of a
+ * failure before we managed to set up the shared memory where we store the
+ * results. This allows us to use SAFE_MACROS() in the initialization of the
+ * shared memory. The ret parameter is not used (passed 0) when called
+ * explicitly from the rest of the library.
+ */
 static void do_exit(int ret)
 {
 	if (results) {
@@ -1258,6 +1305,7 @@ static const char *default_fs_type(void)
 static void do_setup(int argc, char *argv[])
 {
 	char *tdebug_env = getenv("LTP_ENABLE_DEBUG");
+	char *reproducible_env = getenv("LTP_REPRODUCIBLE_OUTPUT");
 
 	if (!tst_test)
 		tst_brk(TBROK, "No tests to run");
@@ -1267,13 +1315,18 @@ static void do_setup(int argc, char *argv[])
 			tst_test->timeout);
 	}
 
-	if (tst_test->runtime < 0) {
-		tst_brk(TBROK, "Invalid runtime value %i",
-			results->runtime);
-	}
+	if (tst_test->runtime < 0)
+		tst_brk(TBROK, "Invalid runtime value %i", tst_test->runtime);
 
 	if (tst_test->tconf_msg)
 		tst_brk(TCONF, "%s", tst_test->tconf_msg);
+
+	if (tst_test->supported_archs && !tst_is_on_arch(tst_test->supported_archs))
+		tst_brk(TCONF, "This arch '%s' is not supported for test!", tst_arch.name);
+
+	if (reproducible_env &&
+	    (!strcmp(reproducible_env, "1") || !strcmp(reproducible_env, "y")))
+		reproducible_output = 1;
 
 	assert_test_fn();
 
@@ -1294,6 +1347,8 @@ static void do_setup(int argc, char *argv[])
 		tst_test->forks_child = 1;
 	}
 
+	setup_ipc();
+
 	if (tst_test->needs_kconfigs && tst_kconfig_check(tst_test->needs_kconfigs))
 		tst_brk(TCONF, "Aborting due to unsuitable kernel config, see above!");
 
@@ -1302,9 +1357,6 @@ static void do_setup(int argc, char *argv[])
 
 	if (tst_test->min_kver)
 		check_kver(tst_test->min_kver, 1);
-
-	if (tst_test->supported_archs && !tst_is_on_arch(tst_test->supported_archs))
-		tst_brk(TCONF, "This arch '%s' is not supported for test!", tst_arch.name);
 
 	if (tst_test->skip_in_lockdown && tst_lockdown_enabled() > 0)
 		tst_brk(TCONF, "Kernel is locked down, skipping test");
@@ -1355,8 +1407,6 @@ static void do_setup(int argc, char *argv[])
 
 	if (tst_test->hugepages.number)
 		tst_reserve_hugepages(&tst_test->hugepages);
-
-	setup_ipc();
 
 	if (tst_test->bufs)
 		tst_buffers_alloc(tst_test->bufs);
@@ -1467,7 +1517,7 @@ static void do_setup(int argc, char *argv[])
 
 static void do_test_setup(void)
 {
-	main_pid = getpid();
+	results->main_pid = getpid();
 
 	if (!tst_test->all_filesystems && tst_test->skip_filesystems) {
 		long fs_type = tst_fs_type(".");
@@ -1487,7 +1537,7 @@ static void do_test_setup(void)
 	if (tst_test->setup)
 		tst_test->setup();
 
-	if (main_pid != tst_getpid())
+	if (results->main_pid != tst_getpid())
 		tst_brk(TBROK, "Runaway child in setup()!");
 
 	if (tst_test->caps)
@@ -1550,13 +1600,14 @@ static void run_tests(void)
 		heartbeat();
 		tst_test->test_all();
 
-		if (tst_getpid() != main_pid)
+		if (tst_getpid() != results->main_pid)
 			exit(0);
 
 		tst_reap_children();
 
 		if (results_equal(&saved_results, results))
 			tst_brk(TBROK, "Test haven't reported results!");
+
 		return;
 	}
 
@@ -1565,7 +1616,7 @@ static void run_tests(void)
 		heartbeat();
 		tst_test->test(i);
 
-		if (tst_getpid() != main_pid)
+		if (tst_getpid() != results->main_pid)
 			exit(0);
 
 		tst_reap_children();
@@ -1651,6 +1702,7 @@ static volatile sig_atomic_t sigkill_retries;
 static void alarm_handler(int sig LTP_ATTRIBUTE_UNUSED)
 {
 	WRITE_MSG("Test timeouted, sending SIGKILL!\n");
+
 	kill(-test_pid, SIGKILL);
 	alarm(5);
 
@@ -1785,7 +1837,10 @@ static int fork_testrun(void)
 		tst_res(TINFO, "Killed the leftover descendant processes");
 
 	if (WIFEXITED(status) && WEXITSTATUS(status))
-		return WEXITSTATUS(status);
+		tst_brk(TBROK, "Child returned with %i", WEXITSTATUS(status));
+
+	if (results->abort_flag)
+		return 0;
 
 	if (WIFSIGNALED(status) && WTERMSIG(status) == SIGKILL) {
 		tst_res(TINFO, "If you are running on slow machine, "
@@ -1855,6 +1910,7 @@ static int run_tcases_per_fs(void)
 {
 	int ret = 0;
 	unsigned int i;
+	bool found_valid_fs = false;
 	const char *const *filesystems = tst_get_supported_fs_types(tst_test->skip_filesystems);
 
 	if (!filesystems[0])
@@ -1866,16 +1922,15 @@ static int run_tcases_per_fs(void)
 		if (!fs)
 			continue;
 
-		ret = run_tcase_on_fs(fs, filesystems[i]);
+		found_valid_fs = true;
+		run_tcase_on_fs(fs, filesystems[i]);
 
-		if (ret == TCONF)
-			continue;
-
-		if (ret == 0)
-			continue;
-
-		do_exit(ret);
+		if (tst_atomic_load(&results->abort_flag))
+			do_exit(0);
 	}
+
+	if (!found_valid_fs)
+		tst_brk(TCONF, "No required filesystems are available");
 
 	return ret;
 }
@@ -1884,21 +1939,18 @@ unsigned int tst_variant;
 
 void tst_run_tcases(int argc, char *argv[], struct tst_test *self)
 {
-	int ret = 0;
 	unsigned int test_variants = 1;
 	struct utsname uval;
 
-	lib_pid = getpid();
 	tst_test = self;
 
 	do_setup(argc, argv);
-	tst_enable_oom_protection(lib_pid);
+	tst_enable_oom_protection(results->lib_pid);
 
 	SAFE_SIGNAL(SIGALRM, alarm_handler);
 	SAFE_SIGNAL(SIGUSR1, heartbeat_handler);
 
 	tst_res(TINFO, "LTP version: "LTP_VERSION);
-
 
 	uname(&uval);
 	tst_res(TINFO, "Tested kernel: %s %s %s", uval.release, uval.version, uval.machine);
@@ -1913,18 +1965,16 @@ void tst_run_tcases(int argc, char *argv[], struct tst_test *self)
 
 	for (tst_variant = 0; tst_variant < test_variants; tst_variant++) {
 		if (tst_test->all_filesystems || count_fs_descs() > 1)
-			ret |= run_tcases_per_fs();
+			run_tcases_per_fs();
 		else
-			ret |= fork_testrun();
+			fork_testrun();
 
-		if (ret & ~(TCONF))
-			goto exit;
+		if (tst_atomic_load(&results->abort_flag))
+			do_exit(0);
 	}
 
-exit:
-	do_exit(ret);
+	do_exit(0);
 }
-
 
 void tst_flush(void)
 {

@@ -1,6 +1,6 @@
 #!/bin/sh
 # SPDX-License-Identifier: GPL-2.0-or-later
-# Copyright (c) Linux Test Project, 2014-2022
+# Copyright (c) Linux Test Project, 2014-2025
 # Author: Cyril Hrubis <chrubis@suse.cz>
 #
 # LTP test library for shell.
@@ -85,7 +85,7 @@ _tst_do_exit()
 	fi
 
 	if [ $TST_BROK -gt 0 -o $TST_FAIL -gt 0 -o $TST_WARN -gt 0 ]; then
-		_tst_check_security_modules
+		[ -z "$TST_SKIP_LSM_WARNINGS" ] && _tst_check_security_modules
 	fi
 
 	cat >&2 << EOF
@@ -151,7 +151,7 @@ ROD_SILENT()
 {
 	local tst_out
 
-	tst_out="$(tst_rod $@ 2>&1)"
+	tst_out=$(tst_rod "$@" 2>&1)
 	if [ $? -ne 0 ]; then
 		echo "$tst_out"
 		tst_brk TBROK "$@ failed"
@@ -486,15 +486,16 @@ tst_usage()
 
 Environment Variables
 ---------------------
-KCONFIG_PATH         Specify kernel config file
-KCONFIG_SKIP_CHECK   Skip kernel config check if variable set (not set by default)
-LTPROOT              Prefix for installed LTP (default: /opt/ltp)
-LTP_COLORIZE_OUTPUT  Force colorized output behaviour (y/1 always, n/0: never)
-LTP_DEV              Path to the block device to be used (for .needs_device)
-LTP_DEV_FS_TYPE      Filesystem used for testing (default: ext2)
-LTP_SINGLE_FS_TYPE   Testing only - specifies filesystem instead all supported (for TST_ALL_FILESYSTEMS=1)
-LTP_TIMEOUT_MUL      Timeout multiplier (must be a number >=1, ceiled to int)
-TMPDIR               Base directory for template directory (for .needs_tmpdir, default: /tmp)
+KCONFIG_PATH             Specify kernel config file
+KCONFIG_SKIP_CHECK       Skip kernel config check if variable set (not set by default)
+LTPROOT                  Prefix for installed LTP (default: /opt/ltp)
+LTP_COLORIZE_OUTPUT      Force colorized output behaviour (y/1 always, n/0: never)
+LTP_DEV                  Path to the block device to be used (for .needs_device)
+LTP_DEV_FS_TYPE          Filesystem used for testing (default: ext2)
+LTP_SINGLE_FS_TYPE       Specifies filesystem instead all supported (for TST_ALL_FILESYSTEMS=1)
+LTP_FORCE_SINGLE_FS_TYPE Testing only. The same as LTP_SINGLE_FS_TYPE but ignores test skiplist
+LTP_TIMEOUT_MUL          Timeout multiplier (must be a number >=1, ceiled to int)
+TMPDIR                   Base directory for template directory (for .needs_tmpdir, default: /tmp)
 EOF
 }
 
