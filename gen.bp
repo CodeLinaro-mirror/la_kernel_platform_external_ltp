@@ -46,8 +46,6 @@ cc_library_static {
     local_include_dirs: [
         "include",
         "include/old",
-        "testcases/kernel/include",
-        "testcases/kernel/mem/include",
     ],
     srcs: [
         "testcases/kernel/mem/hugetlb/lib/hugetlb.c",
@@ -67,6 +65,7 @@ cc_library_static {
     ],
     srcs: [
         "testcases/kernel/lib/ksm_helper.c",
+        "testcases/kernel/lib/numa_cpuset.c",
         "testcases/kernel/lib/numa_helper.c",
     ],
 }
@@ -132,6 +131,7 @@ cc_library_static {
         "lib/tst_netdevice.c",
         "lib/tst_netlink.c",
         "lib/tst_parse_opts.c",
+        "lib/tst_path_exists.c",
         "lib/tst_path_has_mnt_flags.c",
         "lib/tst_pid.c",
         "lib/tst_process_state.c",
@@ -233,20 +233,6 @@ cc_library_static {
     srcs: [
         "libs/vdso/parse_vdso.c",
         "libs/vdso/vdso_helpers.c",
-    ],
-}
-
-cc_library_static {
-    name: "libltp_mem",
-    defaults: ["ltp_defaults"],
-    local_include_dirs: [
-        "include",
-        "include/old",
-        "testcases/kernel/include",
-        "testcases/kernel/mem/include",
-    ],
-    srcs: [
-        "testcases/kernel/mem/lib/mem.c",
     ],
 }
 
@@ -1939,12 +1925,26 @@ cc_test {
     local_include_dirs: [
         "include/old",
         "testcases/kernel/include",
-        "testcases/kernel/mem/include",
     ],
     static_libs: [
         "libltp_kerntest",
         "libltp_ltp",
-        "libltp_mem",
+    ],
+}
+
+cc_test {
+    name: "ltp_cpuset02",
+    stem: "cpuset02",
+    defaults: ["ltp_test_defaults"],
+    srcs: ["testcases/kernel/mem/cpuset/cpuset02.c"],
+    local_include_dirs: [
+        "include/old",
+        "testcases/kernel/include",
+    ],
+    static_libs: [
+        "libltp_kerntest",
+        "libltp_ltp",
+        "libltp_ltpnuma",
     ],
 }
 
@@ -3599,6 +3599,15 @@ cc_test {
 }
 
 cc_test {
+    name: "ltp_fanotify24",
+    stem: "fanotify24",
+    defaults: ["ltp_test_defaults"],
+    srcs: ["testcases/kernel/syscalls/fanotify/fanotify24.c"],
+    local_include_dirs: ["include/old"],
+    static_libs: ["libltp_ltp"],
+}
+
+cc_test {
     name: "ltp_fanotify_child",
     stem: "fanotify_child",
     defaults: ["ltp_test_defaults"],
@@ -3883,6 +3892,15 @@ cc_test {
     stem: "fchownat02",
     defaults: ["ltp_test_defaults"],
     srcs: ["testcases/kernel/syscalls/fchownat/fchownat02.c"],
+    local_include_dirs: ["include/old"],
+    static_libs: ["libltp_ltp"],
+}
+
+cc_test {
+    name: "ltp_fchownat03",
+    stem: "fchownat03",
+    defaults: ["ltp_test_defaults"],
+    srcs: ["testcases/kernel/syscalls/fchownat/fchownat03.c"],
     local_include_dirs: ["include/old"],
     static_libs: ["libltp_ltp"],
 }
@@ -5220,6 +5238,42 @@ cc_test {
 }
 
 cc_test {
+    name: "ltp_fcntl40",
+    stem: "fcntl40",
+    defaults: ["ltp_test_defaults"],
+    srcs: ["testcases/kernel/syscalls/fcntl/fcntl40.c"],
+    cflags: [
+        "-D_GNU_SOURCE",
+        "-D_LARGEFILE64_SOURCE",
+    ],
+    local_include_dirs: [
+        "include/old",
+        "testcases/kernel/syscalls/fcntl",
+        "testcases/kernel/syscalls/utils",
+    ],
+    static_libs: ["libltp_ltp"],
+}
+
+cc_test {
+    name: "ltp_fcntl40_64",
+    stem: "fcntl40_64",
+    defaults: ["ltp_test_defaults"],
+    srcs: ["testcases/kernel/syscalls/fcntl/fcntl40.c"],
+    cflags: [
+        "-DTST_USE_NEWER64_SYSCALL=1",
+        "-D_FILE_OFFSET_BITS=64",
+        "-D_GNU_SOURCE",
+        "-D_LARGEFILE64_SOURCE",
+    ],
+    local_include_dirs: [
+        "include/old",
+        "testcases/kernel/syscalls/fcntl",
+        "testcases/kernel/syscalls/utils",
+    ],
+    static_libs: ["libltp_ltp"],
+}
+
+cc_test {
     name: "ltp_fdatasync01",
     stem: "fdatasync01",
     defaults: ["ltp_test_defaults"],
@@ -5404,6 +5458,15 @@ cc_test {
     stem: "flock06",
     defaults: ["ltp_test_defaults"],
     srcs: ["testcases/kernel/syscalls/flock/flock06.c"],
+    local_include_dirs: ["include/old"],
+    static_libs: ["libltp_ltp"],
+}
+
+cc_test {
+    name: "ltp_flock07",
+    stem: "flock07",
+    defaults: ["ltp_test_defaults"],
+    srcs: ["testcases/kernel/syscalls/flock/flock07.c"],
     local_include_dirs: ["include/old"],
     static_libs: ["libltp_ltp"],
 }
@@ -7506,15 +7569,11 @@ cc_test {
     srcs: ["testcases/kernel/mem/hugetlb/hugefallocate/hugefallocate01.c"],
     local_include_dirs: [
         "include/old",
-        "testcases/kernel/include",
         "testcases/kernel/mem/hugetlb/lib",
-        "testcases/kernel/mem/include",
     ],
     static_libs: [
         "libltp_hugetlb",
-        "libltp_kerntest",
         "libltp_ltp",
-        "libltp_mem",
     ],
 }
 
@@ -7525,15 +7584,11 @@ cc_test {
     srcs: ["testcases/kernel/mem/hugetlb/hugefallocate/hugefallocate02.c"],
     local_include_dirs: [
         "include/old",
-        "testcases/kernel/include",
         "testcases/kernel/mem/hugetlb/lib",
-        "testcases/kernel/mem/include",
     ],
     static_libs: [
         "libltp_hugetlb",
-        "libltp_kerntest",
         "libltp_ltp",
-        "libltp_mem",
     ],
 }
 
@@ -7544,15 +7599,11 @@ cc_test {
     srcs: ["testcases/kernel/mem/hugetlb/hugefork/hugefork01.c"],
     local_include_dirs: [
         "include/old",
-        "testcases/kernel/include",
         "testcases/kernel/mem/hugetlb/lib",
-        "testcases/kernel/mem/include",
     ],
     static_libs: [
         "libltp_hugetlb",
-        "libltp_kerntest",
         "libltp_ltp",
-        "libltp_mem",
     ],
 }
 
@@ -7563,15 +7614,11 @@ cc_test {
     srcs: ["testcases/kernel/mem/hugetlb/hugefork/hugefork02.c"],
     local_include_dirs: [
         "include/old",
-        "testcases/kernel/include",
         "testcases/kernel/mem/hugetlb/lib",
-        "testcases/kernel/mem/include",
     ],
     static_libs: [
         "libltp_hugetlb",
-        "libltp_kerntest",
         "libltp_ltp",
-        "libltp_mem",
     ],
 }
 
@@ -7582,15 +7629,11 @@ cc_test {
     srcs: ["testcases/kernel/mem/hugetlb/hugemmap/hugemmap01.c"],
     local_include_dirs: [
         "include/old",
-        "testcases/kernel/include",
         "testcases/kernel/mem/hugetlb/lib",
-        "testcases/kernel/mem/include",
     ],
     static_libs: [
         "libltp_hugetlb",
-        "libltp_kerntest",
         "libltp_ltp",
-        "libltp_mem",
     ],
 }
 
@@ -7601,15 +7644,11 @@ cc_test {
     srcs: ["testcases/kernel/mem/hugetlb/hugemmap/hugemmap02.c"],
     local_include_dirs: [
         "include/old",
-        "testcases/kernel/include",
         "testcases/kernel/mem/hugetlb/lib",
-        "testcases/kernel/mem/include",
     ],
     static_libs: [
         "libltp_hugetlb",
-        "libltp_kerntest",
         "libltp_ltp",
-        "libltp_mem",
     ],
 }
 
@@ -7620,15 +7659,11 @@ cc_test {
     srcs: ["testcases/kernel/mem/hugetlb/hugemmap/hugemmap04.c"],
     local_include_dirs: [
         "include/old",
-        "testcases/kernel/include",
         "testcases/kernel/mem/hugetlb/lib",
-        "testcases/kernel/mem/include",
     ],
     static_libs: [
         "libltp_hugetlb",
-        "libltp_kerntest",
         "libltp_ltp",
-        "libltp_mem",
     ],
 }
 
@@ -7639,15 +7674,11 @@ cc_test {
     srcs: ["testcases/kernel/mem/hugetlb/hugemmap/hugemmap06.c"],
     local_include_dirs: [
         "include/old",
-        "testcases/kernel/include",
         "testcases/kernel/mem/hugetlb/lib",
-        "testcases/kernel/mem/include",
     ],
     static_libs: [
         "libltp_hugetlb",
-        "libltp_kerntest",
         "libltp_ltp",
-        "libltp_mem",
     ],
 }
 
@@ -7658,15 +7689,11 @@ cc_test {
     srcs: ["testcases/kernel/mem/hugetlb/hugemmap/hugemmap07.c"],
     local_include_dirs: [
         "include/old",
-        "testcases/kernel/include",
         "testcases/kernel/mem/hugetlb/lib",
-        "testcases/kernel/mem/include",
     ],
     static_libs: [
         "libltp_hugetlb",
-        "libltp_kerntest",
         "libltp_ltp",
-        "libltp_mem",
     ],
 }
 
@@ -7677,15 +7704,11 @@ cc_test {
     srcs: ["testcases/kernel/mem/hugetlb/hugemmap/hugemmap08.c"],
     local_include_dirs: [
         "include/old",
-        "testcases/kernel/include",
         "testcases/kernel/mem/hugetlb/lib",
-        "testcases/kernel/mem/include",
     ],
     static_libs: [
         "libltp_hugetlb",
-        "libltp_kerntest",
         "libltp_ltp",
-        "libltp_mem",
     ],
 }
 
@@ -7696,15 +7719,11 @@ cc_test {
     srcs: ["testcases/kernel/mem/hugetlb/hugemmap/hugemmap09.c"],
     local_include_dirs: [
         "include/old",
-        "testcases/kernel/include",
         "testcases/kernel/mem/hugetlb/lib",
-        "testcases/kernel/mem/include",
     ],
     static_libs: [
         "libltp_hugetlb",
-        "libltp_kerntest",
         "libltp_ltp",
-        "libltp_mem",
     ],
 }
 
@@ -7715,15 +7734,11 @@ cc_test {
     srcs: ["testcases/kernel/mem/hugetlb/hugemmap/hugemmap10.c"],
     local_include_dirs: [
         "include/old",
-        "testcases/kernel/include",
         "testcases/kernel/mem/hugetlb/lib",
-        "testcases/kernel/mem/include",
     ],
     static_libs: [
         "libltp_hugetlb",
-        "libltp_kerntest",
         "libltp_ltp",
-        "libltp_mem",
     ],
 }
 
@@ -7734,15 +7749,11 @@ cc_test {
     srcs: ["testcases/kernel/mem/hugetlb/hugemmap/hugemmap11.c"],
     local_include_dirs: [
         "include/old",
-        "testcases/kernel/include",
         "testcases/kernel/mem/hugetlb/lib",
-        "testcases/kernel/mem/include",
     ],
     static_libs: [
         "libltp_hugetlb",
-        "libltp_kerntest",
         "libltp_ltp",
-        "libltp_mem",
     ],
 }
 
@@ -7753,15 +7764,11 @@ cc_test {
     srcs: ["testcases/kernel/mem/hugetlb/hugemmap/hugemmap12.c"],
     local_include_dirs: [
         "include/old",
-        "testcases/kernel/include",
         "testcases/kernel/mem/hugetlb/lib",
-        "testcases/kernel/mem/include",
     ],
     static_libs: [
         "libltp_hugetlb",
-        "libltp_kerntest",
         "libltp_ltp",
-        "libltp_mem",
     ],
 }
 
@@ -7772,15 +7779,11 @@ cc_test {
     srcs: ["testcases/kernel/mem/hugetlb/hugemmap/hugemmap13.c"],
     local_include_dirs: [
         "include/old",
-        "testcases/kernel/include",
         "testcases/kernel/mem/hugetlb/lib",
-        "testcases/kernel/mem/include",
     ],
     static_libs: [
         "libltp_hugetlb",
-        "libltp_kerntest",
         "libltp_ltp",
-        "libltp_mem",
     ],
 }
 
@@ -7791,15 +7794,11 @@ cc_test {
     srcs: ["testcases/kernel/mem/hugetlb/hugemmap/hugemmap14.c"],
     local_include_dirs: [
         "include/old",
-        "testcases/kernel/include",
         "testcases/kernel/mem/hugetlb/lib",
-        "testcases/kernel/mem/include",
     ],
     static_libs: [
         "libltp_hugetlb",
-        "libltp_kerntest",
         "libltp_ltp",
-        "libltp_mem",
     ],
 }
 
@@ -7810,15 +7809,11 @@ cc_test {
     srcs: ["testcases/kernel/mem/hugetlb/hugemmap/hugemmap16.c"],
     local_include_dirs: [
         "include/old",
-        "testcases/kernel/include",
         "testcases/kernel/mem/hugetlb/lib",
-        "testcases/kernel/mem/include",
     ],
     static_libs: [
         "libltp_hugetlb",
-        "libltp_kerntest",
         "libltp_ltp",
-        "libltp_mem",
     ],
 }
 
@@ -7829,15 +7824,11 @@ cc_test {
     srcs: ["testcases/kernel/mem/hugetlb/hugemmap/hugemmap17.c"],
     local_include_dirs: [
         "include/old",
-        "testcases/kernel/include",
         "testcases/kernel/mem/hugetlb/lib",
-        "testcases/kernel/mem/include",
     ],
     static_libs: [
         "libltp_hugetlb",
-        "libltp_kerntest",
         "libltp_ltp",
-        "libltp_mem",
     ],
 }
 
@@ -7848,15 +7839,11 @@ cc_test {
     srcs: ["testcases/kernel/mem/hugetlb/hugemmap/hugemmap18.c"],
     local_include_dirs: [
         "include/old",
-        "testcases/kernel/include",
         "testcases/kernel/mem/hugetlb/lib",
-        "testcases/kernel/mem/include",
     ],
     static_libs: [
         "libltp_hugetlb",
-        "libltp_kerntest",
         "libltp_ltp",
-        "libltp_mem",
     ],
 }
 
@@ -7867,15 +7854,11 @@ cc_test {
     srcs: ["testcases/kernel/mem/hugetlb/hugemmap/hugemmap19.c"],
     local_include_dirs: [
         "include/old",
-        "testcases/kernel/include",
         "testcases/kernel/mem/hugetlb/lib",
-        "testcases/kernel/mem/include",
     ],
     static_libs: [
         "libltp_hugetlb",
-        "libltp_kerntest",
         "libltp_ltp",
-        "libltp_mem",
     ],
 }
 
@@ -7886,15 +7869,11 @@ cc_test {
     srcs: ["testcases/kernel/mem/hugetlb/hugemmap/hugemmap20.c"],
     local_include_dirs: [
         "include/old",
-        "testcases/kernel/include",
         "testcases/kernel/mem/hugetlb/lib",
-        "testcases/kernel/mem/include",
     ],
     static_libs: [
         "libltp_hugetlb",
-        "libltp_kerntest",
         "libltp_ltp",
-        "libltp_mem",
     ],
 }
 
@@ -7905,15 +7884,11 @@ cc_test {
     srcs: ["testcases/kernel/mem/hugetlb/hugemmap/hugemmap21.c"],
     local_include_dirs: [
         "include/old",
-        "testcases/kernel/include",
         "testcases/kernel/mem/hugetlb/lib",
-        "testcases/kernel/mem/include",
     ],
     static_libs: [
         "libltp_hugetlb",
-        "libltp_kerntest",
         "libltp_ltp",
-        "libltp_mem",
     ],
 }
 
@@ -7924,15 +7899,11 @@ cc_test {
     srcs: ["testcases/kernel/mem/hugetlb/hugemmap/hugemmap22.c"],
     local_include_dirs: [
         "include/old",
-        "testcases/kernel/include",
         "testcases/kernel/mem/hugetlb/lib",
-        "testcases/kernel/mem/include",
     ],
     static_libs: [
         "libltp_hugetlb",
-        "libltp_kerntest",
         "libltp_ltp",
-        "libltp_mem",
     ],
 }
 
@@ -7943,15 +7914,11 @@ cc_test {
     srcs: ["testcases/kernel/mem/hugetlb/hugemmap/hugemmap23.c"],
     local_include_dirs: [
         "include/old",
-        "testcases/kernel/include",
         "testcases/kernel/mem/hugetlb/lib",
-        "testcases/kernel/mem/include",
     ],
     static_libs: [
         "libltp_hugetlb",
-        "libltp_kerntest",
         "libltp_ltp",
-        "libltp_mem",
     ],
 }
 
@@ -7962,15 +7929,11 @@ cc_test {
     srcs: ["testcases/kernel/mem/hugetlb/hugemmap/hugemmap24.c"],
     local_include_dirs: [
         "include/old",
-        "testcases/kernel/include",
         "testcases/kernel/mem/hugetlb/lib",
-        "testcases/kernel/mem/include",
     ],
     static_libs: [
         "libltp_hugetlb",
-        "libltp_kerntest",
         "libltp_ltp",
-        "libltp_mem",
     ],
 }
 
@@ -7981,15 +7944,11 @@ cc_test {
     srcs: ["testcases/kernel/mem/hugetlb/hugemmap/hugemmap25.c"],
     local_include_dirs: [
         "include/old",
-        "testcases/kernel/include",
         "testcases/kernel/mem/hugetlb/lib",
-        "testcases/kernel/mem/include",
     ],
     static_libs: [
         "libltp_hugetlb",
-        "libltp_kerntest",
         "libltp_ltp",
-        "libltp_mem",
     ],
 }
 
@@ -8000,15 +7959,11 @@ cc_test {
     srcs: ["testcases/kernel/mem/hugetlb/hugemmap/hugemmap26.c"],
     local_include_dirs: [
         "include/old",
-        "testcases/kernel/include",
         "testcases/kernel/mem/hugetlb/lib",
-        "testcases/kernel/mem/include",
     ],
     static_libs: [
         "libltp_hugetlb",
-        "libltp_kerntest",
         "libltp_ltp",
-        "libltp_mem",
     ],
 }
 
@@ -8019,15 +7974,11 @@ cc_test {
     srcs: ["testcases/kernel/mem/hugetlb/hugemmap/hugemmap27.c"],
     local_include_dirs: [
         "include/old",
-        "testcases/kernel/include",
         "testcases/kernel/mem/hugetlb/lib",
-        "testcases/kernel/mem/include",
     ],
     static_libs: [
         "libltp_hugetlb",
-        "libltp_kerntest",
         "libltp_ltp",
-        "libltp_mem",
     ],
 }
 
@@ -8038,15 +7989,11 @@ cc_test {
     srcs: ["testcases/kernel/mem/hugetlb/hugemmap/hugemmap28.c"],
     local_include_dirs: [
         "include/old",
-        "testcases/kernel/include",
         "testcases/kernel/mem/hugetlb/lib",
-        "testcases/kernel/mem/include",
     ],
     static_libs: [
         "libltp_hugetlb",
-        "libltp_kerntest",
         "libltp_ltp",
-        "libltp_mem",
     ],
 }
 
@@ -8057,15 +8004,11 @@ cc_test {
     srcs: ["testcases/kernel/mem/hugetlb/hugemmap/hugemmap29.c"],
     local_include_dirs: [
         "include/old",
-        "testcases/kernel/include",
         "testcases/kernel/mem/hugetlb/lib",
-        "testcases/kernel/mem/include",
     ],
     static_libs: [
         "libltp_hugetlb",
-        "libltp_kerntest",
         "libltp_ltp",
-        "libltp_mem",
     ],
 }
 
@@ -8076,15 +8019,11 @@ cc_test {
     srcs: ["testcases/kernel/mem/hugetlb/hugemmap/hugemmap30.c"],
     local_include_dirs: [
         "include/old",
-        "testcases/kernel/include",
         "testcases/kernel/mem/hugetlb/lib",
-        "testcases/kernel/mem/include",
     ],
     static_libs: [
         "libltp_hugetlb",
-        "libltp_kerntest",
         "libltp_ltp",
-        "libltp_mem",
     ],
 }
 
@@ -8095,15 +8034,11 @@ cc_test {
     srcs: ["testcases/kernel/mem/hugetlb/hugemmap/hugemmap31.c"],
     local_include_dirs: [
         "include/old",
-        "testcases/kernel/include",
         "testcases/kernel/mem/hugetlb/lib",
-        "testcases/kernel/mem/include",
     ],
     static_libs: [
         "libltp_hugetlb",
-        "libltp_kerntest",
         "libltp_ltp",
-        "libltp_mem",
     ],
 }
 
@@ -8114,15 +8049,11 @@ cc_test {
     srcs: ["testcases/kernel/mem/hugetlb/hugemmap/hugemmap32.c"],
     local_include_dirs: [
         "include/old",
-        "testcases/kernel/include",
         "testcases/kernel/mem/hugetlb/lib",
-        "testcases/kernel/mem/include",
     ],
     static_libs: [
         "libltp_hugetlb",
-        "libltp_kerntest",
         "libltp_ltp",
-        "libltp_mem",
     ],
 }
 
@@ -8133,15 +8064,11 @@ cc_test {
     srcs: ["testcases/kernel/mem/hugetlb/hugemmap/hugemmap34.c"],
     local_include_dirs: [
         "include/old",
-        "testcases/kernel/include",
         "testcases/kernel/mem/hugetlb/lib",
-        "testcases/kernel/mem/include",
     ],
     static_libs: [
         "libltp_hugetlb",
-        "libltp_kerntest",
         "libltp_ltp",
-        "libltp_mem",
     ],
 }
 
@@ -8152,15 +8079,11 @@ cc_test {
     srcs: ["testcases/kernel/mem/hugetlb/hugeshmget/hugeshmget06.c"],
     local_include_dirs: [
         "include/old",
-        "testcases/kernel/include",
         "testcases/kernel/mem/hugetlb/lib",
-        "testcases/kernel/mem/include",
     ],
     static_libs: [
         "libltp_hugetlb",
-        "libltp_kerntest",
         "libltp_ltp",
-        "libltp_mem",
     ],
 }
 
@@ -8719,6 +8642,15 @@ cc_test {
 }
 
 cc_test {
+    name: "ltp_ioctl_fiemap01",
+    stem: "ioctl_fiemap01",
+    defaults: ["ltp_test_defaults"],
+    srcs: ["testcases/kernel/syscalls/ioctl/ioctl_fiemap01.c"],
+    local_include_dirs: ["include/old"],
+    static_libs: ["libltp_ltp"],
+}
+
+cc_test {
     name: "ltp_ioctl_loop01",
     stem: "ioctl_loop01",
     defaults: ["ltp_test_defaults"],
@@ -9113,15 +9045,6 @@ cc_test {
 }
 
 cc_test {
-    name: "ltp_kill09",
-    stem: "kill09",
-    defaults: ["ltp_test_defaults"],
-    srcs: ["testcases/kernel/syscalls/kill/kill09.c"],
-    local_include_dirs: ["include/old"],
-    static_libs: ["libltp_ltp"],
-}
-
-cc_test {
     name: "ltp_kill10",
     stem: "kill10",
     defaults: ["ltp_test_defaults"],
@@ -9174,12 +9097,10 @@ cc_test {
     local_include_dirs: [
         "include/old",
         "testcases/kernel/include",
-        "testcases/kernel/mem/include",
     ],
     static_libs: [
         "libltp_kerntest",
         "libltp_ltp",
-        "libltp_mem",
     ],
 }
 
@@ -9191,12 +9112,10 @@ cc_test {
     local_include_dirs: [
         "include/old",
         "testcases/kernel/include",
-        "testcases/kernel/mem/include",
     ],
     static_libs: [
         "libltp_kerntest",
         "libltp_ltp",
-        "libltp_mem",
     ],
 }
 
@@ -9208,12 +9127,10 @@ cc_test {
     local_include_dirs: [
         "include/old",
         "testcases/kernel/include",
-        "testcases/kernel/mem/include",
     ],
     static_libs: [
         "libltp_kerntest",
         "libltp_ltp",
-        "libltp_mem",
     ],
 }
 
@@ -9225,12 +9142,10 @@ cc_test {
     local_include_dirs: [
         "include/old",
         "testcases/kernel/include",
-        "testcases/kernel/mem/include",
     ],
     static_libs: [
         "libltp_kerntest",
         "libltp_ltp",
-        "libltp_mem",
     ],
 }
 
@@ -9242,12 +9157,10 @@ cc_test {
     local_include_dirs: [
         "include/old",
         "testcases/kernel/include",
-        "testcases/kernel/mem/include",
     ],
     static_libs: [
         "libltp_kerntest",
         "libltp_ltp",
-        "libltp_mem",
     ],
 }
 
@@ -9259,13 +9172,11 @@ cc_test {
     local_include_dirs: [
         "include/old",
         "testcases/kernel/include",
-        "testcases/kernel/mem/include",
     ],
     static_libs: [
         "libltp_kerntest",
         "libltp_ltp",
         "libltp_ltpnuma",
-        "libltp_mem",
     ],
 }
 
@@ -9277,12 +9188,10 @@ cc_test {
     local_include_dirs: [
         "include/old",
         "testcases/kernel/include",
-        "testcases/kernel/mem/include",
     ],
     static_libs: [
         "libltp_kerntest",
         "libltp_ltp",
-        "libltp_mem",
     ],
 }
 
@@ -10005,16 +9914,8 @@ cc_test {
     stem: "max_map_count",
     defaults: ["ltp_test_defaults"],
     srcs: ["testcases/kernel/mem/tunable/max_map_count.c"],
-    local_include_dirs: [
-        "include/old",
-        "testcases/kernel/include",
-        "testcases/kernel/mem/include",
-    ],
-    static_libs: [
-        "libltp_kerntest",
-        "libltp_ltp",
-        "libltp_mem",
-    ],
+    local_include_dirs: ["include/old"],
+    static_libs: ["libltp_ltp"],
 }
 
 cc_test {
@@ -10731,15 +10632,6 @@ cc_test {
 }
 
 cc_test {
-    name: "ltp_mmap001",
-    stem: "mmap001",
-    defaults: ["ltp_test_defaults"],
-    srcs: ["testcases/kernel/syscalls/mmap/mmap001.c"],
-    local_include_dirs: ["include/old"],
-    static_libs: ["libltp_ltp"],
-}
-
-cc_test {
     name: "ltp_mmap01",
     stem: "mmap01",
     defaults: ["ltp_test_defaults"],
@@ -10929,6 +10821,24 @@ cc_test {
 }
 
 cc_test {
+    name: "ltp_mmap21",
+    stem: "mmap21",
+    defaults: ["ltp_test_defaults"],
+    srcs: ["testcases/kernel/syscalls/mmap/mmap21.c"],
+    local_include_dirs: ["include/old"],
+    static_libs: ["libltp_ltp"],
+}
+
+cc_test {
+    name: "ltp_mmap22",
+    stem: "mmap22",
+    defaults: ["ltp_test_defaults"],
+    srcs: ["testcases/kernel/syscalls/mmap/mmap22.c"],
+    local_include_dirs: ["include/old"],
+    static_libs: ["libltp_ltp"],
+}
+
+cc_test {
     name: "ltp_mmap3",
     stem: "mmap3",
     defaults: ["ltp_test_defaults"],
@@ -11068,15 +10978,6 @@ cc_test {
 }
 
 cc_test {
-    name: "ltp_modify_ldt03",
-    stem: "modify_ldt03",
-    defaults: ["ltp_test_defaults"],
-    srcs: ["testcases/kernel/syscalls/modify_ldt/modify_ldt03.c"],
-    local_include_dirs: ["include/old"],
-    static_libs: ["libltp_ltp"],
-}
-
-cc_test {
     name: "ltp_mount01",
     stem: "mount01",
     defaults: ["ltp_test_defaults"],
@@ -11179,6 +11080,15 @@ cc_test {
     stem: "move_mount02",
     defaults: ["ltp_test_defaults"],
     srcs: ["testcases/kernel/syscalls/move_mount/move_mount02.c"],
+    local_include_dirs: ["include/old"],
+    static_libs: ["libltp_ltp"],
+}
+
+cc_test {
+    name: "ltp_move_mount03",
+    stem: "move_mount03",
+    defaults: ["ltp_test_defaults"],
+    srcs: ["testcases/kernel/syscalls/move_mount/move_mount03.c"],
     local_include_dirs: ["include/old"],
     static_libs: ["libltp_ltp"],
 }
@@ -11960,12 +11870,10 @@ cc_test {
     local_include_dirs: [
         "include/old",
         "testcases/kernel/include",
-        "testcases/kernel/mem/include",
     ],
     static_libs: [
         "libltp_kerntest",
         "libltp_ltp",
-        "libltp_mem",
     ],
 }
 
@@ -11977,12 +11885,10 @@ cc_test {
     local_include_dirs: [
         "include/old",
         "testcases/kernel/include",
-        "testcases/kernel/mem/include",
     ],
     static_libs: [
         "libltp_kerntest",
         "libltp_ltp",
-        "libltp_mem",
     ],
 }
 
@@ -11994,12 +11900,10 @@ cc_test {
     local_include_dirs: [
         "include/old",
         "testcases/kernel/include",
-        "testcases/kernel/mem/include",
     ],
     static_libs: [
         "libltp_kerntest",
         "libltp_ltp",
-        "libltp_mem",
     ],
 }
 
@@ -12011,12 +11915,10 @@ cc_test {
     local_include_dirs: [
         "include/old",
         "testcases/kernel/include",
-        "testcases/kernel/mem/include",
     ],
     static_libs: [
         "libltp_kerntest",
         "libltp_ltp",
-        "libltp_mem",
     ],
 }
 
@@ -12028,12 +11930,10 @@ cc_test {
     local_include_dirs: [
         "include/old",
         "testcases/kernel/include",
-        "testcases/kernel/mem/include",
     ],
     static_libs: [
         "libltp_kerntest",
         "libltp_ltp",
-        "libltp_mem",
     ],
 }
 
@@ -12348,16 +12248,8 @@ cc_test {
     stem: "overcommit_memory",
     defaults: ["ltp_test_defaults"],
     srcs: ["testcases/kernel/mem/tunable/overcommit_memory.c"],
-    local_include_dirs: [
-        "include/old",
-        "testcases/kernel/include",
-        "testcases/kernel/mem/include",
-    ],
-    static_libs: [
-        "libltp_kerntest",
-        "libltp_ltp",
-        "libltp_mem",
-    ],
+    local_include_dirs: ["include/old"],
+    static_libs: ["libltp_ltp"],
 }
 
 cc_test {
@@ -12412,15 +12304,6 @@ cc_test {
     stem: "pause02",
     defaults: ["ltp_test_defaults"],
     srcs: ["testcases/kernel/syscalls/pause/pause02.c"],
-    local_include_dirs: ["include/old"],
-    static_libs: ["libltp_ltp"],
-}
-
-cc_test {
-    name: "ltp_pause03",
-    stem: "pause03",
-    defaults: ["ltp_test_defaults"],
-    srcs: ["testcases/kernel/syscalls/pause/pause03.c"],
     local_include_dirs: ["include/old"],
     static_libs: ["libltp_ltp"],
 }
@@ -18223,23 +18106,6 @@ cc_test {
     stem: "swapping01",
     defaults: ["ltp_test_defaults"],
     srcs: ["testcases/kernel/mem/swapping/swapping01.c"],
-    local_include_dirs: [
-        "include/old",
-        "testcases/kernel/include",
-        "testcases/kernel/mem/include",
-    ],
-    static_libs: [
-        "libltp_kerntest",
-        "libltp_ltp",
-        "libltp_mem",
-    ],
-}
-
-cc_test {
-    name: "ltp_symlink01",
-    stem: "symlink01",
-    defaults: ["ltp_test_defaults"],
-    srcs: ["testcases/kernel/syscalls/symlink/symlink01.c"],
     local_include_dirs: ["include/old"],
     static_libs: ["libltp_ltp"],
 }
@@ -18663,6 +18529,51 @@ cc_test {
 }
 
 cc_test {
+    name: "ltp_test_brk_child",
+    stem: "test_brk_child",
+    defaults: ["ltp_test_defaults"],
+    srcs: ["lib/newlib_tests/test_brk_child.c"],
+    local_include_dirs: ["include/old"],
+    static_libs: ["libltp_ltp"],
+}
+
+cc_test {
+    name: "ltp_test_brk_fail",
+    stem: "test_brk_fail",
+    defaults: ["ltp_test_defaults"],
+    srcs: ["lib/newlib_tests/test_brk_fail.c"],
+    local_include_dirs: ["include/old"],
+    static_libs: ["libltp_ltp"],
+}
+
+cc_test {
+    name: "ltp_test_brk_parent",
+    stem: "test_brk_parent",
+    defaults: ["ltp_test_defaults"],
+    srcs: ["lib/newlib_tests/test_brk_parent.c"],
+    local_include_dirs: ["include/old"],
+    static_libs: ["libltp_ltp"],
+}
+
+cc_test {
+    name: "ltp_test_brk_pass",
+    stem: "test_brk_pass",
+    defaults: ["ltp_test_defaults"],
+    srcs: ["lib/newlib_tests/test_brk_pass.c"],
+    local_include_dirs: ["include/old"],
+    static_libs: ["libltp_ltp"],
+}
+
+cc_test {
+    name: "ltp_test_brk_variant",
+    stem: "test_brk_variant",
+    defaults: ["ltp_test_defaults"],
+    srcs: ["lib/newlib_tests/test_brk_variant.c"],
+    local_include_dirs: ["include/old"],
+    static_libs: ["libltp_ltp"],
+}
+
+cc_test {
     name: "ltp_test_children_cleanup",
     stem: "test_children_cleanup",
     defaults: ["ltp_test_defaults"],
@@ -18685,6 +18596,15 @@ cc_test {
     stem: "test_exec_child",
     defaults: ["ltp_test_defaults"],
     srcs: ["lib/newlib_tests/test_exec_child.c"],
+    local_include_dirs: ["include/old"],
+    static_libs: ["libltp_ltp"],
+}
+
+cc_test {
+    name: "ltp_test_fail_variant",
+    stem: "test_fail_variant",
+    defaults: ["ltp_test_defaults"],
+    srcs: ["lib/newlib_tests/test_fail_variant.c"],
     local_include_dirs: ["include/old"],
     static_libs: ["libltp_ltp"],
 }
@@ -25817,16 +25737,8 @@ cc_test {
     stem: "thp01",
     defaults: ["ltp_test_defaults"],
     srcs: ["testcases/kernel/mem/thp/thp01.c"],
-    local_include_dirs: [
-        "include/old",
-        "testcases/kernel/include",
-        "testcases/kernel/mem/include",
-    ],
-    static_libs: [
-        "libltp_kerntest",
-        "libltp_ltp",
-        "libltp_mem",
-    ],
+    local_include_dirs: ["include/old"],
+    static_libs: ["libltp_ltp"],
 }
 
 cc_test {
@@ -25834,16 +25746,8 @@ cc_test {
     stem: "thp02",
     defaults: ["ltp_test_defaults"],
     srcs: ["testcases/kernel/mem/thp/thp02.c"],
-    local_include_dirs: [
-        "include/old",
-        "testcases/kernel/include",
-        "testcases/kernel/mem/include",
-    ],
-    static_libs: [
-        "libltp_kerntest",
-        "libltp_ltp",
-        "libltp_mem",
-    ],
+    local_include_dirs: ["include/old"],
+    static_libs: ["libltp_ltp"],
 }
 
 cc_test {
@@ -25851,16 +25755,8 @@ cc_test {
     stem: "thp03",
     defaults: ["ltp_test_defaults"],
     srcs: ["testcases/kernel/mem/thp/thp03.c"],
-    local_include_dirs: [
-        "include/old",
-        "testcases/kernel/include",
-        "testcases/kernel/mem/include",
-    ],
-    static_libs: [
-        "libltp_kerntest",
-        "libltp_ltp",
-        "libltp_mem",
-    ],
+    local_include_dirs: ["include/old"],
+    static_libs: ["libltp_ltp"],
 }
 
 cc_test {
@@ -25868,16 +25764,8 @@ cc_test {
     stem: "thp04",
     defaults: ["ltp_test_defaults"],
     srcs: ["testcases/kernel/mem/thp/thp04.c"],
-    local_include_dirs: [
-        "include/old",
-        "testcases/kernel/include",
-        "testcases/kernel/mem/include",
-    ],
-    static_libs: [
-        "libltp_kerntest",
-        "libltp_ltp",
-        "libltp_mem",
-    ],
+    local_include_dirs: ["include/old"],
+    static_libs: ["libltp_ltp"],
 }
 
 cc_test {
@@ -27072,6 +26960,24 @@ cc_test {
 }
 
 cc_test {
+    name: "ltp_unshare03",
+    stem: "unshare03",
+    defaults: ["ltp_test_defaults"],
+    srcs: ["testcases/kernel/syscalls/unshare/unshare03.c"],
+    local_include_dirs: ["include/old"],
+    static_libs: ["libltp_ltp"],
+}
+
+cc_test {
+    name: "ltp_unshare04",
+    stem: "unshare04",
+    defaults: ["ltp_test_defaults"],
+    srcs: ["testcases/kernel/syscalls/unshare/unshare04.c"],
+    local_include_dirs: ["include/old"],
+    static_libs: ["libltp_ltp"],
+}
+
+cc_test {
     name: "ltp_userfaultfd01",
     stem: "userfaultfd01",
     defaults: ["ltp_test_defaults"],
@@ -27287,12 +27193,10 @@ cc_test {
     local_include_dirs: [
         "include/old",
         "testcases/kernel/include",
-        "testcases/kernel/mem/include",
     ],
     static_libs: [
         "libltp_kerntest",
         "libltp_ltp",
-        "libltp_mem",
     ],
 }
 
@@ -27304,12 +27208,10 @@ cc_test {
     local_include_dirs: [
         "include/old",
         "testcases/kernel/include",
-        "testcases/kernel/mem/include",
     ],
     static_libs: [
         "libltp_kerntest",
         "libltp_ltp",
-        "libltp_mem",
     ],
 }
 
@@ -27321,12 +27223,10 @@ cc_test {
     local_include_dirs: [
         "include/old",
         "testcases/kernel/include",
-        "testcases/kernel/mem/include",
     ],
     static_libs: [
         "libltp_kerntest",
         "libltp_ltp",
-        "libltp_mem",
     ],
 }
 
@@ -27338,12 +27238,10 @@ cc_test {
     local_include_dirs: [
         "include/old",
         "testcases/kernel/include",
-        "testcases/kernel/mem/include",
     ],
     static_libs: [
         "libltp_kerntest",
         "libltp_ltp",
-        "libltp_mem",
     ],
 }
 
@@ -27355,12 +27253,10 @@ cc_test {
     local_include_dirs: [
         "include/old",
         "testcases/kernel/include",
-        "testcases/kernel/mem/include",
     ],
     static_libs: [
         "libltp_kerntest",
         "libltp_ltp",
-        "libltp_mem",
     ],
 }
 

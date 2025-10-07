@@ -627,6 +627,10 @@ kvm_svm03
 kvm_svm03-payload.elf
 kvm_svm04
 kvm_svm04-payload.elf
+kvm_vmx01
+kvm_vmx01-payload.elf
+kvm_vmx02
+kvm_vmx02-payload.elf
 
 # Redefines cacheflush
 # b/277960476
