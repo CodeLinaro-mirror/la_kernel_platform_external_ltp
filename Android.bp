@@ -116,6 +116,10 @@ cc_defaults {
 
     cflags: [
         // Hacks for bionic compatibility
+        "-DHAVE_STRUCT_FSXATTR",
+        "-DHAVE_STRUCT_FILE_ATTR",
+        "-DHAVE_STRUCT_PROCMAP_QUERY",
+        "-DHAVE_STRUCT_TERMIO",
         "-include bionic-compat.h",
         "-fcommon", //ld.lld: error: duplicate symbol use_the_ltp_clone_functions__do_not_use_clone
         // Too many files import sched.h so we enable -fcommon locally

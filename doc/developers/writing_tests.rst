@@ -119,8 +119,8 @@ The following linting code can be found when we run ``make check``:
         errno are overwritten before the test has chance to check them.
 
         The macros which are clearly intended to update these variables. That
-        is ``TEST`` and those in ``tst_test_macros.h``. Are of course allowed to
-        update these variables.
+        is ``TEST`` and those in :master:`include/tst_test_macros.h`. Are of
+        course allowed to update these variables.
 
     * - LTP-003
       - Externally visible library symbols have the ``tst_`` prefix
@@ -139,7 +139,7 @@ The following linting code can be found when we run ``make check``:
 
     * - LTP-005
       - Array must terminate with a sentinel value (i.e. ``NULL`` or ``{}``)
-      - When defining arrays in the ``struct tst_test`` structure, we need to
+      - When defining arrays in the :ref:`struct tst_test` structure, we need to
         end the array items with a sentinel ``NULL`` value.
 
 Shell coding style
@@ -363,7 +363,7 @@ LTP C And Shell Test API Comparison
 .. list-table::
     :header-rows: 1
 
-    * - C API ``struct tst_test`` members
+    * - C API :ref:`struct tst_test` members
       - Shell API ``$TST_*`` variables
 
     * - .all_filesystems
@@ -533,5 +533,5 @@ LTP C And Shell Test API Comparison
     * - C API other structs
       - Shell API ``$TST_*`` variables
 
-    * - struct tst_device
+    * - :ref:`struct tst_device`
       - TST_DEVICE

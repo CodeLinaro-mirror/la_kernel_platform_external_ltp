@@ -33,7 +33,7 @@
 
 static unsigned char buf[BUF_SIZE], *map_ptr;
 static int mapfd = -1, writefd = -1, readfd = -1;
-static int written;
+static tst_atomic_t written;
 static struct tst_fzsync_pair fzsync_pair;
 struct iovec iov[5];
 
@@ -144,6 +144,7 @@ static struct tst_test test = {
 	.setup = setup,
 	.cleanup = cleanup,
 	.runtime = 75,
+	.min_runtime = 16,
 	.tags = (const struct tst_tag[]) {
 		{"linux-git", "d4690f1e1cda"},
 		{}

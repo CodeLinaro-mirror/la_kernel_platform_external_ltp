@@ -645,3 +645,6 @@ sbrk_mutex
 async_handler_tsc
 preempt_timing
 rdtsc-latency
+
+# Require undeclared identifier
+cve-2025-21756 
