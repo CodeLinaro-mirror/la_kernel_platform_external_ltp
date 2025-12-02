@@ -446,27 +446,67 @@ int tst_umount(const char *path)
 	return -1;
 }
 
-int tst_is_mounted(const char *path)
+int tst_mount_has_opt(const char *path, const char *opt)
 {
 	char line[PATH_MAX];
+	char abspath[PATH_MAX];
 	FILE *file;
 	int ret = 0;
+
+	if (!realpath(path, abspath)) {
+		tst_resm(TWARN | TERRNO, "realpath(%s) failed", path);
+		return 0;
+	}
 
 	file = SAFE_FOPEN(NULL, "/proc/mounts", "r");
 
 	while (fgets(line, sizeof(line), file)) {
-		if (strstr(line, path) != NULL) {
+		char mount_point[PATH_MAX], options[PATH_MAX];
+
+		if (sscanf(line, "%*s %s %*s %s", mount_point, options) < 2)
+			continue;
+
+		if (strcmp(mount_point, abspath) != 0)
+			continue;
+
+		if (!opt) {
 			ret = 1;
 			break;
 		}
+
+		char *tok = strtok(options, ",");
+		while (tok) {
+			if (strcmp(tok, opt) == 0) {
+				ret = 1;
+				break;
+			}
+			tok = strtok(NULL, ",");
+		}
+		if (ret)
+			break;
 	}
 
 	SAFE_FCLOSE(NULL, file);
+	return ret;
+}
 
+int tst_is_mounted(const char *path)
+{
+	int ret = tst_mount_has_opt(path, NULL);
 	if (!ret)
 		tst_resm(TINFO, "No device is mounted at %s", path);
 
 	return ret;
+}
+
+int tst_is_mounted_ro(const char *path)
+{
+	return tst_mount_has_opt(path, "ro");
+}
+
+int tst_is_mounted_rw(const char *path)
+{
+	return tst_mount_has_opt(path, "rw");
 }
 
 int tst_is_mounted_at_tmpdir(const char *path)

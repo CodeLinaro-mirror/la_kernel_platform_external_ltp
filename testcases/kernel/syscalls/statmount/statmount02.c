@@ -20,7 +20,6 @@
 #include "statmount.h"
 #include "lapi/stat.h"
 #include "lapi/sched.h"
-#include <linux/btrfs.h>
 
 #define MNTPOINT "mntpoint"
 
@@ -69,7 +68,6 @@ static struct tst_test test = {
 	.format_device = 1,
 	.all_filesystems = 1,
 	.skip_filesystems = (const char *const []) {
-		"fuse",
 		"btrfs",
 		NULL
 	},
