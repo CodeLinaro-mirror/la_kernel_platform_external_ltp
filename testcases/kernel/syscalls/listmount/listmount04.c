@@ -26,7 +26,7 @@ static uint64_t mnt_ids[MNT_SIZE];
 static struct tcase {
 	int req_usage;
 	uint32_t size;
-	uint32_t spare;
+	uint32_t mnt_ns_fd;
 	uint64_t mnt_id;
 	uint64_t param;
 	uint64_t *mnt_ids;
@@ -73,12 +73,12 @@ static struct tcase {
 	{
 		.req_usage = 1,
 		.size = MNT_ID_REQ_SIZE_VER0,
-		.spare = -1,
+		.mnt_ns_fd = -1,
 		.mnt_id = LSMT_ROOT,
 		.mnt_ids = mnt_ids,
 		.nr_mnt_ids = MNT_SIZE,
 		.exp_errno = EINVAL,
-		.msg = "invalid mnt_id_req.spare",
+		.msg = "invalid mnt_id_req.mnt_ns_fd",
 	},
 	{
 		.req_usage = 1,
@@ -122,7 +122,7 @@ static void run(unsigned int n)
 		req->mnt_id = tc->mnt_id;
 		req->param = tc->param;
 		req->size = tc->size;
-		req->spare = tc->spare;
+		req->mnt_ns_fd = tc->mnt_ns_fd;
 	}
 
 	TST_EXP_FAIL(tst_syscall(__NR_listmount, req, tc->mnt_ids,
