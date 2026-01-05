@@ -30,11 +30,12 @@ extensions = [
     'sphinx.ext.extlinks',
 ]
 
-exclude_patterns = ["html*", '_static*']
+exclude_patterns = ["html*", '_static*', '.venv*']
 extlinks = {
     'repo': (f'{ltp_repo}/%s', '%s'),
     'master': (f'{ltp_repo}/blob/master/%s', '%s'),
     'git_man': ('https://git-scm.com/docs/git-%s', 'git %s'),
+    'man2': ('https://man7.org/linux/man-pages/man2/%s.2.html', '%s(2)'),
     # TODO: allow 2nd parameter to show page description instead of plain URL
     'kernel_doc': ('https://docs.kernel.org/%s.html', 'https://docs.kernel.org/%s.html'),
     'kernel_tree': ('https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/%s', '%s'),
@@ -71,6 +72,8 @@ def generate_syscalls_stats(_):
         'fadvise64': f'{ltp_syscalls_path}/fadvise',
         'fanotify_init': f'{ltp_syscalls_path}/fanotify',
         'fanotify_mark': f'{ltp_syscalls_path}/fanotify',
+        'file_getattr': f'{ltp_syscalls_path}/file_attr',
+        'file_setattr': f'{ltp_syscalls_path}/file_attr',
         'futex': f'{ltp_syscalls_path}/futex',
         'getdents64': f'{ltp_syscalls_path}/gettdents',
         'inotify_add_watch': f'{ltp_syscalls_path}/inotify',
@@ -406,13 +409,12 @@ def _generate_setup_table(keys):
             else:
                 values.append(f'{value[0]}, {value[1]}')
         elif key == 'filesystems':
-            for v in value:
-                for item in v:
-                    if isinstance(item, list):
-                        continue
-
-                    if item.startswith('.type'):
-                        values.append(item.replace('.type=', ''))
+            for params in value:
+                for pkey, pval in params.items():
+                    if pkey == "type":
+                        values.append(f"- {pval}")
+                    else:
+                        values.append(f" {pkey}: {pval}")
         elif key == "save_restore":
             for item in value:
                 values.append(item[0])
@@ -422,7 +424,8 @@ def _generate_setup_table(keys):
             else:
                 values.append(value)
 
-        table.extend(_generate_table_cell(key, values))
+        if values:
+            table.extend(_generate_table_cell(key, values))
 
     return table
 

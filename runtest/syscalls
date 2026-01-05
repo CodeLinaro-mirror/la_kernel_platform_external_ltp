@@ -112,6 +112,7 @@ leapsec01 leapsec01
 clock_settime01 clock_settime01
 clock_settime02 clock_settime02
 clock_settime03 clock_settime03
+clock_settime04 clock_settime04
 
 clone01 clone01
 clone02 clone02
@@ -192,6 +193,7 @@ epoll_pwait02 epoll_pwait02
 epoll_pwait03 epoll_pwait03
 epoll_pwait04 epoll_pwait04
 epoll_pwait05 epoll_pwait05
+epoll_pwait06 epoll_pwait06
 
 eventfd01 eventfd01
 eventfd02 eventfd02
@@ -243,6 +245,11 @@ fallocate06 fallocate06
 
 fsetxattr01 fsetxattr01
 fsetxattr02 fsetxattr02
+
+file_attr01 file_attr01
+file_attr02 file_attr02
+file_attr03 file_attr03
+file_attr04 file_attr04
 
 #posix_fadvise test cases
 posix_fadvise01                      posix_fadvise01
@@ -585,6 +592,7 @@ ioctl06      ioctl06
 ioctl07      ioctl07
 ioctl08      ioctl08
 ioctl09      ioctl09
+ioctl10      ioctl10
 
 ioctl_loop01 ioctl_loop01
 ioctl_loop02 ioctl_loop02
@@ -610,6 +618,13 @@ ioctl_ficlone03 ioctl_ficlone03
 ioctl_ficlonerange01 ioctl_ficlonerange01
 ioctl_ficlonerange02 ioctl_ficlonerange02
 ioctl_fiemap01 ioctl_fiemap01
+
+ioctl_pidfd01 ioctl_pidfd01
+ioctl_pidfd02 ioctl_pidfd02
+ioctl_pidfd03 ioctl_pidfd03
+ioctl_pidfd04 ioctl_pidfd04
+ioctl_pidfd05 ioctl_pidfd05
+ioctl_pidfd06 ioctl_pidfd06
 
 inotify_init1_01 inotify_init1_01
 inotify_init1_02 inotify_init1_02
@@ -697,7 +712,6 @@ kill02 kill02
 kill03 kill03
 kill05 kill05
 kill06 kill06
-kill07 kill07
 kill08 kill08
 kill10 kill10
 kill11 kill11
@@ -712,13 +726,13 @@ landlock05 landlock05
 landlock06 landlock06
 landlock07 landlock07
 landlock08 landlock08
+landlock09 landlock09
+landlock10 landlock10
 
 lchown01 lchown01
 lchown01_16 lchown01_16
 lchown02  lchown02
-lchown03  lchown03
 lchown02_16 lchown02_16
-lchown03_16 lchown03_16
 
 lgetxattr01 lgetxattr01
 lgetxattr02 lgetxattr02
@@ -742,6 +756,7 @@ listmount04 listmount04
 listxattr01 listxattr01
 listxattr02 listxattr02
 listxattr03 listxattr03
+listxattr04 listxattr04
 
 llistxattr01 llistxattr01
 llistxattr02 llistxattr02
@@ -757,6 +772,13 @@ lseek01 lseek01
 lseek02 lseek02
 lseek07 lseek07
 lseek11 lseek11
+
+lsm_get_self_attr01 lsm_get_self_attr01
+lsm_get_self_attr02 lsm_get_self_attr02
+lsm_get_self_attr03 lsm_get_self_attr03
+lsm_list_modules01 lsm_list_modules01
+lsm_list_modules02 lsm_list_modules02
+lsm_set_self_attr01 lsm_set_self_attr01
 
 lstat01 lstat01
 lstat01_64 lstat01_64
@@ -855,8 +877,10 @@ mount04 mount04
 mount05 mount05
 mount06 mount06
 mount07 mount07
+mount08 mount08
 
 mount_setattr01 mount_setattr01
+mount_setattr02 mount_setattr02
 
 move_mount01 move_mount01
 move_mount02 move_mount02
@@ -940,8 +964,8 @@ munlock02 munlock02
 munlockall01 munlockall01
 
 munmap01 munmap01
-munmap02 munmap02
 munmap03 munmap03
+munmap04 munmap04
 
 nanosleep01 nanosleep01
 nanosleep02 nanosleep02
@@ -1238,7 +1262,6 @@ rmdir03 rmdir03
 rt_sigaction01 rt_sigaction01
 rt_sigaction02 rt_sigaction02
 rt_sigaction03 rt_sigaction03
-rt_sigpending02 rt_sigpending02
 rt_sigprocmask01 rt_sigprocmask01
 rt_sigprocmask02 rt_sigprocmask02
 rt_sigqueueinfo01 rt_sigqueueinfo01
@@ -1290,21 +1313,9 @@ sched_getattr02 sched_getattr02
 seccomp01 seccomp01
 
 select01 select01
-select01_SYS__newselect select01_SYS__newselect
-select01_SYS_select select01_SYS_select
-select01_SYS_pselect6 select01_SYS_pselect6
 select02 select02
-select02_SYS__newselect select02_SYS__newselect
-select02_SYS_select select02_SYS_select
-select02_SYS_pselect6 select02_SYS_pselect6
 select03 select03
-select03_SYS__newselect select03_SYS__newselect
-select03_SYS_select select03_SYS_select
-select03_SYS_pselect6 select03_SYS_pselect6
 select04 select04
-select04_SYS__newselect select04_SYS__newselect
-select04_SYS_select select04_SYS_select
-select04_SYS_pselect6 select04_SYS_pselect6
 
 semctl01 semctl01
 semctl02 semctl02
@@ -1365,6 +1376,7 @@ set_mempolicy04 set_mempolicy04
 
 set_robust_list01 set_robust_list01
 set_thread_area01 set_thread_area01
+set_thread_area02 set_thread_area02
 set_tid_address01 set_tid_address01
 
 setdomainname01	setdomainname01
@@ -1610,6 +1622,7 @@ statmount05 statmount05
 statmount06 statmount06
 statmount07 statmount07
 statmount08 statmount08
+statmount09 statmount09
 
 statfs01 statfs01
 statfs01_64 statfs01_64
@@ -1644,8 +1657,6 @@ symlink04 symlink04
 symlinkat01 symlinkat01
 
 sync01 sync01
-
-syncfs01 syncfs01
 
 syncfs01 syncfs01
 
@@ -1740,6 +1751,7 @@ unshare01 unshare01
 unshare02 unshare02
 unshare03 unshare03
 unshare04 unshare04
+unshare05 unshare05
 
 #
 # These tests require an unmounted block device

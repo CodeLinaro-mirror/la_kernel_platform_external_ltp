@@ -48,6 +48,7 @@ AC_CHECK_DECLS([PR_CAPBSET_DROP, PR_CAPBSET_READ],,,[#include <sys/prctl.h>])
 AC_CHECK_DECLS([SEM_STAT_ANY],,,[#include <sys/sem.h>])
 
 AC_CHECK_HEADERS_ONCE([ \
+    aio.h \
     asm/ldt.h \
     asm/prctl.h \
     cpuid.h \
@@ -60,8 +61,10 @@ AC_CHECK_HEADERS_ONCE([ \
     linux/cryptouser.h \
     linux/close_range.h \
     linux/dccp.h \
+    linux/fs.h \
     linux/futex.h \
     linux/genetlink.h \
+    linux/genhd.h \
     linux/if_alg.h \
     linux/if_ether.h \
     linux/if_packet.h \
@@ -69,6 +72,7 @@ AC_CHECK_HEADERS_ONCE([ \
     linux/ioprio.h \
     linux/keyctl.h \
     linux/landlock.h \
+    linux/lsm.h \
     linux/mempolicy.h \
     linux/module.h \
     linux/mount.h \
@@ -109,6 +113,8 @@ AC_CHECK_FUNCS_ONCE([ \
     execveat \
     faccessat2 \
     fallocate \
+    file_getattr \
+    file_setattr \
     fsconfig \
     fsmount \
     fsopen \
@@ -189,6 +195,7 @@ AC_CHECK_TYPES([struct fanotify_event_info_fid, struct fanotify_event_info_error
 		struct fanotify_event_info_range],,,[#include <sys/fanotify.h>])
 AC_CHECK_TYPES([struct file_clone_range],,,[#include <linux/fs.h>])
 AC_CHECK_TYPES([struct file_dedupe_range],,,[#include <linux/fs.h>])
+AC_CHECK_TYPES([struct procmap_query],,,[#include <linux/fs.h>])
 
 AC_CHECK_TYPES([struct file_handle],,,[
 #define _GNU_SOURCE
@@ -206,7 +213,7 @@ AC_CHECK_TYPES([struct ipc64_perm],,,[#include <sys/ipcbuf.h>])
 AC_CHECK_TYPES([struct loop_config],,,[#include <linux/loop.h>])
 AC_CHECK_TYPES([struct landlock_path_beneath_attr],,,[#include <linux/landlock.h>])
 AC_CHECK_TYPES([struct landlock_net_port_attr],,,[#include <linux/landlock.h>])
-
+AC_CHECK_TYPES([struct lsm_ctx],,,[#include <linux/lsm.h>])
 AC_CHECK_TYPES([struct mmsghdr],,,[
 #define _GNU_SOURCE
 #include <sys/types.h>
@@ -266,8 +273,22 @@ AC_CHECK_TYPES([struct mount_attr],,,[
 
 AC_CHECK_TYPES([struct cachestat_range],,,[#include <sys/mman.h>])
 AC_CHECK_TYPES([struct cachestat],,,[#include <sys/mman.h>])
-AC_CHECK_TYPES([struct mnt_id_req],,,[#include <linux/mount.h>])
-AC_CHECK_TYPES([struct statmount],,,[#include <linux/mount.h>])
+
+# Defined in <linux/mount.h>, but include/lapi/mount.h includes <sys/mount.h> */
+AC_CHECK_TYPES([struct mnt_id_req],,,[#include <sys/mount.h>])
+AC_CHECK_TYPES([struct statmount],,,[#include <sys/mount.h>])
+AC_CHECK_MEMBERS([struct statmount.mnt_ns_id],,,[#include <unistd.h>
+#include <linux/mount.h>])
+
+AC_CHECK_TYPES([struct pidfd_info],,,[#include <sys/pidfd.h>])
+AC_CHECK_TYPES([struct file_attr],,,[#include <linux/fs.h>])
+
+AC_CHECK_TYPES([struct fsxattr],,,[#include <linux/fs.h>])
+
+AC_CHECK_TYPES([struct sockaddr_vm],,,[
+#include <sys/socket.h>
+#include <linux/vm_sockets.h>
+])
 
 # Tools knobs
 
@@ -396,7 +417,6 @@ LTP_CHECK_LIBMNL
 LTP_CHECK_SELINUX
 LTP_CHECK_SYNC_ADD_AND_FETCH
 LTP_CHECK_SYSCALL_EVENTFD
-LTP_CHECK_SYSCALL_FCNTL
 LTP_CHECK_FSVERITY
 
 AX_CHECK_COMPILE_FLAG([-no-pie], [LTP_CFLAGS_NOPIE=1])
@@ -413,7 +433,6 @@ fi
 AC_DEFINE_UNQUOTED(NUMA_ERROR_MSG, ["$numa_error_msg"], [Error message when no NUMA support])
 
 
-LTP_CHECK_SYSCALL_SIGNALFD
 LTP_CHECK_SYSCALL_UTIMENSAT
 LTP_CHECK_TASKSTATS
 test "x$with_tirpc" = xyes && LTP_CHECK_TIRPC
