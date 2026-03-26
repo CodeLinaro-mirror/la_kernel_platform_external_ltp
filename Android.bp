@@ -120,6 +120,10 @@ cc_defaults {
         "-DHAVE_STRUCT_FILE_ATTR",
         "-DHAVE_STRUCT_PROCMAP_QUERY",
         "-DHAVE_STRUCT_TERMIO",
+        // Explicitly added the following flags to Android.bp to skip LTP20260130's internal LAPI definitions.
+        "-DHAVE_STRUCT_MNT_ID_REQ_MNT_NS_FD",
+        "-DHAVE_STRUCT_UFFDIO_MOVE",
+        "-DHAVE_STRUCT_UFFDIO_WRITEPROTECT",
         "-include bionic-compat.h",
         "-fcommon", //ld.lld: error: duplicate symbol use_the_ltp_clone_functions__do_not_use_clone
         // Too many files import sched.h so we enable -fcommon locally
