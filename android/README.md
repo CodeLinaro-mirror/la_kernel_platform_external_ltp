@@ -215,10 +215,21 @@ nick is metan).
 
 
 Merging Fixes
-------------------------
+-------------
 
-When possible please merge fixes upstream first. Then cherrypick the change
-onto aosp/master in external/ltp.
+**All commits should be pushed to upstream LTP first.** We periodically sync from
+upstream to the Android tree.
+
+If you need to land a fix in the Android tree immediately:
+1. The change **must** still be submitted upstream first (to the mailing list or
+   as a pull request).
+2. The commit title in the Android tree must start with **FROMGIT** (if merged
+   upstream) or **FROMLIST** (if submitted but not yet merged).
+3. The commit message **must** include a link to the upstream commit or mailing
+   list discussion.
+
+**Warning:** If you do not follow this process and land code only in the Android
+tree, your changes are likely to be lost during the next upstream merge/sync.
 
 
 Upgrade LTP to the latest upstream release
