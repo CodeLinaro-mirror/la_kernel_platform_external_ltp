@@ -20,6 +20,9 @@
 /* Define to 1 if you have __builtin___clear_cache */
 #define HAVE_BUILTIN_CLEAR_CACHE 1
 
+/* Define to 1 if you have clone3 */
+#define HAVE_CLONE3 1
+
 /* Define to 1 if you have close_range */
 #define HAVE_CLOSE_RANGE 1
 

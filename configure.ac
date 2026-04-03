@@ -77,7 +77,6 @@ AC_CHECK_HEADERS_ONCE([ \
     linux/module.h \
     linux/mount.h \
     linux/netlink.h \
-    linux/openat2.h \
     linux/seccomp.h \
     linux/securebits.h \
     linux/tls.h \
@@ -227,7 +226,6 @@ AC_CHECK_TYPES([struct rlimit64],,,[
 #include <sys/resource.h>
 ])
 
-AC_CHECK_TYPES([struct semun],,,[#include <sys/sem.h>])
 AC_CHECK_TYPES([struct semid64_ds],,,[#include <sys/sem.h>])
 AC_CHECK_TYPES([struct shmid64_ds],,,[#include <sys/shmbuf.h>])
 
@@ -248,16 +246,6 @@ AC_CHECK_TYPES([struct xt_entry_match, struct xt_entry_target],,,[
 #include <linux/netfilter_ipv4/ip_tables.h>
 ])
 
-AC_CHECK_TYPES([struct __kernel_itimerspec],,,[#include <linux/time_types.h>])
-AC_CHECK_TYPES([struct __kernel_old_timespec],,,[#include <linux/time_types.h>])
-AC_CHECK_TYPES([struct __kernel_old_timeval],,,[#include <linux/time_types.h>])
-AC_CHECK_TYPES([struct __kernel_old_itimerval],,,[#include <linux/time_types.h>])
-AC_CHECK_TYPES([struct __kernel_old_itimerspec],,,[#include <linux/time_types.h>])
-AC_CHECK_TYPES([struct __kernel_timespec],,,[#include <linux/time_types.h>])
-
-AC_CHECK_TYPES([struct __kernel_timex],,,[#include <sys/timex.h>])
-AC_CHECK_TYPES([struct __kernel_timex_timeval],,,[#include <sys/timex.h>])
-
 AC_CHECK_TYPES([struct __kernel_old_timeval, struct __kernel_old_timespec, struct __kernel_timespec,
                 struct __kernel_old_itimerspec, struct __kernel_itimerspec,
                 struct __kernel_old_itimerval],,,[#include <sys/socket.h>])
@@ -275,7 +263,7 @@ AC_CHECK_TYPES([struct cachestat_range],,,[#include <sys/mman.h>])
 AC_CHECK_TYPES([struct cachestat],,,[#include <sys/mman.h>])
 
 # Defined in <linux/mount.h>, but include/lapi/mount.h includes <sys/mount.h> */
-AC_CHECK_TYPES([struct mnt_id_req],,,[#include <sys/mount.h>])
+AC_CHECK_MEMBERS([struct mnt_id_req.mnt_ns_fd],,,[#include <sys/mount.h>])
 AC_CHECK_TYPES([struct statmount],,,[#include <sys/mount.h>])
 AC_CHECK_MEMBERS([struct statmount.mnt_ns_id],,,[#include <unistd.h>
 #include <linux/mount.h>])
@@ -289,6 +277,9 @@ AC_CHECK_TYPES([struct sockaddr_vm],,,[
 #include <sys/socket.h>
 #include <linux/vm_sockets.h>
 ])
+
+AC_CHECK_TYPES([struct uffdio_move],,,[#include <linux/userfaultfd.h>])
+AC_CHECK_TYPES([struct uffdio_writeprotect],,,[#include <linux/userfaultfd.h>])
 
 # Tools knobs
 
