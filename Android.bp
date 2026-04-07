@@ -152,7 +152,11 @@ cc_defaults {
         "-Wno-unused-function",
         "-Wno-unused-parameter",
         "-Wno-unused-variable",
-    ],
+    ] + select(release_flag("RELEASE_BUILD_CLANG_VERSION"), {
+        // Suppress locally to unblock r596125 update
+        "clang-r596125": ["-Wno-alloc-size"],
+        default: [],
+    }),
 
     local_include_dirs: [
         "android/include",
