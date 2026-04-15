@@ -18,6 +18,37 @@ As of Jan 2023 there are on the order of 1300 tests executed in VTS on arm64.
 Most tests are run in both 32-bit and 64-bit mode. Many more are available but
 currently disabled due to either being broken or not applicable on Android.
 
+Submitting Fixes Upstream
+--------------------------
+
+The mailing list for LTP is located
+[here](https://lists.linux.it/listinfo/ltp). Some standard kernel guidelines
+apply to sending patches; they should be checkpatch (scripts/checkpatch.pl in
+the kernel repository) clean and sent in plain text in canonical patch format.
+One easy way to do this is by using git format-patch and git send-email.
+
+There is an #LTP channel on freenode. The maintainer Cyril Hrubis is there (his
+nick is metan).
+
+
+Landing Fixes in Android
+------------------------
+
+**All commits should be pushed to upstream LTP first.** We periodically sync from
+upstream to the Android tree.
+
+If you need to land a fix in the Android tree immediately:
+1. The change **must** still be submitted upstream first (to the mailing list or
+   as a pull request).
+2. The commit title in the Android tree must start with **FROMGIT** (if merged
+   upstream) or **FROMLIST** (if submitted but not yet merged).
+3. The commit message **must** include a link to the upstream commit or mailing
+   list discussion.
+
+**Warning:** If you do not follow this process and land code only in the Android
+tree, your changes are likely to be lost during the next upstream merge/sync.
+
+
 How is LTP Run in VTS?
 ----------------------
 
@@ -199,26 +230,6 @@ virtualized environment, or on a dedicated development x86 platform.
 To run LTP tests for x86 platform, you can do:
 * `atest vts_ltp_test_x86`
 * `atest vts_ltp_test_x86_64`
-
-
-Sending Fixes Upstream
-----------------------
-
-The mailing list for LTP is located
-[here](https://lists.linux.it/listinfo/ltp). Some standard kernel guidelines
-apply to sending patches; they should be checkpatch (scripts/checkpatch.pl in
-the kernel repository) clean and sent in plain text in canonical patch format.
-One easy way to do this is by using git format-patch and git send-email.
-
-There is an #LTP channel on freenode. The maintainer Cyril Hrubis is there (his
-nick is metan).
-
-
-Merging Fixes
-------------------------
-
-When possible please merge fixes upstream first. Then cherrypick the change
-onto aosp/master in external/ltp.
 
 
 Upgrade LTP to the latest upstream release
