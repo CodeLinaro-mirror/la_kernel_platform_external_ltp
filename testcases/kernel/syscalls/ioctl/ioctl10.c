@@ -26,6 +26,7 @@
 #include <sys/sysmacros.h>
 #include <linux/fs.h>
 #include "lapi/ioctl.h"
+#include "pgsize_helpers.h"
 
 #define PROC_MAP_PATH "/proc/self/maps"
 
@@ -107,7 +108,7 @@ static void verify_ioctl(void)
 	TST_EXP_EQ_LU(q->vma_flags, entry.vm_flags);
 	TST_EXP_EQ_LU(q->vma_start, entry.vm_start);
 	TST_EXP_EQ_LU(q->vma_end, entry.vm_end);
-	TST_EXP_EQ_LU(q->vma_page_size, getpagesize());
+	TST_EXP_EQ_LU(q->vma_page_size, kernel_page_size());
 	TST_EXP_EQ_LU(q->vma_offset, entry.vm_pgoff);
 	TST_EXP_EQ_LU(q->inode, entry.vm_inode);
 	TST_EXP_EQ_LU(q->dev_major, entry.vm_major);
