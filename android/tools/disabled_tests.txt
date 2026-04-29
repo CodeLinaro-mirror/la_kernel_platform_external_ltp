@@ -648,3 +648,7 @@ rdtsc-latency
 
 # Require undeclared identifier
 cve-2025-21756 
+
+# Disabled from LTP20260130
+tst_device
+tst_checkpoint
