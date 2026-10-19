@@ -84,6 +84,39 @@ static struct tcase {
 	},
 };
 
+/*
+ * Kernels without commit f2fed441c69b ("loop: stop using
+ * vfs_iter_{read,write} for buffered I/O"), merged in v6.15, access the
+ * backing file through vfs_iter_{read,write}(), which run LSM permission
+ * checks with the credentials of the loop worker kernel thread. Strict
+ * SELinux policies, such as Android's, do not allow the kernel to access
+ * the unlabeled files on the freshly formatted test filesystem, so any I/O
+ * on the loop device fails with EIO.
+ *
+ * The commit has been backported to some stable kernels (e.g. v6.12.25),
+ * so on older kernels the loop device has to be probed.
+ */
+static void check_loop_io(void)
+{
+	char buf[512];
+	int fd;
+
+	if (tst_kvercmp(6, 15, 0) >= 0 || !tst_selinux_enforcing())
+		return;
+
+	fd = SAFE_OPEN(loop_dev, O_RDONLY);
+	TEST(read(fd, buf, sizeof(buf)));
+	SAFE_CLOSE(fd);
+
+	if (TST_RET == (long)sizeof(buf))
+		return;
+
+	if (TST_RET == -1 && TST_ERR == EIO)
+		tst_brk(TCONF | TTERRNO, "I/O on %s is likely denied by SELinux", loop_dev);
+
+	tst_brk(TBROK | TTERRNO, "read(%s) returned %ld", loop_dev, TST_RET);
+}
+
 static void setup(void)
 {
 	char discard_path[PATH_MAX];
@@ -113,6 +146,8 @@ static void setup(void)
 	if (tst_attach_device(loop_dev, BACKING_FILE))
 		tst_brk(TBROK, "Failed to attach %s to %s", loop_dev, BACKING_FILE);
 	loop_attached = 1;
+
+	check_loop_io();
 
 	snprintf(discard_path, sizeof(discard_path),
 		 "/sys/block/loop%d/queue/discard_max_bytes", loop_dev_id);
