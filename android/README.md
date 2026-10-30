@@ -298,16 +298,55 @@ After upgrading (via either method), verify the build and run tests:
 
 It is good practice to write a detailed commit message presenting the differences (added/removed tests) in the new LTP version. 
 
-You can use the helper script `android/tools/compare_ltp_projects.py` to compare the tests between the old and new LTP directories:
+You can use the helper script `android/tools/compare_ltp_projects.py` to
+compare the tests of two LTP versions. Each side of the comparison can be
+given in one of three ways:
+
+| Input | Options | What is read |
+|---|---|---|
+| Git revision | `--old-rev REV`, `--new-rev REV` | `runtest/` as committed in `REV`. `REV` is anything git understands: a SHA, `goog/main`, `HEAD~1`, `<sha>^1`, ... It is resolved in the `external/ltp` repository that contains the script. |
+| Directory | `--ltp-old DIR`, `--ltp-new DIR` | `DIR/runtest/` as it is on disk, including uncommitted changes. |
+| JSON file | `--ltp-old-json FILE`, `--ltp-new-json FILE` | A snapshot written by an earlier run (see "Two steps" below). |
+
+Any combination of old and new inputs works:
+
+| Old | New | Command | Compares |
+|---|---|---|---|
+| revision | directory | `--old-rev goog/main --ltp-new .` | `goog/main` with the working tree. Use this while the update is applied but not committed yet. |
+| revision | revision | `--old-rev <sha>^1 --new-rev <sha>` | The parent of an update commit with the update commit. |
+| directory | revision | `--ltp-old /tmp/ltp_old --new-rev HEAD` | A directory with a commit. |
+| directory | directory | `--ltp-old /tmp/ltp_old --ltp-new .` | Two directories. This is what `post_update.sh` runs automatically. |
+| JSON | revision or directory | `--ltp-old-json old.json --ltp-new .` | A saved snapshot with the current tree. |
+| one side only | - | `--old-rev goog/main --ltp-old-json old.json` | Nothing. The tool writes the snapshot of that side to the JSON file instead. |
 
 ```bash
-LTP_NEW=$ANDROID_BUILD_TOP/external/ltp
-LTP_OLD=/tmp/ltp-base
-mkdir -p $LTP_OLD
+cd $ANDROID_BUILD_TOP/external/ltp
 
-# Extract the old version (from main branch) to a temp directory
-git archive goog/main | tar -x -C $LTP_OLD
+# Most common: the update is in the working tree, compare it with goog/main.
+android/tools/compare_ltp_projects.py --old-rev goog/main --ltp-new .
 
-# Compare the two directories
-android/tools/compare_ltp_projects.py --ltp-new $LTP_NEW --ltp-old $LTP_OLD
+# The update is already committed as <sha>.
+android/tools/compare_ltp_projects.py --old-rev <sha>^1 --new-rev <sha>
+
+# Two steps: save a snapshot first, compare later.
+android/tools/compare_ltp_projects.py --old-rev goog/main --ltp-old-json /tmp/ltp_old.json
+android/tools/compare_ltp_projects.py --ltp-old-json /tmp/ltp_old.json --ltp-new .
 ```
+
+Notes:
+
+- `--old-rev` cannot be combined with `--ltp-old`, and `--new-rev` cannot be
+  combined with `--ltp-new`.
+- For each side, a revision or directory is used first. If neither is given,
+  the JSON file is used. The JSON options default to `ltp_old.json` and
+  `ltp_new.json` in the current directory, so an old file with one of these
+  names is picked up automatically. Pass explicit paths to avoid surprises.
+- A revision reads committed content only. To include uncommitted changes,
+  use a directory, for example `--ltp-new .`.
+- `external/ltp` is a partial clone. For old revisions, git may have to
+  download files first. This needs a valid SSO certificate (`gcert`).
+- Upstream release tags such as `20260930` are not available in this
+  repository. Use the commit SHA, `goog/main`, or `<sha>^1`.
+- For each revision, the script prints the resolved commit SHA on stderr. The
+  report itself is printed on stdout, so redirecting or pasting it gives you
+  the report only.
