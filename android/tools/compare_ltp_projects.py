@@ -51,7 +51,7 @@ def scan_tests(ltp_root, suite):
     runtest_dir = ltp_root + os.path.sep + 'runtest'
     test_suiteFile = runtest_dir + os.path.sep + suite
     if not os.path.isfile(test_suiteFile):
-        print('No tests defined for suite {}',format(suite))
+        print('No tests defined for suite {}'.format(suite))
         return tests
 
     with open(test_suiteFile) as f:
@@ -143,6 +143,15 @@ def show_diff(ltp_tests_1, ltp_tests_2):
     added_test_suites = sorted(test_suites2.difference(test_suites1))
     common_test_suites = test_suites1.intersection(test_suites2)
 
+    # Tests that belong to a test suite which only exists in one of the two
+    # projects. They are listed separately from the tests of the common test
+    # suites, because enabling a new test suite is a separate decision from
+    # enabling new tests of an already enabled test suite.
+    deleted_suite_tests = sorted(set(
+        suite + '.' + e for suite in deleted_test_suites for e in ltp_tests_1[suite]))
+    added_suite_tests = sorted(set(
+        suite + '.' + e for suite in added_test_suites for e in ltp_tests_2[suite]))
+
     deleted_tests = []
     added_tests = []
     for suite in common_test_suites:
@@ -157,53 +166,75 @@ def show_diff(ltp_tests_1, ltp_tests_2):
             added_tests.append(suite + '.' + e)
     deleted_tests = sorted(deleted_tests)
     added_tests = sorted(added_tests)
-    print_columns(added_test_suites, deleted_test_suites, added_tests, deleted_tests)
+    print_columns(added_test_suites, deleted_test_suites, added_tests, deleted_tests,
+                  added_suite_tests, deleted_suite_tests)
 
 
-def print_columns(added_test_suites, deleted_test_suites, added_tests, deleted_tests):
-    DEFAULT_WIDTH = 8
-    # find the maximum width of a test suite name or test name
-    # we have to print to decide the alignment.
-    if not deleted_test_suites:
-        width_suites = DEFAULT_WIDTH
-    else:
-        width_suites = max(len(x) for x in deleted_test_suites)
+def print_section(title, added, deleted, width):
+    ''' Print one two-column section: added entries on the left, deleted
+    entries on the right. Nothing is printed when both lists are empty.
 
-    if added_test_suites:
-        width_suites = max(width_suites, max(len(x) for x in added_test_suites))
+    Args:
+        title: section title, printed centered in a line of '*'
+        added: list of added names
+        deleted: list of deleted names
+        width: width of each column
+    '''
+    total_rows = max(len(added), len(deleted))
+    if not total_rows:
+        return
 
-    if not deleted_tests:
-        width_tests = DEFAULT_WIDTH
-    else:
-        width_tests = max(len(x) for x in deleted_tests)
+    print('{:*^{len}}'.format(title, len=min(width*2+2, 72)))
+    print('{:<{len}} {:<{len}}'.format('Added ({})'.format(len(added)),
+                                       'Deleted ({})'.format(len(deleted)), len=width))
+    for i in range(total_rows):
+        print('{:<{len}} {:<{len}}'.format(added[i] if i < len(added) else '',
+                                           deleted[i] if i < len(deleted) else '', len=width))
 
-    if added_tests:
-        width_tests = max(width_tests, max(len(x) for x in added_tests))
 
-    width = max(width_suites, width_tests);
+def print_columns(added_test_suites, deleted_test_suites, added_tests, deleted_tests,
+                  added_suite_tests=(), deleted_suite_tests=()):
+    ''' Print the added / deleted test suites and tests as two-column tables.
 
-    # total rows we have to print
-    total_rows = max(len(deleted_test_suites), len(added_test_suites))
-    added_text = 'Added ({})'.format(len(added_test_suites))
-    deleted_text = 'Deleted ({})'.format(len(deleted_test_suites))
-    if total_rows > 0:
-        print('{:*^{len}}'.format(' Tests Suites ', len=min(width*2+2, 72)))
-        print('{:<{len}} {:<{len}}'.format(added_text, deleted_text, len=width))
-        for i in range(total_rows):
-            print('{:<{len}} {:<{len}}'.format('' if i >= len(added_test_suites) else str(added_test_suites[i]),
-                                 '' if i >= len(deleted_test_suites) else str(deleted_test_suites[i]), len=width))
+    Args:
+        added_test_suites: test suites only present in the new project
+        deleted_test_suites: test suites only present in the old project
+        added_tests: tests added to test suites present in both projects
+        deleted_tests: tests deleted from test suites present in both projects
+        added_suite_tests: tests of the added test suites
+        deleted_suite_tests: tests of the deleted test suites
+    '''
+    sections = [
+        (' Tests Suites ', added_test_suites, deleted_test_suites),
+        # Printed right below the test suites they belong to, and separately
+        # from the tests of the common test suites, because enabling a new
+        # test suite is a separate decision from enabling new tests.
+        (' Tests in Added/Deleted Suites ', added_suite_tests, deleted_suite_tests),
+        (' Tests ', added_tests, deleted_tests),
+    ]
 
-    print('')
-    # total rows we have to print
-    total_rows = max(len(deleted_tests), len(added_tests))
-    added_text = 'Added ({})'.format(len(added_tests))
-    deleted_text = 'Deleted ({})'.format(len(deleted_tests))
-    if total_rows:
-        print('{:*^{len}}'.format(' Tests ', len=min(width*2+2, 72)))
-        print('{:^{len}} {:^{len}}'.format(added_text, deleted_text, len=width))
-        for i in range(total_rows):
-            print('{:<{len}} {:<{len}}'.format('' if i >= len(added_tests) else str(added_tests[i]),
-                                 '' if i >= len(deleted_tests) else str(deleted_tests[i]), len=width))
+    # One shared width for all sections, so their columns line up. It also
+    # covers the header texts so the columns stay aligned even when all names
+    # are shorter than 'Added (N)' / 'Deleted (N)'.
+    width = 0
+    for _, added, deleted in sections:
+        width = max([width,
+                     len('Added ({})'.format(len(added))),
+                     len('Deleted ({})'.format(len(deleted)))] +
+                    [len(x) for x in added] +
+                    [len(x) for x in deleted])
+
+    # Non-empty sections are separated by a single blank line.
+    first = True
+    for title, added, deleted in sections:
+        if not added and not deleted:
+            continue
+        if not first:
+            print('')
+        print_section(title, added, deleted, width)
+        first = False
+
+
 def main():
     arg_parser = argparse.ArgumentParser(
         description='Diff 2 LTP projects for supported test cases')
