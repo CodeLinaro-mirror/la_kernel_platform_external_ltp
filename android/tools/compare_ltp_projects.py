@@ -23,6 +23,10 @@ file dumped by a previous run (--ltp-old-json / --ltp-new-json), i.e.:
 $ compare_ltp_projects.py --old-rev goog/main --ltp-new .
 $ compare_ltp_projects.py --old-rev 7cce28f86^1 --new-rev 7cce28f86
 
+Revisions can be resolved in another LTP checkout with --git-repo, i.e.:
+
+$ compare_ltp_projects.py --git-repo ~/other/ltp --old-rev HEAD~1 --new-rev HEAD
+
 The tool can also be run in two separate steps by dumping the list of tests as
 a json file, i.e.:
 
@@ -44,7 +48,8 @@ import tarfile
 import tempfile
 
 # The LTP git repository that contains this script. Revisions given with
-# --old-rev / --new-rev are resolved in this repository.
+# --old-rev / --new-rev are resolved in this repository, unless another one
+# is given with --git-repo.
 LTP_GIT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(
     os.path.realpath(__file__))))
 
@@ -143,36 +148,66 @@ def scan_ltp(ltp_root, scenario):
     return ltp_tests
 
 
-def run_git(args):
-    ''' Run a git command in LTP_GIT_ROOT.
+def run_git(repo, args):
+    ''' Run a git command in a git repository.
 
     Args:
+        repo: string, directory of the git repository.
         args: list of string, arguments for git.
 
     Returns:
         subprocess.CompletedProcess with stdout and stderr captured as bytes.
     '''
-    return subprocess.run(['git', '-C', LTP_GIT_ROOT] + args,
+    return subprocess.run(['git', '-C', repo] + args,
                           stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 
-def resolve_rev(rev):
+def check_git_repo(repo):
+    ''' Check that a directory given with --git-repo is inside a git checkout.
+
+    Args:
+        repo: string, directory given with --git-repo.
+
+    Returns:
+        The root directory of the checkout (work tree) that contains repo.
+        Exits with code 1 when the directory does not exist or is not inside
+        a git checkout.
+    '''
+    if not os.path.isdir(repo):
+        logging.error("Git repository '%s' is not a directory", repo)
+        sys.exit(1)
+    repo = os.path.abspath(repo)
+
+    # git archive resolves paths relative to the current directory, so git
+    # must run in the root of the checkout, not in a subdirectory of it.
+    result = run_git(repo, ['rev-parse', '--show-toplevel'])
+    if result.returncode != 0:
+        logging.error("'%s' is not inside a git checkout", repo)
+        error = result.stderr.decode(errors='replace').strip()
+        if error:
+            logging.error('%s', error)
+        sys.exit(1)
+    return result.stdout.decode().strip()
+
+
+def resolve_rev(repo, rev):
     ''' Resolve a git revision of the LTP project to a full commit SHA.
 
     Args:
+        repo: string, git repository in which rev is resolved.
         rev: string, anything git understands: SHA, tag, branch, HEAD~1, ...
 
     Returns:
-        The full commit SHA. Exits with code 1 when LTP_GIT_ROOT is not a git
+        The full commit SHA. Exits with code 1 when repo is not a git
         repository or when rev does not name a commit.
     '''
     if rev.startswith('-'):
         logging.error("Invalid revision '%s'", rev)
         sys.exit(1)
 
-    result = run_git(['rev-parse', '--verify', '--quiet', rev + '^{commit}'])
+    result = run_git(repo, ['rev-parse', '--verify', '--quiet', rev + '^{commit}'])
     if result.returncode != 0:
-        logging.error("Revision '%s' not found in %s", rev, LTP_GIT_ROOT)
+        logging.error("Revision '%s' not found in %s", rev, repo)
         error = result.stderr.decode(errors='replace').strip()
         if error:
             logging.error('%s', error)
@@ -183,7 +218,7 @@ def resolve_rev(rev):
     return result.stdout.decode().strip()
 
 
-def scan_ltp_rev(rev, scenario):
+def scan_ltp_rev(repo, rev, scenario):
     ''' Scan the runtest directory of a git revision of the LTP project.
 
     runtest/ (and scenario_groups/, when the revision has it) is extracted to
@@ -191,24 +226,25 @@ def scan_ltp_rev(rev, scenario):
     is removed before returning, also when the scan fails.
 
     Args:
+        repo: string, git repository in which rev is resolved.
         rev: string, git revision to scan, see resolve_rev().
         scenario: specific scenario we want to scan. e.g. vts
 
     Returns:
         Same as scan_ltp().
     '''
-    sha = resolve_rev(rev)
+    sha = resolve_rev(repo, rev)
     logging.info("'%s' resolved to %s", rev, sha)
 
-    if run_git(['cat-file', '-e', sha + ':runtest']).returncode != 0:
+    if run_git(repo, ['cat-file', '-e', sha + ':runtest']).returncode != 0:
         logging.error("Revision '%s' has no runtest directory", rev)
         sys.exit(2)
 
     paths = ['runtest']
-    if run_git(['cat-file', '-e', sha + ':scenario_groups']).returncode == 0:
+    if run_git(repo, ['cat-file', '-e', sha + ':scenario_groups']).returncode == 0:
         paths.append('scenario_groups')
 
-    result = run_git(['archive', '--format=tar', sha, '--'] + paths)
+    result = run_git(repo, ['archive', '--format=tar', sha, '--'] + paths)
     if result.returncode != 0:
         logging.error("git archive failed for revision '%s'", rev)
         logging.error('%s', result.stderr.decode(errors='replace').strip())
@@ -346,7 +382,7 @@ def main():
                            dest='old_rev', metavar='REV',
                            help="git revision (SHA, tag, branch, HEAD~1, ...) "
                                 "before merge, resolved in the LTP repository "
-                                "that contains this script")
+                                "that contains this script, or in --git-repo")
     arg_parser.add_argument('-oj', '--ltp-old-json',
                             dest='ltp_old_json',
                             default='ltp_old.json',
@@ -362,17 +398,31 @@ def main():
                             dest='ltp_new_json',
                             default='ltp_new.json',
                             help="New LTP parsed directory in json format")
+    arg_parser.add_argument('--git-repo',
+                            dest='git_repo', metavar='DIR',
+                            help="git repository in which --old-rev and "
+                                 "--new-rev are resolved (default: the LTP "
+                                 "repository that contains this script)")
     arg_parser.add_argument('--scenario', default=None,
                             dest='scenario',
                             help="LTP scenario to list tests for")
     args = arg_parser.parse_args()
+
+    # The git repository for --old-rev / --new-rev. --git-repo is checked
+    # before anything is scanned, so a wrong directory fails early.
+    git_repo = LTP_GIT_ROOT
+    if args.git_repo:
+        if not args.old_rev and not args.new_rev:
+            arg_parser.error('--git-repo requires --old-rev or --new-rev')
+        git_repo = check_git_repo(args.git_repo)
+        logging.info("Resolving revisions in git repository '%s'", git_repo)
 
     # Find tests in the "old" directory or revision, or read the json output
     # from a prior run
     if args.ltp_old:
         ltp_tests1 = scan_ltp(args.ltp_old, args.scenario)
     elif args.old_rev:
-        ltp_tests1 = scan_ltp_rev(args.old_rev, args.scenario)
+        ltp_tests1 = scan_ltp_rev(git_repo, args.old_rev, args.scenario)
     elif args.ltp_old_json and os.path.isfile(args.ltp_old_json):
         with open(args.ltp_old_json) as f:
             ltp_tests1 = json.load(f)
@@ -383,7 +433,7 @@ def main():
     if args.ltp_new:
         ltp_tests2 = scan_ltp(args.ltp_new, args.scenario)
     elif args.new_rev:
-        ltp_tests2 = scan_ltp_rev(args.new_rev, args.scenario)
+        ltp_tests2 = scan_ltp_rev(git_repo, args.new_rev, args.scenario)
     elif args.ltp_new_json and os.path.isfile(args.ltp_new_json):
         with open(args.ltp_new_json) as f:
             ltp_tests2 = json.load(f)

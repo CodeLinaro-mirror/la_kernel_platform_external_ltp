@@ -304,7 +304,7 @@ given in one of three ways:
 
 | Input | Options | What is read |
 |---|---|---|
-| Git revision | `--old-rev REV`, `--new-rev REV` | `runtest/` as committed in `REV`. `REV` is anything git understands: a SHA, `goog/main`, `HEAD~1`, `<sha>^1`, ... It is resolved in the `external/ltp` repository that contains the script. |
+| Git revision | `--old-rev REV`, `--new-rev REV` | `runtest/` as committed in `REV`. `REV` is anything git understands: a SHA, `goog/main`, `HEAD~1`, `<sha>^1`, ... It is resolved in the `external/ltp` repository that contains the script, or in the repository given with `--git-repo DIR`. |
 | Directory | `--ltp-old DIR`, `--ltp-new DIR` | `DIR/runtest/` as it is on disk, including uncommitted changes. |
 | JSON file | `--ltp-old-json FILE`, `--ltp-new-json FILE` | A snapshot written by an earlier run (see "Two steps" below). |
 
@@ -318,6 +318,7 @@ Any combination of old and new inputs works:
 | directory | directory | `--ltp-old /tmp/ltp_old --ltp-new .` | Two directories. This is what `post_update.sh` runs automatically. |
 | JSON | revision or directory | `--ltp-old-json old.json --ltp-new .` | A saved snapshot with the current tree. |
 | one side only | - | `--old-rev goog/main --ltp-old-json old.json` | Nothing. The tool writes the snapshot of that side to the JSON file instead. |
+| revision in another checkout | revision | `--git-repo ~/other/ltp --old-rev HEAD~1 --new-rev HEAD` | Two commits of another LTP checkout. `--git-repo` applies to both `--old-rev` and `--new-rev`. |
 
 ```bash
 cd $ANDROID_BUILD_TOP/external/ltp
@@ -331,12 +332,19 @@ android/tools/compare_ltp_projects.py --old-rev <sha>^1 --new-rev <sha>
 # Two steps: save a snapshot first, compare later.
 android/tools/compare_ltp_projects.py --old-rev goog/main --ltp-old-json /tmp/ltp_old.json
 android/tools/compare_ltp_projects.py --ltp-old-json /tmp/ltp_old.json --ltp-new .
+
+# Resolve the revisions in another LTP checkout.
+android/tools/compare_ltp_projects.py --git-repo ~/other/ltp --old-rev HEAD~1 --new-rev HEAD
 ```
 
 Notes:
 
 - `--old-rev` cannot be combined with `--ltp-old`, and `--new-rev` cannot be
   combined with `--ltp-new`.
+- `--git-repo DIR` can be any directory inside a git checkout; the root of
+  the checkout is used. Bare repositories are not supported. The option is
+  only accepted together with `--old-rev` or `--new-rev`. It changes where
+  revisions are resolved; directories and JSON files are read as before.
 - For each side, a revision or directory is used first. If neither is given,
   the JSON file is used. The JSON options default to `ltp_old.json` and
   `ltp_new.json` in the current directory, so an old file with one of these
