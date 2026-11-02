@@ -103,13 +103,11 @@ TEST_DIFF=""
 COMPARE_PY="$NEW_PATH/android/tools/compare_ltp_projects.py"
 if [ -f "$COMPARE_PY" ]; then
   if [ -n "$OLD_PATH" ] && [ -d "$OLD_PATH" ]; then
+    # Archive update: compare the saved old tree with the new tree.
     TEST_DIFF=$(python3 "$COMPARE_PY" --ltp-old "$OLD_PATH" --ltp-new "$NEW_PATH" 2>/dev/null || true)
   else
-    OLD_RUNTEST_DIR=$(mktemp -d)
-    if git archive HEAD~1 runtest | tar -x -C "$OLD_RUNTEST_DIR" 2>/dev/null; then
-      TEST_DIFF=$(python3 "$COMPARE_PY" --ltp-old "$OLD_RUNTEST_DIR" --ltp-new "$NEW_PATH" 2>/dev/null || true)
-    fi
-    rm -rf "$OLD_RUNTEST_DIR"
+    # Git merge: compare the previous commit with the updated working tree.
+    TEST_DIFF=$(python3 "$COMPARE_PY" --git-repo "$NEW_PATH" --old-rev HEAD~1 --ltp-new "$NEW_PATH" 2>/dev/null || true)
   fi
 fi
 
