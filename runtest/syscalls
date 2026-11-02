@@ -316,6 +316,20 @@ fchownat01 fchownat01
 fchownat02 fchownat02
 fchownat03 fchownat03
 
+fchroot01 fchroot01
+fchroot02 fchroot02
+fchroot03 fchroot03
+fchroot04 fchroot04
+fchroot05 fchroot05
+fchroot06 fchroot06
+fchroot07 fchroot07
+fchroot08 fchroot08
+fchroot09 fchroot09
+fchroot10 fchroot10
+fchroot11 fchroot11
+fchroot12 fchroot12
+fchroot13 fchroot13
+
 fcntl01 fcntl01
 fcntl01_64 fcntl01_64
 fcntl02 fcntl02
@@ -1048,6 +1062,7 @@ open12 open12
 open13 open13
 open14 open14
 open15 open15
+open16 open16
 
 openat01 openat01
 openat02 openat02
@@ -1173,6 +1188,9 @@ preadv203 preadv203
 preadv203_64 preadv203_64
 
 profil01 profil01
+
+process_mrelease01 process_mrelease01
+process_mrelease02 process_mrelease02
 
 process_vm_readv01 process_vm01 -r
 process_vm_readv02 process_vm_readv02

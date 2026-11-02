@@ -13,13 +13,12 @@ third_party {
   license_note: "would be RESTRICTED save for GFDL in: testcases/kernel/device-drivers/v4l/user_space/doc/spec/*.htm*"
   last_upgrade_date {
     year: 2026
-    month: 10
+    month: 11
     day: 2
   }
   identifier {
     type: "Git"
     value: "https://github.com/linux-test-project/ltp/"
-    version: "2279d708c817db657611a30c427c7d06c4360049"
-    closest_version: "20260930"
+    version: "aac7fd279e2d844c5c861582ee6ddf00ffa1e499"
   }
 }
