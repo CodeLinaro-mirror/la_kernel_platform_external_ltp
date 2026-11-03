@@ -315,7 +315,7 @@ Any combination of old and new inputs works:
 | revision | directory | `--old-rev goog/main --ltp-new .` | `goog/main` with the working tree. Use this while the update is applied but not committed yet. |
 | revision | revision | `--old-rev <sha>^1 --new-rev <sha>` | The parent of an update commit with the update commit. |
 | directory | revision | `--ltp-old /tmp/ltp_old --new-rev HEAD` | A directory with a commit. |
-| directory | directory | `--ltp-old /tmp/ltp_old --ltp-new .` | Two directories. This is what `post_update.sh` runs automatically. |
+| directory | directory | `--ltp-old /tmp/ltp_old --ltp-new .` | Two directories. `post_update.sh` runs this for archive updates; for git merge updates it runs `--git-repo <project> --old-rev HEAD~1 --ltp-new <project>`. |
 | JSON | revision or directory | `--ltp-old-json old.json --ltp-new .` | A saved snapshot with the current tree. |
 | one side only | - | `--old-rev goog/main --ltp-old-json old.json` | Nothing. The tool writes the snapshot of that side to the JSON file instead. |
 | revision in another checkout | revision | `--git-repo ~/other/ltp --old-rev HEAD~1 --new-rev HEAD` | Two commits of another LTP checkout. `--git-repo` applies to both `--old-rev` and `--new-rev`. |
