@@ -17,12 +17,46 @@
 #define _GNU_SOURCE
 #include <errno.h>
 #include "tst_test.h"
+#include "tst_safe_stdio.h"
 
 static int test_fd;
 static char *mmaped_area;
 static long pagesize;
 
 #define STRING_TO_WRITE	"AAAAAAAAAA"
+
+#define PM_PFRAME_MASK	((1ULL << 55) - 1)
+#define PM_PRESENT	(1ULL << 63)
+
+/*
+ * Returns the amount of dirty memory of the mapping starting at addr, as
+ * accounted in /proc/self/smaps.
+ */
+static long get_smaps_dirty_kb(unsigned long addr)
+{
+	FILE *fp = SAFE_FOPEN("/proc/self/smaps", "r");
+	unsigned long start, end;
+	long dirty_kb = 0, kb;
+	char line[1024];
+	int found = 0;
+
+	while (fgets(line, sizeof(line), fp)) {
+		if (sscanf(line, "%lx-%lx ", &start, &end) == 2) {
+			found = start == addr;
+			continue;
+		}
+
+		if (!found)
+			continue;
+
+		if (sscanf(line, "Shared_Dirty: %ld kB", &kb) == 1 ||
+		    sscanf(line, "Private_Dirty: %ld kB", &kb) == 1)
+			dirty_kb += kb;
+	}
+
+	SAFE_FCLOSE(fp);
+	return dirty_kb;
+}
 
 static uint64_t get_dirty_bit(void *data)
 {
@@ -37,9 +71,17 @@ static uint64_t get_dirty_bit(void *data)
 	SAFE_READ(SAFE_READ_ALL, pagemap_fd, &pagemap_entry,
 		  sizeof(pagemap_entry));
 	SAFE_CLOSE(pagemap_fd);
-	pfn = pagemap_entry & ((1ULL << 55) - 1);
-	if (!pfn)
+	pfn = pagemap_entry & PM_PFRAME_MASK;
+	if (!pfn) {
+		/*
+		 * The PFN of a present page may not be exposed, check the
+		 * dirty accounting of the mapping in smaps instead.
+		 */
+		if (pagemap_entry & PM_PRESENT)
+			return get_smaps_dirty_kb(addr) > 0;
+
 		return 0;
+	}
 	pageflags_fd = SAFE_OPEN("/proc/kpageflags", O_RDONLY);
 	index = pfn * sizeof(uint64_t);
 	SAFE_LSEEK(pageflags_fd, index, SEEK_SET);
