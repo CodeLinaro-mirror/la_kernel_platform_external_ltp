@@ -522,10 +522,6 @@ class BuildGenerator(object):
             bp_result.extend(self._prebuilt_bp_result[k])
         self._prebuilt_bp_result = {}
         with open(output_path, 'a') as f:
-            for k in sorted(self._prebuilt_bp_result.keys()):
-                f.write('\n'.join(self._prebuilt_bp_result[k]))
-                f.write('\n')
-            self._prebuilt_bp_result = {}
             f.write('\n'.join(bp_result))
             f.write('\n')
 
