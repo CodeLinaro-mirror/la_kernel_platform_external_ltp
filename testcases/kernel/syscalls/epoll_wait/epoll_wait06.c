@@ -32,13 +32,18 @@ static int epfd;
 
 static void setup(void)
 {
-	write_size = getpagesize();
-	read_size = write_size / 2;
-
 	SAFE_PIPE2(fds, O_NONBLOCK);
 
-	/* EPOLLOUT will be raised when buffer became empty after becoming full */
-	SAFE_FCNTL(fds[1], F_SETPIPE_SZ, write_size);
+	/*
+	 * EPOLLOUT will be raised when buffer became empty after becoming full.
+	 *
+	 * Shrink the pipe to its minimum capacity, which is a single pipe
+	 * buffer, so that reading only half of the data doesn't release any
+	 * buffer. Use the capacity reported by the kernel rather than
+	 * assuming it matches getpagesize().
+	 */
+	write_size = SAFE_FCNTL(fds[1], F_SETPIPE_SZ, 1);
+	read_size = write_size / 2;
 }
 
 static void cleanup(void)
