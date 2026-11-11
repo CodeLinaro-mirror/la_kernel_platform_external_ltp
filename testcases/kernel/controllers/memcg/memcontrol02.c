@@ -27,7 +27,6 @@
 #define _GNU_SOURCE
 #include "memcontrol_common.h"
 
-static size_t page_size;
 static struct tst_cg_group *cg_child;
 static int fd = -1;
 static int file_to_all_error = 10;
@@ -35,14 +34,18 @@ static int file_to_all_error = 10;
 static void alloc_anon_50M_check(void)
 {
 	const ssize_t size = MB(50);
-	char *buf, *ptr;
+	char *buf;
 	ssize_t anon, current;
 	const char *const anon_key_fmt =
 		TST_CG_VER_IS_V1(tst_cg, "memory") ? "rss %zd" : "anon %zd";
 
 	buf = SAFE_MALLOC(size);
-	for (ptr = buf; ptr < buf + size; ptr += page_size)
-		*ptr = 0;
+	/*
+	 * Write the whole buffer rather than one byte per getpagesize(), so
+	 * that it gets fully populated regardless of the granularity the
+	 * kernel faults in memory with.
+	 */
+	memset(buf, 1, size);
 
 	SAFE_CG_SCANF(cg_child, "memory.current", "%zd", &current);
 	TST_EXP_EXPR(current >= size,
@@ -113,8 +116,6 @@ static void test_memcg_current(unsigned int n)
 
 static void setup(void)
 {
-	page_size = SAFE_SYSCONF(_SC_PAGESIZE);
-
 	switch (tst_fs_type(TMPDIR)) {
 	case TST_VFAT_MAGIC:
 	case TST_EXFAT_MAGIC:

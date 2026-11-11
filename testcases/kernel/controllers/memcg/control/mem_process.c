@@ -10,6 +10,7 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 /*
@@ -49,14 +50,14 @@ void process_options(int argc, char **argv)
 
 /*
  * touch_memory: force physical memory allocation
+ *
+ * Write the whole area rather than one byte per getpagesize(), so that it
+ * gets fully populated regardless of the granularity the kernel faults in
+ * memory with.
  */
 void touch_memory(char *p)
 {
-	int i;
-	int pagesize = getpagesize();
-
-	for (i = 0; i < (int)memsize; i += pagesize)
-		p[i] = 0xef;
+	memset(p, 0xef, memsize);
 }
 
 void mem_map(void)
