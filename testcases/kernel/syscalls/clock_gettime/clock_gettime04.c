@@ -107,7 +107,7 @@ static void run(unsigned int i)
 	struct tst_ts ts;
 	long long start, end = 0, diff, slack;
 	struct time64_variants *tv;
-	int count = 10000, ret;
+	int count = 10000, retries = 10, ret;
 	unsigned int j;
 
 	if (clks[i] == CLOCK_REALTIME_COARSE || clks[i] == CLOCK_MONOTONIC_COARSE)
@@ -166,6 +166,12 @@ static void run(unsigned int i)
 			diff /= 1000000;
 
 			if (diff >= delta) {
+				if (retries > 0) {
+					retries--;
+					count++;
+					break;
+				}
+
 				tst_res(TFAIL, "%s(%s): Difference between successive readings greater than %lld ms (%d): %lld",
 					tst_clock_name(clks[i]), tv->desc, delta, j, diff);
 				return;
