@@ -11,8 +11,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#define MAX_PAGE_SIZE (64*1024)
-
 #if defined(__x86_64__)
 /*
  * Android emulates the userspace page size on some x86_64 emulators.
@@ -22,20 +20,12 @@ static inline size_t kernel_page_size(void)
 {
     return 0x1000;
 }
-
-/* Handle upto MAX_PAGE_SIZE emulation on 4KiB kernel base page size system */
-#define DECLARE_MINCORE_VECTOR(vec_name, num_pages) \
-    unsigned char vec_name[(num_pages) * (MAX_PAGE_SIZE / 4096)]
-
-#else	/* !defined(__x86_64__) */
-
+#else
 static inline size_t kernel_page_size(void)
 {
 	return getpagesize();
 }
-
-#define DECLARE_MINCORE_VECTOR(vec_name, num_pages) unsigned char vec_name[(num_pages)]
-#endif  /* defined(__x86_64__) */
+#endif
 
 /*
  * NOTE: For all cases except Android x86_64 page size emulators,
@@ -62,21 +52,6 @@ static size_t nr_kernel_pgs_to_nr_pgs(size_t nr_pages)
 }
 
 /*
- * Test populating the last partial 4KiB page if the page size is emulated,
- * instead of the first. This faults in the preceding pages for convenient
- * test accounting.
- */
-#define MLOCK_PAGE_SIZE_EMULATION_OFFSET(tcases)                                            \
-do {                                                                                        \
-    if (getpagesize() != kernel_page_size()) {                                              \
-        for (int i = 0; i < ARRAY_SIZE(tcases); i++) {                                      \
-            struct tcase *test = tcases + i;                                                \
-            if (test->offset > 0) test->offset = pgsz - kernel_page_size() + test->offset;  \
-        }                                                                                   \
-    }                                                                                       \
-} while (0)
-
-/*
  * Make the backing file large enough to cover the last corresponding kernel page.
  *
  * This is an artifact of x86_64 page size emulation on Android, to handle
@@ -93,9 +68,10 @@ do {                                                                            
                             * (nr_pgs_to_nr_kernel_pgs(1) - 1)) / str_len) + 1; \
         int total_len = str_len * nr_writes;                                    \
         char *buffer = SAFE_MALLOC(total_len + 1);                              \
+        buffer[0] = '\0';                                                       \
         for (int i = 0; i < nr_writes; i++)                                     \
             strcat(buffer, str);                                                \
-        SAFE_FILE_PRINTF(file, buffer);                                         \
+        SAFE_FILE_PRINTF(file, "%s", buffer);                                   \
         free(buffer);                                                           \
     }                                                                           \
 } while (0)

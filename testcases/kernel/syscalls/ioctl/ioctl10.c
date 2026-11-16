@@ -28,6 +28,7 @@
 #include "lapi/ioctl.h"
 
 #define PROC_MAP_PATH "/proc/self/maps"
+#define PROC_SMAPS_PATH "/proc/self/smaps"
 
 struct map_entry {
 	unsigned long vm_start;
@@ -86,6 +87,37 @@ static void parse_maps_file(const char *filename, const char *keyword, struct ma
 	tst_brk(TFAIL, "parse maps file /proc/self/maps failed");
 }
 
+/*
+ * vma_page_size is the page size the kernel uses to back the VMA, which is
+ * reported as KernelPageSize in /proc/self/smaps. It is not necessarily
+ * equal to getpagesize(), e.g. for hugetlb mappings or when the kernel
+ * reports a larger page size to userspace than it uses internally.
+ */
+static unsigned long get_kernel_page_size(unsigned long vm_start)
+{
+	FILE *fp = SAFE_FOPEN(PROC_SMAPS_PATH, "r");
+	unsigned long start, end, size_kb;
+	char line[1024];
+	int found = 0;
+
+	while (fgets(line, sizeof(line), fp)) {
+		if (sscanf(line, "%lx-%lx ", &start, &end) == 2) {
+			found = start == vm_start;
+			continue;
+		}
+
+		if (found && sscanf(line, "KernelPageSize: %lu kB", &size_kb) == 1) {
+			SAFE_FCLOSE(fp);
+			return size_kb * 1024;
+		}
+	}
+
+	SAFE_FCLOSE(fp);
+	tst_brk(TBROK, "KernelPageSize of %lx not found in %s",
+		vm_start, PROC_SMAPS_PATH);
+	return 0;
+}
+
 static void verify_ioctl(void)
 {
 	struct map_entry entry;
@@ -107,7 +139,7 @@ static void verify_ioctl(void)
 	TST_EXP_EQ_LU(q->vma_flags, entry.vm_flags);
 	TST_EXP_EQ_LU(q->vma_start, entry.vm_start);
 	TST_EXP_EQ_LU(q->vma_end, entry.vm_end);
-	TST_EXP_EQ_LU(q->vma_page_size, getpagesize());
+	TST_EXP_EQ_LU(q->vma_page_size, get_kernel_page_size(entry.vm_start));
 	TST_EXP_EQ_LU(q->vma_offset, entry.vm_pgoff);
 	TST_EXP_EQ_LU(q->inode, entry.vm_inode);
 	TST_EXP_EQ_LU(q->dev_major, entry.vm_major);

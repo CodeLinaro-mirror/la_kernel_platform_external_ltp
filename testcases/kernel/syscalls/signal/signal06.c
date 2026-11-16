@@ -48,8 +48,8 @@
 #include <errno.h>
 
 #include "test.h"
+#include "tso_safe_macros.h"
 #include "lapi/syscalls.h"
-#include "pgsize_helpers.h"
 
 char *TCID = "signal06";
 int TST_TOTAL = 5;
@@ -62,7 +62,8 @@ int TST_TOTAL = 5;
 volatile double D;
 volatile int FLAGE;
 
-char altstack[MAX_PAGE_SIZE * 10] __attribute__((aligned(MAX_PAGE_SIZE)));
+static char *altstack;
+static size_t altstack_size;
 
 void test(void)
 {
@@ -100,12 +101,12 @@ void *tfunc(void *arg LTP_ATTRIBUTE_UNUSED)
 
 	for (i = -1; ; i *= -1) {
 		if (i == -1) {
-			TEST(mprotect(altstack, sizeof(altstack), PROT_READ));
+			TEST(mprotect(altstack, altstack_size, PROT_READ));
 			if (TEST_RETURN == -1)
 				tst_brkm(TBROK | TTERRNO, NULL, "mprotect failed");
 		}
 
-		TEST(mprotect(altstack, sizeof(altstack), PROT_READ | PROT_WRITE));
+		TEST(mprotect(altstack, altstack_size, PROT_READ | PROT_WRITE));
 		if (TEST_RETURN == -1)
 			tst_brkm(TBROK | TTERRNO, NULL, "mprotect failed");
 
@@ -121,9 +122,14 @@ int main(int ac, char **av)
 
 	tst_parse_opts(ac, av, NULL, NULL);
 
+	/* mprotect() needs the stack to be aligned to the runtime page size */
+	altstack_size = getpagesize() * 10;
+	altstack = SAFE_MMAP(NULL, NULL, altstack_size, PROT_READ | PROT_WRITE,
+			     MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+
 	stack_t st = {
 		.ss_sp = altstack,
-		.ss_size = sizeof(altstack),
+		.ss_size = altstack_size,
 		.ss_flags = SS_ONSTACK,
 	};
 

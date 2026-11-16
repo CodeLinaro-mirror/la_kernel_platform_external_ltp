@@ -28,7 +28,7 @@ Date:   Sun Oct 13 14:20:58 2024 -0700
     Signed-off-by: Kalesh Singh <kaleshsingh@google.com>
 
 diff --git a/include/pgsize_helpers.h b/include/pgsize_helpers.h
-index 6850f5871..a66448a4f 100644
+index 7e57a7456..633b3ebc7 100644
 --- a/include/pgsize_helpers.h
 +++ b/include/pgsize_helpers.h
 @@ -7,6 +7,8 @@
@@ -39,12 +39,11 @@ index 6850f5871..a66448a4f 100644
 +#include <string.h>
  #include <unistd.h>
  
- #define MAX_PAGE_SIZE (64*1024)
-@@ -73,4 +75,28 @@ do {
-         }                                                                                   \
-     }                                                                                       \
- } while (0)
-+
+ #if defined(__x86_64__)
+@@ -49,4 +51,28 @@ static size_t nr_kernel_pgs_to_nr_pgs(size_t nr_pages)
+     return nr_pages / nr_kernel_pages(getpagesize());
+ }
+ 
 +/*
 + * Make the backing file large enough to cover the last corresponding kernel page.
 + *
@@ -62,18 +61,19 @@ index 6850f5871..a66448a4f 100644
 +                            * (nr_pgs_to_nr_kernel_pgs(1) - 1)) / str_len) + 1; \
 +        int total_len = str_len * nr_writes;                                    \
 +        char *buffer = SAFE_MALLOC(total_len + 1);                              \
++        buffer[0] = '\0';                                                       \
 +        for (int i = 0; i < nr_writes; i++)                                     \
 +            strcat(buffer, str);                                                \
-+        SAFE_FILE_PRINTF(file, buffer);                                         \
++        SAFE_FILE_PRINTF(file, "%s", buffer);                                   \
 +        free(buffer);                                                           \
 +    }                                                                           \
 +} while (0)
  #endif /* PGSIZE_HELPER_H */
 diff --git a/testcases/kernel/security/dirtyc0w_shmem/dirtyc0w_shmem.c b/testcases/kernel/security/dirtyc0w_shmem/dirtyc0w_shmem.c
-index f3d6e6423..82f2399e6 100644
+index c57f1dd22..545b01ec2 100644
 --- a/testcases/kernel/security/dirtyc0w_shmem/dirtyc0w_shmem.c
 +++ b/testcases/kernel/security/dirtyc0w_shmem/dirtyc0w_shmem.c
-@@ -22,6 +22,7 @@
+@@ -20,6 +20,7 @@
  #include <pwd.h>
  
  #include "tst_test.h"
@@ -81,7 +81,7 @@ index f3d6e6423..82f2399e6 100644
  
  #define TMP_DIR "tmp_dirtyc0w_shmem"
  #define TEST_FILE TMP_DIR"/testfile"
-@@ -62,7 +63,7 @@ static void dirtyc0w_shmem_test(void)
+@@ -60,7 +61,7 @@ static void dirtyc0w_shmem_test(void)
  	int pid;
  	char c;
  
