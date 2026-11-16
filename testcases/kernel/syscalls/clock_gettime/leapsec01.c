@@ -79,6 +79,15 @@ static void adjtimex_status(struct timex *tx, int status)
 	int ret;
 	struct timespec now;
 
+	/*
+	 * Keep STA_UNSYNC set, otherwise the kernel considers the clock
+	 * synchronized and copies the system time, i.e. the fake time set by
+	 * this test, into the RTC (CONFIG_RTC_SYSTOHC). Nothing restores the
+	 * RTC afterwards. The leap second is inserted regardless of
+	 * STA_UNSYNC.
+	 */
+	status |= STA_UNSYNC;
+
 	tx->modes = ADJ_STATUS;
 	tx->status = status;
 	ret = adjtimex(tx);
