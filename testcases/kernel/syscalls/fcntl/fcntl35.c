@@ -30,9 +30,6 @@
 
 #include "lapi/fcntl.h"
 #include "tst_test.h"
-#include "pgsize_helpers.h"
-
-#define PIPE_DEF_BUFFERS 16
 
 static int pipe_max_unpriv;
 static int test_max_unpriv;
@@ -47,15 +44,29 @@ static struct tcase {
 	{&test_max_priv, 0, "a privileged user"}
 };
 
+/*
+ * The pipe capacity is a multiple of the size of a pipe buffer, which is one
+ * page of the kernel. Get it by shrinking a pipe to its minimum capacity,
+ * rather than assuming it matches getpagesize().
+ */
+static int get_pipe_buf_size(void)
+{
+	int fds[2], size;
+
+	SAFE_PIPE(fds);
+	size = SAFE_FCNTL(fds[1], F_SETPIPE_SZ, 1);
+	SAFE_CLOSE(fds[0]);
+	SAFE_CLOSE(fds[1]);
+
+	return size;
+}
+
 static void setup(void)
 {
-	test_max_unpriv = getpagesize();
-	/*
-	 * The test doesn't set the pipe's size so we are actually checking the default size.
-	 * In the case of a privileged user this is determined by PIPE_DEF_BUFFERS number of
-	 * pages in the kernel.
-	 */
-	test_max_priv = kernel_page_size() * PIPE_DEF_BUFFERS;
+	/* pipe-max-size can't be lower than a single pipe buffer */
+	test_max_unpriv = get_pipe_buf_size();
+	/* The default capacity is 16 pipe buffers (PIPE_DEF_BUFFERS) */
+	test_max_priv = test_max_unpriv * 16;
 
 	if (!access(PATH_FS_PIPE_MAX_SIZE, F_OK)) {
 		SAFE_FILE_SCANF(PATH_FS_PIPE_MAX_SIZE, "%d", &pipe_max_unpriv);

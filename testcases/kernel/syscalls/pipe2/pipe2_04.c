@@ -15,7 +15,6 @@
 #include <stdio.h>
 #include "lapi/fcntl.h"
 #include "tst_test.h"
-#include "pgsize_helpers.h"
 
 static int fds[2];
 static int flags;
@@ -58,11 +57,10 @@ static void test_pipe2(void)
 
 static void setup(void)
 {
-	int page_size, pipe_size;
+	int pipe_size, set_size;
 	char *write_buffer;
 
 	SAFE_PIPE2(fds, O_NONBLOCK);
-	page_size = kernel_page_size();
 
 	flags = SAFE_FCNTL(fds[1], F_GETFL);
 	if (!(flags & O_NONBLOCK))
@@ -71,17 +69,21 @@ static void setup(void)
 	 * A pipe has two file descriptors.
 	 * But in the kernel these two file descriptors point to the same pipe.
 	 * So setting size from first file handle set size for the pipe.
+	 *
+	 * The size is rounded up to the minimum pipe capacity, i.e. a single
+	 * pipe buffer of one kernel page, which can be smaller or larger than
+	 * the page size reported to userspace.
 	 */
-	SAFE_FCNTL(fds[0], F_SETPIPE_SZ, 0);
+	set_size = SAFE_FCNTL(fds[0], F_SETPIPE_SZ, 0);
 
 	/*
 	 * So getting size from the second file descriptor return the size of
 	 * the pipe which was changed before with first file descriptor.
 	 */
 	pipe_size = SAFE_FCNTL(fds[1], F_GETPIPE_SZ);
-	if (pipe_size != page_size)
-		tst_res(TFAIL, "Pipe size (%d) must be page size (%d)",
-				pipe_size, page_size);
+	if (pipe_size != set_size)
+		tst_res(TFAIL, "Pipe size (%d) must be the size set (%d)",
+				pipe_size, set_size);
 
 	write_buffer = SAFE_MALLOC(pipe_size);
 	memset(write_buffer, 'x', pipe_size);

@@ -32,7 +32,7 @@ static void setup(void)
 
 static void set_pages(void)
 {
-	char ch = 'A';
+	char *buf;
 
 	page_size = SAFE_SYSCONF(_SC_PAGE_SIZE);
 
@@ -45,8 +45,15 @@ static void set_pages(void)
 	/*
 	 * Populate page cache so that after MADV_DONTNEED the next access
 	 * can generate a MINOR fault rather than a MISSING fault.
+	 *
+	 * Write the whole page, as UFFDIO_CONTINUE needs the page cache to
+	 * cover the whole range and the kernel may cache memory in units
+	 * smaller than getpagesize().
 	 */
-	SAFE_PWRITE(1, memfd, &ch, 1, 0);
+	buf = SAFE_MALLOC(page_size);
+	memset(buf, 'A', page_size);
+	SAFE_PWRITE(1, memfd, buf, page_size, 0);
+	free(buf);
 
 	page = SAFE_MMAP(NULL, page_size, PROT_READ, MAP_SHARED, memfd, 0);
 }
