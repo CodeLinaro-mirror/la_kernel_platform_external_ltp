@@ -30,9 +30,6 @@
 
 #include "lapi/fcntl.h"
 #include "tst_test.h"
-#include "pgsize_helpers.h"
-
-#define PIPE_DEF_BUFFERS 16
 
 static int pipe_max_unpriv;
 static int test_max_unpriv;
@@ -50,12 +47,7 @@ static struct tcase {
 static void setup(void)
 {
 	test_max_unpriv = getpagesize();
-	/*
-	 * The test doesn't set the pipe's size so we are actually checking the default size.
-	 * In the case of a privileged user this is determined by PIPE_DEF_BUFFERS number of
-	 * pages in the kernel.
-	 */
-	test_max_priv = kernel_page_size() * PIPE_DEF_BUFFERS;
+	test_max_priv = test_max_unpriv * 16;
 
 	if (!access(PATH_FS_PIPE_MAX_SIZE, F_OK)) {
 		SAFE_FILE_SCANF(PATH_FS_PIPE_MAX_SIZE, "%d", &pipe_max_unpriv);

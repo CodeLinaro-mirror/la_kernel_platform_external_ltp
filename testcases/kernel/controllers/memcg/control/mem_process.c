@@ -11,7 +11,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include "pgsize_helpers.h"
 
 /*
  * Named pipe to act as a communication channel between
@@ -56,7 +55,7 @@ void touch_memory(char *p)
 	int i;
 	int pagesize = getpagesize();
 
-	for (i = 0; i < (int)memsize; i += kernel_page_size())
+	for (i = 0; i < (int)memsize; i += pagesize)
 		p[i] = 0xef;
 }
 
