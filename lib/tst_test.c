@@ -1257,6 +1257,31 @@ int tst_creat_unlinked(const char *path, int flags, mode_t mode)
 	return fd;
 }
 
+/*
+ * tmpfs allocates space in filesystem blocks (kernel PAGE_SIZE), which may
+ * exceed 4KB or differ from the page size reported to userspace. Query the
+ * actual tmpfs block size via memfd_create() + fstatvfs() so the default
+ * mount size keeps an 8192-block budget across all page configurations.
+ */
+static unsigned long get_tmpfs_block_size(void)
+{
+	struct statvfs st;
+	int fd = -1;
+
+	if (__NR_memfd_create != __LTP__NR_INVALID_SYSCALL)
+		fd = syscall(__NR_memfd_create, "ltp_tmpfs", 0);
+
+	if (fd >= 0) {
+		int ret = fstatvfs(fd, &st);
+
+		SAFE_CLOSE(fd);
+		if (!ret && st.f_bsize > 0)
+			return st.f_bsize;
+	}
+
+	return getpagesize();
+}
+
 static const char *limit_tmpfs_mount_size(const char *mnt_data,
 		char *buf, size_t buf_size, const char *fs_type)
 {
@@ -1266,7 +1291,7 @@ static const char *limit_tmpfs_mount_size(const char *mnt_data,
 		return mnt_data;
 
 	if (!tst_test->dev_min_size)
-		tmpfs_size = 32;
+		tmpfs_size = 32 * MAX(get_tmpfs_block_size() / 4096, 1UL);
 	else
 		tmpfs_size = tdev.size;
 
